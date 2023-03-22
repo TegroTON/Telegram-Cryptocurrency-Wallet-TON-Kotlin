@@ -2,7 +2,7 @@ package bot.inlines
 
 import bot.api.Bot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.utils.button
@@ -19,17 +19,25 @@ class StockMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages.menuStockMessage,
+            message = MessagesContainer[user.settings.lang].menuStockMessage,
             keyboard = BotKeyboard {
                 row {
-                    button(Messages.menuStockStart, ButtonPayload.serializer(), ButtonPayload.START)
-                }
-                row {
-                    button(Messages.menuStockHistory, ButtonPayload.serializer(), ButtonPayload.HISTORY)
+                    button(
+                        MessagesContainer[user.settings.lang].menuStockStart,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.START
+                    )
                 }
                 row {
                     button(
-                        Messages.menuButtonBack,
+                        MessagesContainer[user.settings.lang].menuStockHistory,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.HISTORY
+                    )
+                }
+                row {
+                    button(
+                        MessagesContainer[user.settings.lang].menuButtonBack,
                         WalletMenu.ButtonPayload.serializer(),
                         WalletMenu.ButtonPayload.BACK
                     )

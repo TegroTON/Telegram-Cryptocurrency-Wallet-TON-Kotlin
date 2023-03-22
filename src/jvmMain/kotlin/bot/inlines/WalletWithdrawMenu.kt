@@ -2,7 +2,7 @@ package bot.inlines
 
 import bot.api.Bot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.utils.button
@@ -22,25 +22,25 @@ class WalletWithdrawMenu(
             when (currency) {
                 CryptoCurrency.TON -> appendLine(
                     String.format(
-                        Messages.menuWalletWithdrawMessage,
+                        MessagesContainer[user.settings.lang].menuWalletWithdrawMessage,
                         "TON",
-                        Messages.menuWalletWithdrawTON
+                        MessagesContainer[user.settings.lang].menuWalletWithdrawTON
                     )
                 )
 
                 CryptoCurrency.TGR -> appendLine(
                     String.format(
-                        Messages.menuWalletWithdrawMessage,
+                        MessagesContainer[user.settings.lang].menuWalletWithdrawMessage,
                         "TGR",
-                        Messages.menuWalletWithdrawTGR
+                        MessagesContainer[user.settings.lang].menuWalletWithdrawTGR
                     )
                 )
 
                 CryptoCurrency.USDT -> appendLine(
                     String.format(
-                        Messages.menuWalletWithdrawMessage,
+                        MessagesContainer[user.settings.lang].menuWalletWithdrawMessage,
                         "USDT",
-                        Messages.menuWalletWithdrawUSDT
+                        MessagesContainer[user.settings.lang].menuWalletWithdrawUSDT
                     )
                 )
             }
@@ -52,7 +52,7 @@ class WalletWithdrawMenu(
             keyboard = BotKeyboard {
                 row {
                     button(
-                        Messages.menuButtonBack,
+                        MessagesContainer[user.settings.lang].menuButtonBack,
                         WalletMenu.ButtonPayload.serializer(),
                         WalletMenu.ButtonPayload.BACK
                     )

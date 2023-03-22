@@ -3,7 +3,7 @@ package bot.inlines
 import bot.api.Bot
 import bot.api.TgBot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.utils.button
@@ -23,11 +23,14 @@ class ReferralsMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = String.format(Messages.menuReferralsMessage, if (bot is TgBot) tgLink else vkLink),
+            message = String.format(
+                MessagesContainer[user.settings.lang].menuReferralsMessage,
+                if (bot is TgBot) tgLink else vkLink
+            ),
             keyboard = BotKeyboard {
                 row {
                     button(
-                        Messages.menuButtonBack,
+                        MessagesContainer[user.settings.lang].menuButtonBack,
                         WalletMenu.ButtonPayload.serializer(),
                         WalletMenu.ButtonPayload.BACK
                     )

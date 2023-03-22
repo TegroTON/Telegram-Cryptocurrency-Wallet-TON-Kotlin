@@ -2,7 +2,7 @@ package bot.inlines
 
 import bot.api.Bot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.utils.button
@@ -26,11 +26,15 @@ class ReceiptSelectAmountMenu(
             bot.updateKeyboard(
                 to = user.vkId ?: user.tgId ?: 0,
                 lastMenuMessageId = lastMenuMessageId,
-                message = String.format(Messages.menuReceiptsSelectAmountNoMoney, min, avalible),
+                message = String.format(
+                    MessagesContainer[user.settings.lang].menuReceiptsSelectAmountNoMoney,
+                    min,
+                    avalible
+                ),
                 keyboard = BotKeyboard {
                     row {
                         button(
-                            Messages.menuButtonBack,
+                            MessagesContainer[user.settings.lang].menuButtonBack,
                             ButtonPayload.serializer(),
                             ButtonPayload.BACK
                         )
@@ -42,21 +46,29 @@ class ReceiptSelectAmountMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = String.format(Messages.menuReceiptsSelectAmountMessage, currency.ticker, avalible),
+            message = String.format(
+                MessagesContainer[user.settings.lang].menuReceiptsSelectAmountMessage,
+                currency.ticker,
+                avalible
+            ),
             keyboard = BotKeyboard {
                 row {
-                    button(Messages.menuReceiptsSelectAmountMin + min, ButtonPayload.serializer(), ButtonPayload.MIN)
+                    button(
+                        MessagesContainer[user.settings.lang].menuReceiptsSelectAmountMin + min,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.MIN
+                    )
                 }
                 row {
                     button(
-                        Messages.menuReceiptsSelectAmountMax + avalible,
+                        MessagesContainer[user.settings.lang].menuReceiptsSelectAmountMax + avalible,
                         ButtonPayload.serializer(),
                         ButtonPayload.MAX
                     )
                 }
                 row {
                     button(
-                        Messages.menuButtonBack,
+                        MessagesContainer[user.settings.lang].menuButtonBack,
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
                     )

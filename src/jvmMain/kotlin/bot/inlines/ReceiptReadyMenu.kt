@@ -3,7 +3,7 @@ package bot.inlines
 import bot.api.Bot
 import bot.api.TgBot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.receipts.PostgresReceiptPersistent
@@ -36,28 +36,40 @@ data class ReceiptReadyMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = String.format(Messages.menuReceiptReadyMessage, receipt.coins, time),
+            message = String.format(MessagesContainer[user.settings.lang].menuReceiptReadyMessage, receipt.coins, time),
             keyboard = BotKeyboard {
                 row {
                     linkButton(
-                        Messages.menuReceiptReadyShare,
+                        MessagesContainer[user.settings.lang].menuReceiptReadyShare,
                         if (bot is TgBot) tgLink else vkLink,
                         ButtonPayload.serializer(),
                         ButtonPayload.SHARE
                     )
                 }
                 row {
-                    button(Messages.menuReceiptReadyQr, ButtonPayload.serializer(), ButtonPayload.QR)
-                }
-                row {
-                    button(Messages.menuReceiptReadyLimitations, ButtonPayload.serializer(), ButtonPayload.LIMITATIONS)
-                }
-                row {
-                    button(Messages.menuReceiptReadyDelete, ButtonPayload.serializer(), ButtonPayload.DELETE)
+                    button(
+                        MessagesContainer[user.settings.lang].menuReceiptReadyQr,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.QR
+                    )
                 }
                 row {
                     button(
-                        Messages.menuButtonBack,
+                        MessagesContainer[user.settings.lang].menuReceiptReadyLimitations,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.LIMITATIONS
+                    )
+                }
+                row {
+                    button(
+                        MessagesContainer[user.settings.lang].menuReceiptReadyDelete,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.DELETE
+                    )
+                }
+                row {
+                    button(
+                        MessagesContainer[user.settings.lang].menuButtonBack,
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
                     )
@@ -107,7 +119,7 @@ data class ReceiptReadyMenu(
 
             ButtonPayload.DELETE -> {
                 PostgresReceiptPersistent.deleteReceipt(receipt)
-                bot.sendMessage(message.peerId, Messages.menuReceiptDeleted)
+                bot.sendMessage(message.peerId, MessagesContainer[user.settings.lang].menuReceiptDeleted)
                 user.setMenu(bot, ReceiptsMenu(user, MainMenu(user)), message.lastMenuMessageId)
             }
 

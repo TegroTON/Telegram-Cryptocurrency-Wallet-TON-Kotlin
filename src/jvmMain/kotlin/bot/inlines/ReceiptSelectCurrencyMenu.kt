@@ -2,7 +2,7 @@ package bot.inlines
 
 import bot.api.Bot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.utils.button
@@ -20,7 +20,7 @@ class ReceiptSelectCurrencyMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages.menuReceiptsSelectCurrencyMessage,
+            message = MessagesContainer[user.settings.lang].menuReceiptsSelectCurrencyMessage,
             keyboard = BotKeyboard {
                 row {
                     button("TON", ButtonPayload.serializer(), ButtonPayload.TON)
@@ -33,7 +33,7 @@ class ReceiptSelectCurrencyMenu(
                 }
                 row {
                     button(
-                        Messages.menuButtonBack,
+                        MessagesContainer[user.settings.lang].menuButtonBack,
                         WalletMenu.ButtonPayload.serializer(),
                         WalletMenu.ButtonPayload.BACK
                     )

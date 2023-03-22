@@ -18,34 +18,44 @@ class SettingsMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages.menuSettingsMessage,
+            message = MessagesContainer[user.settings.lang].menuSettingsMessage,
             keyboard = BotKeyboard {
                 row {
-                    button(Messages.menuSettingsRefs, ButtonPayload.serializer(), SettingsMenu.ButtonPayload.REFS)
+                    button(
+                        MessagesContainer[user.settings.lang].menuSettingsRefs,
+                        ButtonPayload.serializer(),
+                        SettingsMenu.ButtonPayload.REFS
+                    )
                 }
                 row {
                     button(
-                        String.format(Messages.menuSettingsLang, user.settings.lang.displayName),
+                        String.format(
+                            MessagesContainer[user.settings.lang].menuSettingsLang,
+                            user.settings.lang.displayName
+                        ),
                         ButtonPayload.serializer(),
                         ButtonPayload.LANG
                     )
                 }
                 row {
                     button(
-                        String.format(Messages.menuSettingsCurrency, user.settings.localCurrency.ticker),
+                        String.format(
+                            MessagesContainer[user.settings.lang].menuSettingsCurrency,
+                            user.settings.localCurrency.ticker
+                        ),
                         ButtonPayload.serializer(),
                         ButtonPayload.CURRENCY
                     )
                 }
                 row {
                     linkButton(
-                        Messages.menuSettingsHints,
+                        MessagesContainer[user.settings.lang].menuSettingsHints,
                         "https://justkiwi.ru",
                         ButtonPayload.serializer(),
                         ButtonPayload.HINTS
                     )
                     linkButton(
-                        Messages.menuSettingsHelp,
+                        MessagesContainer[user.settings.lang].menuSettingsHelp,
                         "https://vk.me/justkiwi_bot",
                         ButtonPayload.serializer(),
                         ButtonPayload.HELP
@@ -53,7 +63,7 @@ class SettingsMenu(
                 }
                 row {
                     button(
-                        Messages.menuButtonBack,
+                        MessagesContainer[user.settings.lang].menuButtonBack,
                         WalletMenu.ButtonPayload.serializer(),
                         WalletMenu.ButtonPayload.BACK
                     )

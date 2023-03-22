@@ -3,7 +3,7 @@ package bot.inlines
 import bot.api.Bot
 import bot.api.TgBot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.ton.TonUtils
@@ -25,13 +25,13 @@ class WalletDepositMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = String.format(Messages.menuWalletDepositMessage, currency.ticker),
+            message = String.format(MessagesContainer[user.settings.lang].menuWalletDepositMessage, currency.ticker),
             keyboard = BotKeyboard {
                 if (currency == CryptoCurrency.TON && bot is TgBot) {
                     val userTonAddress = TonUtils.getUserAddress(user.id, tonMasterKey)
                     row {
                         linkButton(
-                            Messages.menuWalletDepositLink,
+                            MessagesContainer[user.settings.lang].menuWalletDepositLink,
                             "ton://transfer/${userTonAddress.toString(userFriendly = true, bounceable = false)}",
                             ButtonPayload.serializer(),
                             ButtonPayload.LINK
@@ -39,11 +39,15 @@ class WalletDepositMenu(
                     }
                 }
                 row {
-                    button(Messages.menuWalletDepositQR, ButtonPayload.serializer(), ButtonPayload.QR)
+                    button(
+                        MessagesContainer[user.settings.lang].menuWalletDepositQR,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.QR
+                    )
                 }
                 row {
                     button(
-                        Messages.menuButtonBack,
+                        MessagesContainer[user.settings.lang].menuButtonBack,
                         WalletMenu.ButtonPayload.serializer(),
                         WalletMenu.ButtonPayload.BACK
                     )

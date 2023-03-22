@@ -2,7 +2,7 @@ package bot.inlines
 
 import bot.api.Bot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.receipts.Receipt
@@ -24,7 +24,6 @@ class ReceiptsListMenu(
     val parentMenu: Menu
 ) : Menu {
 
-    //TODO: open ReceiptReadyMenu
     private var maxPages: Int = max(receipts.size - 1, 0) / 6 + 1
     private var start = if (page == 1) 0 else (page - 1) * 6
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
@@ -36,7 +35,7 @@ class ReceiptsListMenu(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = buildString {
-                appendLine(Messages.menuReceiptsListMessage)
+                appendLine(MessagesContainer[user.settings.lang].menuReceiptsListMessage)
                 if (receipts.isNotEmpty()) {
                     var count = 1
                     for (receipt in receipts.subList(start, min(receipts.size, start + 6))) {
@@ -46,7 +45,7 @@ class ReceiptsListMenu(
                         appendLine()
                         appendLine(
                             String.format(
-                                Messages.menuReceiptsListEntry,
+                                MessagesContainer[user.settings.lang].menuReceiptsListEntry,
                                 count++.toString(),
                                 time,
                                 receipt.coins
@@ -54,14 +53,14 @@ class ReceiptsListMenu(
                         )
                         val recipient = receipt.recipient
                         if (recipient != null) {
-                            appendLine(Messages.menuReceiptsListWithRecipient)
+                            appendLine(MessagesContainer[user.settings.lang].menuReceiptsListWithRecipient)
                         } else {
-                            appendLine(Messages.menuReceiptsListWithoutRecipient)
+                            appendLine(MessagesContainer[user.settings.lang].menuReceiptsListWithoutRecipient)
                         }
                     }
                 } else {
                     appendLine()
-                    appendLine(Messages.menuReceiptsListEmpty)
+                    appendLine(MessagesContainer[user.settings.lang].menuReceiptsListEmpty)
                 }
             },
             keyboard = BotKeyboard {
@@ -123,7 +122,7 @@ class ReceiptsListMenu(
                             button("← " + (page - 1), ButtonPayload.serializer(), ButtonPayload.PREVIOUS_PAGE)
                         }
                         button(
-                            Messages.menuReceiptsListBack,
+                            MessagesContainer[user.settings.lang].menuReceiptsListBack,
                             ButtonPayload.serializer(),
                             ButtonPayload.BACK
                         )
@@ -134,7 +133,7 @@ class ReceiptsListMenu(
                 } else {
                     row {
                         button(
-                            Messages.menuReceiptsListBack,
+                            MessagesContainer[user.settings.lang].menuReceiptsListBack,
                             ButtonPayload.serializer(),
                             ButtonPayload.BACK
                         )
@@ -204,7 +203,7 @@ class ReceiptsListMenu(
     }
 
     private fun getText(receipt: Receipt, id: String): String {
-        return String.format(Messages.menuReceiptsListKeyboardEntry, id, receipt.coins)
+        return String.format(MessagesContainer[user.settings.lang].menuReceiptsListKeyboardEntry, id, receipt.coins)
     }
 
     @Serializable

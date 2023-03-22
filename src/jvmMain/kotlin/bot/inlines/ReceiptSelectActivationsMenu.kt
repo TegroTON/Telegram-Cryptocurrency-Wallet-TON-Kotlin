@@ -2,7 +2,7 @@ package bot.inlines
 
 import bot.api.Bot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.receipts.PostgresReceiptPersistent
@@ -24,23 +24,30 @@ class ReceiptSelectActivationsMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages.menuReceiptsSelectActivationsMessage,
+            message = MessagesContainer[user.settings.lang].menuReceiptsSelectActivationsMessage,
             keyboard = BotKeyboard {
                 row {
                     //skip
-                    button(Messages.menuReceiptsSelectActivationsSkip, ButtonPayload.serializer(), ButtonPayload.SKIP)
+                    button(
+                        MessagesContainer[user.settings.lang].menuReceiptsSelectActivationsSkip,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.SKIP
+                    )
                 }
                 row {
                     val maxActivations = maxCoins / coins.amount
                     button(
-                        String.format(Messages.menuReceiptsSelectActivationsMax, maxActivations.toString()),
+                        String.format(
+                            MessagesContainer[user.settings.lang].menuReceiptsSelectActivationsMax,
+                            maxActivations.toString()
+                        ),
                         ButtonPayload.serializer(),
                         ButtonPayload.MAX
                     )
                 }
                 row {
                     button(
-                        Messages.menuButtonBack,
+                        MessagesContainer[user.settings.lang].menuButtonBack,
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
                     )

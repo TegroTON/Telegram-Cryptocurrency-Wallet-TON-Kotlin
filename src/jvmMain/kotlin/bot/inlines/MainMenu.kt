@@ -2,7 +2,6 @@ package bot.inlines
 
 import bot.api.Bot
 import bot.objects.BotMessage
-import bot.objects.Messages
 import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
@@ -22,31 +21,72 @@ data class MainMenu(
                 CommandPayload.serializer(),
                 CommandPayload.WALLET
             )
-            button(Messages.mainMenuButtonReceipts, CommandPayload.serializer(), CommandPayload.RECEIPTS)
+            button(
+                MessagesContainer[user.settings.lang].mainMenuButtonReceipts,
+                CommandPayload.serializer(),
+                CommandPayload.RECEIPTS
+            )
         }
         row {
-            button(Messages.mainMenuButtonExchange, CommandPayload.serializer(), CommandPayload.EXCHANGE)
-            button(Messages.mainMenuButtonStock, CommandPayload.serializer(), CommandPayload.STOCK)
+            button(
+                MessagesContainer[user.settings.lang].mainMenuButtonExchange,
+                CommandPayload.serializer(),
+                CommandPayload.EXCHANGE
+            )
+            button(
+                MessagesContainer[user.settings.lang].mainMenuButtonStock,
+                CommandPayload.serializer(),
+                CommandPayload.STOCK
+            )
         }
         row {
-            button(Messages.mainMenuButtonMarket, CommandPayload.serializer(), CommandPayload.MARKET)
-            button(Messages.mainMenuButtonAccounts, CommandPayload.serializer(), CommandPayload.ACCOUNTS)
+            button(
+                MessagesContainer[user.settings.lang].mainMenuButtonMarket,
+                CommandPayload.serializer(),
+                CommandPayload.MARKET
+            )
+            button(
+                MessagesContainer[user.settings.lang].mainMenuButtonAccounts,
+                CommandPayload.serializer(),
+                CommandPayload.ACCOUNTS
+            )
         }
         row {
-            button(Messages.mainMenuButtonDeals, CommandPayload.serializer(), CommandPayload.DEALS)
-            button(Messages.mainMenuButtonDeposits, CommandPayload.serializer(), CommandPayload.DEPOSITS)
+            button(
+                MessagesContainer[user.settings.lang].mainMenuButtonDeals,
+                CommandPayload.serializer(),
+                CommandPayload.DEALS
+            )
+            button(
+                MessagesContainer[user.settings.lang].mainMenuButtonDeposits,
+                CommandPayload.serializer(),
+                CommandPayload.DEPOSITS
+            )
         }
         row {
-            button(Messages.mainMenuButtonNFT, CommandPayload.serializer(), CommandPayload.NFT)
+            button(
+                MessagesContainer[user.settings.lang].mainMenuButtonNFT,
+                CommandPayload.serializer(),
+                CommandPayload.NFT
+            )
         }
         row {
-            button(Messages.mainMenuButtonSettings, CommandPayload.serializer(), CommandPayload.SETTINGS)
+            button(
+                MessagesContainer[user.settings.lang].mainMenuButtonSettings,
+                CommandPayload.serializer(),
+                CommandPayload.SETTINGS
+            )
         }
     }
 
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         val keyboard = createKeyboard()
-        bot.updateKeyboard(user.vkId ?: user.tgId ?: 0, lastMenuMessageId, Messages.mainMenuMessage, keyboard)
+        bot.updateKeyboard(
+            user.vkId ?: user.tgId ?: 0,
+            lastMenuMessageId,
+            MessagesContainer[user.settings.lang].mainMenuMessage,
+            keyboard
+        )
     }
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {

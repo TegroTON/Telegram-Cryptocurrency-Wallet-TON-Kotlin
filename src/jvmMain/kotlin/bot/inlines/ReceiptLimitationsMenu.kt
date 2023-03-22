@@ -2,7 +2,7 @@ package bot.inlines
 
 import bot.api.Bot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.receipts.Receipt
@@ -21,25 +21,41 @@ data class ReceiptLimitationsMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages.menuReceiptLimitationsMessage,
+            message = MessagesContainer[user.settings.lang].menuReceiptLimitationsMessage,
             keyboard = BotKeyboard {
                 row {
                     //TODO: ref
-                    button(Messages.menuReceiptLimitationsRef, ButtonPayload.serializer(), ButtonPayload.REF)
+                    button(
+                        MessagesContainer[user.settings.lang].menuReceiptLimitationsRef,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.REF
+                    )
                 }
                 row {
                     //TODO: sub
-                    button(Messages.menuReceiptLimitationsSub, ButtonPayload.serializer(), ButtonPayload.SUB)
-                }
-                row {
-                    button(Messages.menuReceiptLimitationsUser, ButtonPayload.serializer(), ButtonPayload.USER)
-                }
-                row {
-                    button(Messages.menuReceiptLimitationsCaptcha, ButtonPayload.serializer(), ButtonPayload.CAPTCHA)
+                    button(
+                        MessagesContainer[user.settings.lang].menuReceiptLimitationsSub,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.SUB
+                    )
                 }
                 row {
                     button(
-                        Messages.menuButtonBack,
+                        MessagesContainer[user.settings.lang].menuReceiptLimitationsUser,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.USER
+                    )
+                }
+                row {
+                    button(
+                        MessagesContainer[user.settings.lang].menuReceiptLimitationsCaptcha,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.CAPTCHA
+                    )
+                }
+                row {
+                    button(
+                        MessagesContainer[user.settings.lang].menuButtonBack,
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
                     )

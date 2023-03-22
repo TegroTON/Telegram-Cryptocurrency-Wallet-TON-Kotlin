@@ -2,7 +2,7 @@ package bot.inlines
 
 import bot.api.Bot
 import bot.objects.BotMessage
-import bot.objects.Messages
+import bot.objects.MessagesContainer
 import bot.objects.User
 import bot.objects.keyboard.BotKeyboard
 import bot.utils.button
@@ -25,7 +25,7 @@ class WalletMenu(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = buildString {
-                appendLine(Messages.walletMenuTitle)
+                appendLine(MessagesContainer[user.settings.lang].walletMenuTitle)
                 appendLine()
                 val values = CryptoCurrency.values().toMutableList()
                 walletState.active.forEach {
@@ -38,7 +38,7 @@ class WalletMenu(
                 val frozen = walletState.frozen.filter { it.amount > BigInteger.ZERO }
                 if (frozen.isNotEmpty()) {
                     appendLine()
-                    appendLine(Messages.menuWalletFrozenTitle)
+                    appendLine(MessagesContainer[user.settings.lang].menuWalletFrozenTitle)
                     appendLine()
                     frozen.forEach {
                         appendLine("· ${it.currency.displayName}: $it")
@@ -47,15 +47,35 @@ class WalletMenu(
             },
             keyboard = BotKeyboard {
                 row {
-                    button(Messages.menuWalletButtonDeposit, ButtonPayload.serializer(), ButtonPayload.DEPOSIT)
-                    button(Messages.menuWalletButtonWithdraw, ButtonPayload.serializer(), ButtonPayload.WITHDRAW)
+                    button(
+                        MessagesContainer[user.settings.lang].menuWalletButtonDeposit,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.DEPOSIT
+                    )
+                    button(
+                        MessagesContainer[user.settings.lang].menuWalletButtonWithdraw,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.WITHDRAW
+                    )
                 }
                 row {
-                    button(Messages.menuWalletButtonTransfer, ButtonPayload.serializer(), ButtonPayload.TRANSFER)
-                    button(Messages.menuWalletButtonHistory, ButtonPayload.serializer(), ButtonPayload.HISTORY)
+                    button(
+                        MessagesContainer[user.settings.lang].menuWalletButtonTransfer,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.TRANSFER
+                    )
+                    button(
+                        MessagesContainer[user.settings.lang].menuWalletButtonHistory,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.HISTORY
+                    )
                 }
                 row {
-                    button(Messages.menuButtonBack, ButtonPayload.serializer(), ButtonPayload.BACK)
+                    button(
+                        MessagesContainer[user.settings.lang].menuButtonBack,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.BACK
+                    )
                 }
             }
         )
