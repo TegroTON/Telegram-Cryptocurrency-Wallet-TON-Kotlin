@@ -1,0 +1,18 @@
+{
+  "bc4c2579-83b3-4f9e-bfc5-1bf2873ba1bd": {
+    "type": "vkbot.inlines.SettingsMenu",
+    "user": {
+      "id": "bc4c2579-83b3-4f9e-bfc5-1bf2873ba1bd",
+      "tgId": null,
+      "vkId": 102307040
+    },
+    "parentMenu": {
+      "type": "vkbot.inlines.MainMenu",
+      "user": {
+        "id": "bc4c2579-83b3-4f9e-bfc5-1bf2873ba1bd",
+        "tgId": null,
+        "vkId": 102307040
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+version: "3.1"
+services:
+  postgres:
+    container_name: "postgres"
+    image: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=qwerty
+      - POSTGRES_USER=tgr-bot
+      - POSTGRES_DB=tgr-bot
+    ports:
+      - "5432:5432"
