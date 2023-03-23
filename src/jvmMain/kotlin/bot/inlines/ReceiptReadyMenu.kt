@@ -36,7 +36,12 @@ data class ReceiptReadyMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = String.format(MessagesContainer[user.settings.lang].menuReceiptReadyMessage, receipt.coins, time),
+            message = String.format(
+                MessagesContainer[user.settings.lang].menuReceiptReadyMessage,
+                receipt.coins,
+                receipt.activations,
+                time
+            ),
             keyboard = BotKeyboard {
                 row {
                     linkButton(

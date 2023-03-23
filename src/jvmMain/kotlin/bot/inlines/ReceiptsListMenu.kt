@@ -149,37 +149,37 @@ class ReceiptsListMenu(
 
             ButtonPayload.ONE_ONE -> user.setMenu(
                 bot,
-                ReceiptReadyMenu(user, receipts[start + 1], ReceiptsMenu(user, MainMenu(user))),
+                ReceiptReadyMenu(user, receipts[start], ReceiptsMenu(user, MainMenu(user))),
                 message.lastMenuMessageId
             )
 
             ButtonPayload.ONE_TWO -> user.setMenu(
                 bot,
-                ReceiptReadyMenu(user, receipts[start + 2], ReceiptsMenu(user, MainMenu(user))),
+                ReceiptReadyMenu(user, receipts[start + 1], ReceiptsMenu(user, MainMenu(user))),
                 message.lastMenuMessageId
             )
 
             ButtonPayload.TWO_ONE -> user.setMenu(
                 bot,
-                ReceiptReadyMenu(user, receipts[start + 3], ReceiptsMenu(user, MainMenu(user))),
+                ReceiptReadyMenu(user, receipts[start + 2], ReceiptsMenu(user, MainMenu(user))),
                 message.lastMenuMessageId
             )
 
             ButtonPayload.TWO_TWO -> user.setMenu(
                 bot,
-                ReceiptReadyMenu(user, receipts[start + 4], ReceiptsMenu(user, MainMenu(user))),
+                ReceiptReadyMenu(user, receipts[start + 3], ReceiptsMenu(user, MainMenu(user))),
                 message.lastMenuMessageId
             )
 
             ButtonPayload.THREE_ONE -> user.setMenu(
                 bot,
-                ReceiptReadyMenu(user, receipts[start + 5], ReceiptsMenu(user, MainMenu(user))),
+                ReceiptReadyMenu(user, receipts[start + 4], ReceiptsMenu(user, MainMenu(user))),
                 message.lastMenuMessageId
             )
 
             ButtonPayload.THREE_TWO -> user.setMenu(
                 bot,
-                ReceiptReadyMenu(user, receipts[start + 6], ReceiptsMenu(user, MainMenu(user))),
+                ReceiptReadyMenu(user, receipts[start + 5], ReceiptsMenu(user, MainMenu(user))),
                 message.lastMenuMessageId
             )
 

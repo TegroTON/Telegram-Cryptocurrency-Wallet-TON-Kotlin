@@ -78,23 +78,59 @@ class ReceiptSelectAmountMenu(
     }
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
-        val avalible = PostgresWalletPersistent.loadWalletState(user).active[currency]
-        when (Json.decodeFromString<ButtonPayload>(payload)) {
-            ButtonPayload.MIN -> {
-                val min = Coins(currency, currency.minAmount.toBigInteger())
-                user.setMenu(bot, ReceiptSelectActivationsMenu(user, min, this), message.lastMenuMessageId)
-            }
+        val payload = message.payload
+        val available = PostgresWalletPersistent.loadWalletState(user).active[currency]
+        val min = Coins(currency, currency.minAmount.toBigInteger())
+        if (payload != null) {
+            when (Json.decodeFromString<ButtonPayload>(payload)) {
+                ButtonPayload.MIN -> {
+                    user.setMenu(bot, ReceiptSelectActivationsMenu(user, min, this), message.lastMenuMessageId)
+                }
 
-            ButtonPayload.MAX -> {
-                user.setMenu(bot, ReceiptSelectActivationsMenu(user, avalible, this), message.lastMenuMessageId)
-            }
+                ButtonPayload.MAX -> {
+                    user.setMenu(bot, ReceiptSelectActivationsMenu(user, available, this), message.lastMenuMessageId)
+                }
 
-            ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                ButtonPayload.BACK -> {
+                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                }
+            }
+        } else {
+            if (isStringLong(message.body)) {
+                val count = (message.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
+                val coins = Coins(currency, count)
+                if (count < min.amount || count > available.amount) {
+                    bot.sendMessage(message.peerId, MessagesContainer[user.settings.lang].menuSelectInvalidAmount)
+                    return false
+                }
+                user.setMenu(bot, ReceiptSelectActivationsMenu(user, coins, this), message.lastMenuMessageId)
+                return true
+            } else {
+                bot.sendMessage(message.peerId, MessagesContainer[user.settings.lang].menuSelectInvalidAmount)
+                return false
             }
         }
         return true
+    }
+
+    private fun getFactor(decimals: Int): Long {
+        val string = buildString {
+            append("1")
+            for (i in 1..decimals) {
+                append("0")
+            }
+        }
+        return string.toLong()
+    }
+
+    private fun isStringLong(s: String?): Boolean {
+        if (s == null) return false
+        return try {
+            s.toDouble()
+            true
+        } catch (ex: NumberFormatException) {
+            false
+        }
     }
 
     @Serializable

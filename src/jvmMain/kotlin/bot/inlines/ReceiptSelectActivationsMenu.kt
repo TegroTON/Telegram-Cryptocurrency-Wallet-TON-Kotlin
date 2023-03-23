@@ -57,35 +57,67 @@ class ReceiptSelectActivationsMenu(
     }
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+        val payload = message.payload
         val maxCoins = PostgresWalletPersistent.loadWalletState(user).active[coins.currency].amount
-        val maxActivations = maxCoins / coins.amount
-        when (Json.decodeFromString<ButtonPayload>(payload)) {
-            ButtonPayload.SKIP -> user.setMenu(
-                bot,
-                ReceiptReadyMenu(
-                    user,
-                    PostgresReceiptPersistent.createReceipt(user, coins, 1),
-                    ReceiptsMenu(user, MainMenu(user))
-                ),
-                message.lastMenuMessageId
-            )
+        val maxActivations = (maxCoins / coins.amount).toInt()
+        if (payload != null) {
+            when (Json.decodeFromString<ButtonPayload>(payload)) {
+                ButtonPayload.SKIP -> user.setMenu(
+                    bot,
+                    ReceiptReadyMenu(
+                        user,
+                        PostgresReceiptPersistent.createReceipt(user, coins, 1),
+                        ReceiptsMenu(user, MainMenu(user))
+                    ),
+                    message.lastMenuMessageId
+                )
 
-            ButtonPayload.MAX -> user.setMenu(
-                bot,
-                ReceiptReadyMenu(
-                    user,
-                    PostgresReceiptPersistent.createReceipt(user, coins, maxActivations.toInt()),
-                    ReceiptsMenu(user, MainMenu(user))
-                ),
-                message.lastMenuMessageId
-            )
+                ButtonPayload.MAX -> user.setMenu(
+                    bot,
+                    ReceiptReadyMenu(
+                        user,
+                        PostgresReceiptPersistent.createReceipt(user, coins, maxActivations),
+                        ReceiptsMenu(user, MainMenu(user))
+                    ),
+                    message.lastMenuMessageId
+                )
 
-            ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                ButtonPayload.BACK -> {
+                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                }
+            }
+        } else {
+            if (isStringInt(message.body)) {
+                val count = message.body!!.toInt()
+                if (count > maxActivations) {
+                    bot.sendMessage(message.peerId, MessagesContainer[user.settings.lang].menuSelectInvalidAmount)
+                    return false
+                }
+                user.setMenu(
+                    bot,
+                    ReceiptReadyMenu(
+                        user,
+                        PostgresReceiptPersistent.createReceipt(user, coins, count),
+                        ReceiptsMenu(user, MainMenu(user))
+                    ),
+                    message.lastMenuMessageId
+                )
+            } else {
+                bot.sendMessage(message.peerId, MessagesContainer[user.settings.lang].menuSelectInvalidAmount)
+                return false
             }
         }
         return true
+    }
+
+    private fun isStringInt(s: String?): Boolean {
+        if (s == null) return false
+        return try {
+            s.toInt()
+            true
+        } catch (ex: NumberFormatException) {
+            false
+        }
     }
 
     @Serializable

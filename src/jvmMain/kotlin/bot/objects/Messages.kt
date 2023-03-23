@@ -90,6 +90,7 @@ data class MessagesContainer(
     val menuDepositsNew: String = "menuDepositsNew",
     val menuDepositsCurrent: String = "menuDepositsCurrent",
     val menuReferralsMessage: String = "menuReferralsMessage",
+    val menuSelectInvalidAmount: String = "menuSelectInvalidAmount",
 ) {
     companion object {
 
