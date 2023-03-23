@@ -8,6 +8,7 @@ import bot.receipts.PostgresReceiptPersistent
 import com.petersamokhin.vksdk.core.api.botslongpoll.VkBotsLongPollApi
 import com.petersamokhin.vksdk.core.client.VkApiClient
 import com.petersamokhin.vksdk.core.http.paramsOf
+import com.petersamokhin.vksdk.core.io.FileOnDisk
 import com.petersamokhin.vksdk.core.model.VkSettings
 import com.petersamokhin.vksdk.core.model.event.MessagePartial
 import com.petersamokhin.vksdk.http.VkOkHttpClient
@@ -96,19 +97,21 @@ class VkBot : Bot, CoroutineScope {
     }
 
     override suspend fun sendMessage(to: Long, message: String) {
-        client.sendMessage {
+        val s = client.sendMessage {
             peerId = to.toInt()
             this.message = message
         }.execute()
+        println(s)
     }
 
     override suspend fun sendMessageKeyboard(to: Long, message: String, keyboard: BotKeyboard) {
         val vkKeyboard = keyboard.toVk()
-        client.sendMessage {
+        val s = client.sendMessage {
             peerId = to.toInt()
             this.message = message
             this.keyboard = vkKeyboard
         }.execute()
+        println(s)
     }
 
     override suspend fun updateKeyboard(to: Long, lastMenuMessageId: Long?, message: String, keyboard: BotKeyboard) {
@@ -119,7 +122,16 @@ class VkBot : Bot, CoroutineScope {
     }
 
     override suspend fun sendPhoto(to: Long, message: String, file: File, keyboard: BotKeyboard?) {
-        TODO("Not yet implemented")
+        val imageAttachmentString = client.uploader().uploadPhotoForMessage(
+            to.toInt(),
+            FileOnDisk(file.path)
+        )
+        client.sendMessage {
+            peerId = to.toInt()
+            this.message = message
+            this.keyboard = keyboard?.toVk()
+            attachment = imageAttachmentString
+        }.execute()
     }
 
     override suspend fun sendPhoto(
@@ -129,7 +141,18 @@ class VkBot : Bot, CoroutineScope {
         filename: String,
         keyboard: BotKeyboard?
     ) {
-        TODO("Not yet implemented")
+        val imageAttachmentString = client.uploader().uploadPhotoForMessage(
+            to.toInt(),
+            withContext(Dispatchers.IO) {
+                inputStream.readAllBytes()
+            }
+        )
+        client.sendMessage {
+            peerId = to.toInt()
+            this.message = message
+            this.keyboard = keyboard?.toVk()
+            attachment = imageAttachmentString
+        }.execute()
     }
 
     private suspend fun getRefId(ref: String?): UUID? {

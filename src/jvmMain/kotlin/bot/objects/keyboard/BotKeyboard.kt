@@ -7,7 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 
 @Serializable
-public data class BotKeyboard(
+data class BotKeyboard(
     val buttons: List<BotKeyboardRow> = emptyList(),
     @SerialName("one_time")
     val oneTime: Boolean = false
@@ -40,7 +40,7 @@ public data class BotKeyboard(
                     )
                 }
             }
-            keyboard.add(keyboardRow)
+            if (keyboardRow.isNotEmpty()) keyboard.add(keyboardRow)
         }
         return Keyboard(buttons = keyboard, oneTime = false, inline = true, authorId = null)
     }
