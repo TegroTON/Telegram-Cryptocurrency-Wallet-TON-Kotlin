@@ -23,10 +23,12 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import org.jetbrains.exposed.dao.id.UUIDTable
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.io.File
 import java.util.*
 
@@ -85,7 +87,7 @@ object PostgresReceiptPersistent : ReceiptPersistent {
 
     fun saveReceipt(receipt: Receipt) {
         transaction {
-            addLogger(StdOutSqlLogger)
+            //addLogger(StdOutSqlLogger)
 
             exec(
                 """

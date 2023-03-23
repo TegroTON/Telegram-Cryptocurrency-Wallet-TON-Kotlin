@@ -97,21 +97,19 @@ class VkBot : Bot, CoroutineScope {
     }
 
     override suspend fun sendMessage(to: Long, message: String) {
-        val s = client.sendMessage {
+        client.sendMessage {
             peerId = to.toInt()
             this.message = message
         }.execute()
-        println(s)
     }
 
     override suspend fun sendMessageKeyboard(to: Long, message: String, keyboard: BotKeyboard) {
         val vkKeyboard = keyboard.toVk()
-        val s = client.sendMessage {
+        client.sendMessage {
             peerId = to.toInt()
             this.message = message
             this.keyboard = vkKeyboard
         }.execute()
-        println(s)
     }
 
     override suspend fun updateKeyboard(to: Long, lastMenuMessageId: Long?, message: String, keyboard: BotKeyboard) {

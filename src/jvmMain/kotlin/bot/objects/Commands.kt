@@ -16,7 +16,6 @@ class Commands {
                 user.setMenu(bot, MainMenu(user), null)
                 return
             }
-            println(botMessage.body)
             val args = botMessage.body.split(" ")
             val backMenu: Menu = menu ?: MainMenu(user)
             when (args[0]) {

@@ -104,7 +104,6 @@ class TgBot : Bot, TelegramLongPollingBot(System.getenv("TG_API_TOKEN")), Corout
     }
 
     override fun onUpdateReceived(update: Update) {
-        println(update)
         val userTgId = update.message?.from?.id ?: update.callbackQuery.from.id
         launch {
             val randomUUID = UUID.randomUUID()
