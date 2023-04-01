@@ -1,18 +1,20 @@
 package money.tegro.bot.inlines
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.api.TgBot
 import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.MessagesContainer
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.ton.TonBlockchainManager
 import money.tegro.bot.tonMasterKey
+import money.tegro.bot.utils.UserPrivateKey
 import money.tegro.bot.utils.button
 import money.tegro.bot.utils.linkButton
 import money.tegro.bot.wallet.CryptoCurrency
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 
 @Serializable
 class WalletDepositMenu(
@@ -27,11 +29,12 @@ class WalletDepositMenu(
             message = String.format(MessagesContainer[user.settings.lang].menuWalletDepositMessage, currency.ticker),
             keyboard = BotKeyboard {
                 if (currency == CryptoCurrency.TON && bot is TgBot) {
-                    val userTonAddress = TonUtils.getUserAddress(user.id, tonMasterKey)
+                    val privateKey = UserPrivateKey(user.id, tonMasterKey)
+                    val userTonAddress = TonBlockchainManager.getAddress(privateKey)
                     row {
                         linkButton(
                             MessagesContainer[user.settings.lang].menuWalletDepositLink,
-                            "ton://transfer/${userTonAddress.toString(userFriendly = true, bounceable = false)}",
+                            "ton://transfer/${userTonAddress}",
                             ButtonPayload.serializer(),
                             ButtonPayload.LINK
                         )

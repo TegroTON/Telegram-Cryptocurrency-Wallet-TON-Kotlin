@@ -13,7 +13,7 @@ import org.ton.block.AddrStd
 import org.ton.block.VarUInteger
 import org.ton.lite.client.LiteClient
 
-class TonBlockchainManager : BlockchainManager {
+object TonBlockchainManager : BlockchainManager {
     @OptIn(DelicateCoroutinesApi::class)
     val liteClient = LiteClient(
         newSingleThreadContext("lite-client"), LiteServerDesc(
@@ -23,9 +23,12 @@ class TonBlockchainManager : BlockchainManager {
         )
     )
 
-    override fun getAddress(privateKey: ByteArray): String {
-        return getAddrStd(PrivateKeyEd25519(privateKey)).toString(userFriendly = true, bounceable = false)
+    fun getAddress(privateKey: PrivateKeyEd25519): String {
+        return getAddrStd(privateKey).toString(userFriendly = true, bounceable = false)
     }
+
+    override fun getAddress(privateKey: ByteArray): String =
+        getAddress(PrivateKeyEd25519(privateKey))
 
     override suspend fun getBalance(address: String): Coins {
         val addrStd = AddrStd(address)
