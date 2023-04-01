@@ -6,7 +6,6 @@ import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.MessagesContainer
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
-import money.tegro.bot.ton.TonUtils
 import money.tegro.bot.tonMasterKey
 import money.tegro.bot.utils.button
 import money.tegro.bot.utils.linkButton

@@ -1,29 +1,35 @@
 package money.tegro.bot.wallet
 
+import java.math.BigDecimal
 import java.math.BigInteger
 
 enum class CryptoCurrency(
     val displayName: String,
     val ticker: String,
     val decimals: Int,
-    val minAmount: Long
+    val minAmount: Long,
+    val feeReserve: BigInteger = BigInteger.ZERO
 ) {
-    TON("Toncoin", "TON", 9, 10000000),
+    TON("Toncoin", "TON", 9, 10000000, feeReserve = 100000000.toBigInteger()),
     TGR("Tegro", "TGR", 9, 10000000),
     USDT("Tether USD", "USDT", 2, 2);
 
     val ZERO = Coins(this, BigInteger.ZERO)
 
-    fun toString(value: BigInteger): String {
-        return value.toString().let {
-            it.dropLast(decimals).ifEmpty { "0" } + it.appendDecimals()
-        }
-    }
+    private val factor = BigDecimal.TEN.pow(decimals)
 
-    private fun String.appendDecimals(): String {
-        val decimals = takeLast(decimals).padStart(decimals, '0')
-        val croppedDecimals = decimals.removeSuffix(takeLastWhile { it == '0' })
-        return if (croppedDecimals.isNotEmpty() && croppedDecimals != "0") ".${croppedDecimals}"
-        else ""
-    }
+    fun fromNano(value: String): BigDecimal =
+        fromNano(BigInteger(value))
+
+    fun fromNano(value: BigInteger): BigDecimal =
+        value.toBigDecimal().divide(factor)
+
+    fun toNano(string: String): BigInteger =
+        toNano(BigDecimal(string))
+
+    fun toNano(value: BigDecimal): BigInteger =
+        value.multiply(factor).toBigInteger()
+
+    fun toString(value: BigInteger): String =
+        fromNano(value).toString()
 }

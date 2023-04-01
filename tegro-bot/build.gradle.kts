@@ -7,6 +7,7 @@ dependencies {
     val vkSdkKotlinVersion = "0.0.8"
     val ydbVersion = "2.0.1"
     val ktorVersion = "2.2.4"
+    val tonKotlinVersion = "0.3.0-SNAPSHOT"
 
     implementation("com.petersamokhin.vksdk:core:$vkSdkKotlinVersion")
 
@@ -33,7 +34,7 @@ dependencies {
     implementation("tech.ydb:ydb-sdk-core:$ydbVersion")
     implementation("tech.ydb:ydb-sdk-table:$ydbVersion")
     implementation("tech.ydb.auth:yc-auth-provider:$ydbVersion")
-    implementation("org.ton:ton-kotlin:0.2.15")
+    implementation("org.ton:ton-kotlin:$tonKotlinVersion")
     implementation("com.github.bnb-chain:java-sdk:1.1.5")
     implementation("com.github.centerprime:BinanceSmartChain-Android-SDK:2.1.0")
 
