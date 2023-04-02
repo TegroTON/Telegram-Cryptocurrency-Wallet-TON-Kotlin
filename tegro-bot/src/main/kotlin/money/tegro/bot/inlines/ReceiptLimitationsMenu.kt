@@ -5,7 +5,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.Receipt
@@ -21,12 +21,12 @@ data class ReceiptLimitationsMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = MessagesContainer[user.settings.lang].menuReceiptLimitationsMessage,
+            message = Messages[user.settings.lang].menuReceiptLimitationsMessage,
             keyboard = BotKeyboard {
                 row {
                     //TODO: ref
                     button(
-                        MessagesContainer[user.settings.lang].menuReceiptLimitationsRef,
+                        Messages[user.settings.lang].menuReceiptLimitationsRef,
                         ButtonPayload.serializer(),
                         ButtonPayload.REF
                     )
@@ -34,28 +34,28 @@ data class ReceiptLimitationsMenu(
                 row {
                     //TODO: sub
                     button(
-                        MessagesContainer[user.settings.lang].menuReceiptLimitationsSub,
+                        Messages[user.settings.lang].menuReceiptLimitationsSub,
                         ButtonPayload.serializer(),
                         ButtonPayload.SUB
                     )
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuReceiptLimitationsUser,
+                        Messages[user.settings.lang].menuReceiptLimitationsUser,
                         ButtonPayload.serializer(),
                         ButtonPayload.USER
                     )
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuReceiptLimitationsCaptcha,
+                        Messages[user.settings.lang].menuReceiptLimitationsCaptcha,
                         ButtonPayload.serializer(),
                         ButtonPayload.CAPTCHA
                     )
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
+                        Messages[user.settings.lang].menuButtonBack,
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
                     )

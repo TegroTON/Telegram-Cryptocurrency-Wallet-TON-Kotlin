@@ -6,7 +6,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.Receipt
@@ -35,7 +35,7 @@ class ReceiptsListMenu(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = buildString {
-                appendLine(MessagesContainer[user.settings.lang].menuReceiptsListMessage)
+                appendLine(Messages[user.settings.lang].menuReceiptsListMessage)
                 if (receipts.isNotEmpty()) {
                     var count = 1
                     for (receipt in receipts.subList(start, min(receipts.size, start + 6))) {
@@ -45,7 +45,7 @@ class ReceiptsListMenu(
                         appendLine()
                         appendLine(
                             String.format(
-                                MessagesContainer[user.settings.lang].menuReceiptsListEntry,
+                                Messages[user.settings.lang].menuReceiptsListEntry,
                                 count++.toString(),
                                 time,
                                 receipt.coins
@@ -53,14 +53,14 @@ class ReceiptsListMenu(
                         )
                         val recipient = receipt.recipient
                         if (recipient != null) {
-                            appendLine(MessagesContainer[user.settings.lang].menuReceiptsListWithRecipient)
+                            appendLine(Messages[user.settings.lang].menuReceiptsListWithRecipient)
                         } else {
-                            appendLine(MessagesContainer[user.settings.lang].menuReceiptsListWithoutRecipient)
+                            appendLine(Messages[user.settings.lang].menuReceiptsListWithoutRecipient)
                         }
                     }
                 } else {
                     appendLine()
-                    appendLine(MessagesContainer[user.settings.lang].menuReceiptsListEmpty)
+                    appendLine(Messages[user.settings.lang].menuReceiptsListEmpty)
                 }
             },
             keyboard = BotKeyboard {
@@ -122,7 +122,7 @@ class ReceiptsListMenu(
                             button("← " + (page - 1), ButtonPayload.serializer(), ButtonPayload.PREVIOUS_PAGE)
                         }
                         button(
-                            MessagesContainer[user.settings.lang].menuReceiptsListBack,
+                            Messages[user.settings.lang].menuReceiptsListBack,
                             ButtonPayload.serializer(),
                             ButtonPayload.BACK
                         )
@@ -133,7 +133,7 @@ class ReceiptsListMenu(
                 } else {
                     row {
                         button(
-                            MessagesContainer[user.settings.lang].menuReceiptsListBack,
+                            Messages[user.settings.lang].menuReceiptsListBack,
                             ButtonPayload.serializer(),
                             ButtonPayload.BACK
                         )
@@ -203,7 +203,7 @@ class ReceiptsListMenu(
     }
 
     private fun getText(receipt: Receipt, id: String): String {
-        return String.format(MessagesContainer[user.settings.lang].menuReceiptsListKeyboardEntry, id, receipt.coins)
+        return String.format(Messages[user.settings.lang].menuReceiptsListKeyboardEntry, id, receipt.coins)
     }
 
     @Serializable

@@ -21,12 +21,12 @@ data class ReceiptRecipientMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = if (receipt.recipient == null) MessagesContainer[user.settings.lang].menuReceiptRecipientMessage else MessagesContainer[user.settings.lang].menuReceiptRecipientSetMessage,
+            message = if (receipt.recipient == null) Messages[user.settings.lang].menuReceiptRecipientMessage else Messages[user.settings.lang].menuReceiptRecipientSetMessage,
             keyboard = BotKeyboard {
                 if (receipt.recipient != null) {
                     row {
                         button(
-                            MessagesContainer[user.settings.lang].menuReceiptRecipientUnattach,
+                            Messages[user.settings.lang].menuReceiptRecipientUnattach,
                             ButtonPayload.serializer(),
                             ButtonPayload.UNATTACH
                         )
@@ -34,7 +34,7 @@ data class ReceiptRecipientMenu(
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
+                        Messages[user.settings.lang].menuButtonBack,
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
                     )

@@ -1,10 +1,5 @@
 package money.tegro.bot.api
 
-import money.tegro.bot.inlines.MainMenu
-import money.tegro.bot.menuPersistent
-import money.tegro.bot.objects.*
-import money.tegro.bot.objects.keyboard.BotKeyboard
-import money.tegro.bot.receipts.PostgresReceiptPersistent
 import com.petersamokhin.vksdk.core.api.botslongpoll.VkBotsLongPollApi
 import com.petersamokhin.vksdk.core.client.VkApiClient
 import com.petersamokhin.vksdk.core.http.paramsOf
@@ -14,6 +9,11 @@ import com.petersamokhin.vksdk.core.model.event.MessagePartial
 import com.petersamokhin.vksdk.http.VkOkHttpClient
 import kotlinx.coroutines.*
 import kotlinx.serialization.Contextual
+import money.tegro.bot.inlines.MainMenu
+import money.tegro.bot.menuPersistent
+import money.tegro.bot.objects.*
+import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.receipts.PostgresReceiptPersistent
 import java.io.File
 import java.io.InputStream
 import java.util.*
@@ -85,10 +85,13 @@ class VkBot : Bot, CoroutineScope {
                     Commands.execute(user, botMessage, this@VkBot, menu)
                     return@launch
                 }
-                if (menu?.handleMessage(this@VkBot, botMessage) == true) {
-                    return@launch
+                try {
+                    if (menu?.handleMessage(this@VkBot, botMessage) == true) {
+                        return@launch
+                    }
+                } catch (e: Throwable) {
+                    throw RuntimeException("Failed handle message for user $user in menu: $menu", e)
                 }
-
                 user.setMenu(this@VkBot, MainMenu(user), null)
             }
         }

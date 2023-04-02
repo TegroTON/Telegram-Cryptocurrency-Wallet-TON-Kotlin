@@ -1,12 +1,12 @@
 package money.tegro.bot.objects
 
+import kotlinx.serialization.Serializable
 import money.tegro.bot.api.Bot
 import money.tegro.bot.inlines.Menu
 import money.tegro.bot.menuPersistent
 import money.tegro.bot.utils.UUIDSerializer
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.walletPersistent
-import kotlinx.serialization.Serializable
 import java.util.*
 
 @Serializable
@@ -15,7 +15,7 @@ data class User(
     val id: UUID,
     val tgId: Long?,
     val vkId: Long?,
-    var settings: UserSettings
+    val settings: UserSettings
 ) {
 
     suspend fun setMenu(bot: Bot, menu: Menu, lastMenuMessageId: Long?) {

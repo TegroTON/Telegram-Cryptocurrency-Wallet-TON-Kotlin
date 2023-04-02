@@ -1,15 +1,15 @@
 package money.tegro.bot.wallet
 
-import money.tegro.bot.exceptions.NotEnoughCoinsException
-import money.tegro.bot.objects.PostgresUserPersistent
-import money.tegro.bot.objects.User
-import money.tegro.bot.utils.JSON
 import kotlinx.atomicfu.locks.reentrantLock
 import kotlinx.atomicfu.locks.withLock
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import money.tegro.bot.exceptions.NotEnoughCoinsException
+import money.tegro.bot.objects.PostgresUserPersistent
+import money.tegro.bot.objects.User
+import money.tegro.bot.utils.JSON
 import net.dzikoysk.exposed.upsert.upsert
 import net.dzikoysk.exposed.upsert.withUnique
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -26,6 +26,28 @@ interface WalletPersistent {
     suspend fun transfer(sender: User, receiver: User, coins: Coins)
     suspend fun freeze(user: User, coins: Coins)
     suspend fun unfreeze(user: User, coins: Coins)
+
+    suspend fun updateActive(user: User, cryptoCurrency: CryptoCurrency, onUpdate: (Coins) -> Coins): Coins {
+        val currentWalletState = loadWalletState(user)
+        val currentCoins = currentWalletState.active[cryptoCurrency]
+        val newCoins = onUpdate(currentCoins)
+        val newWalletState = currentWalletState.copy(
+            active = currentWalletState.active.withCoins(newCoins)
+        )
+        saveWalletState(user, newWalletState)
+        return newCoins
+    }
+
+    suspend fun updateFreeze(user: User, cryptoCurrency: CryptoCurrency, onUpdate: (Coins) -> Coins): Coins {
+        val currentWalletState = loadWalletState(user)
+        val currentCoins = currentWalletState.frozen[cryptoCurrency]
+        val newCoins = onUpdate(currentCoins)
+        val newWalletState = currentWalletState.copy(
+            frozen = currentWalletState.frozen.withCoins(newCoins)
+        )
+        saveWalletState(user, newWalletState)
+        return newCoins
+    }
 }
 
 object PostgresWalletPersistent : WalletPersistent {

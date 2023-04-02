@@ -1,15 +1,16 @@
 package money.tegro.bot.inlines
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.CryptoCurrency
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 
 @Serializable
 class WalletWithdrawSelectMenu(
@@ -20,22 +21,26 @@ class WalletWithdrawSelectMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = MessagesContainer[user.settings.lang].menuWalletWithdrawSelectMessage,
+            message = Messages[user.settings.lang].menuWalletWithdrawSelectMessage,
             keyboard = BotKeyboard {
-                row {
-                    button("TON", ButtonPayload.serializer(), ButtonPayload.TON)
-                }
-                row {
-                    button("TGR", ButtonPayload.serializer(), ButtonPayload.TGR)
-                }
-                row {
-                    button("USDT", ButtonPayload.serializer(), ButtonPayload.USDT)
+                CryptoCurrency.values().forEach { cryptoCurrency ->
+                    row {
+                        button(
+                            label = if (cryptoCurrency.isEnabled) {
+                                cryptoCurrency.ticker
+                            } else {
+                                "${cryptoCurrency.ticker} ${Messages[user].walletSoon}"
+                            },
+                            ButtonPayload.serializer(),
+                            ButtonPayload.Currency(cryptoCurrency)
+                        )
+                    }
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
-                        WalletMenu.ButtonPayload.serializer(),
-                        WalletMenu.ButtonPayload.BACK
+                        Messages[user.settings.lang].menuButtonBack,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.Back
                     )
                 }
             }
@@ -43,28 +48,25 @@ class WalletWithdrawSelectMenu(
     }
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
-        when (Json.decodeFromString<ButtonPayload>(payload)) {
+        val rawPayload = message.payload ?: return false
+        when (val payload = Json.decodeFromString<ButtonPayload>(rawPayload)) {
 
-            ButtonPayload.TON -> user.setMenu(
-                bot,
-                WalletWithdrawMenu(user, CryptoCurrency.TON, this),
-                message.lastMenuMessageId
-            )
+            is ButtonPayload.Currency -> {
+                val currency = payload.value
+                if (!currency.isEnabled) return false
+                val nativeBlockchain = currency.nativeBlockchainType
+                if (nativeBlockchain != null) {
+                    user.setMenu(
+                        bot,
+                        WalletWithdrawSelectAmountMenu(user, payload.value, nativeBlockchain, this),
+                        message.lastMenuMessageId
+                    )
+                } else {
+                    TODO()
+                }
+            }
 
-            ButtonPayload.TGR -> user.setMenu(
-                bot,
-                WalletWithdrawMenu(user, CryptoCurrency.TGR, this),
-                message.lastMenuMessageId
-            )
-
-            ButtonPayload.USDT -> user.setMenu(
-                bot,
-                WalletWithdrawMenu(user, CryptoCurrency.USDT, this),
-                message.lastMenuMessageId
-            )
-
-            ButtonPayload.BACK -> {
+            ButtonPayload.Back -> {
                 user.setMenu(bot, parentMenu, message.lastMenuMessageId)
             }
         }
@@ -75,19 +77,40 @@ class WalletWithdrawSelectMenu(
         BotKeyboard {
             row {
                 button(
-                    MessagesContainer[user.settings.lang].menuButtonBack,
-                    WalletMenu.ButtonPayload.serializer(),
-                    WalletMenu.ButtonPayload.BACK
+                    Messages[user.settings.lang].menuButtonBack,
+                    ButtonPayload.serializer(),
+                    ButtonPayload.Back
                 )
             }
         }
     }
 
     @Serializable
-    enum class ButtonPayload {
-        TON,
-        TGR,
-        USDT,
-        BACK
+    private sealed class ButtonPayload {
+        @Serializable
+        @SerialName("back")
+        object Back : ButtonPayload()
+
+        @Serializable
+        @SerialName("currency")
+        data class Currency(val value: CryptoCurrency) : ButtonPayload()
     }
 }
+
+//sealed class Result
+//object Success : Result()
+//class Error(val string: String) : Result()
+//
+//fun a() {
+//    val r = Any() as Result
+//
+//
+//    when (r) {
+//        is Error -> {
+//            r.string
+//        }
+//        Success -> {
+//
+//        }
+//    }
+//}

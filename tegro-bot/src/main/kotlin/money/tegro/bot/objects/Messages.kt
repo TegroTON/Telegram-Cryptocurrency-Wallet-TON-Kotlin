@@ -6,12 +6,8 @@ import kotlinx.serialization.properties.Properties
 import kotlinx.serialization.properties.decodeFromMap
 import java.io.File
 
-val Messages by lazy(LazyThreadSafetyMode.PUBLICATION) {
-    MessagesContainer.loadFromFile(File("messages_ru.properties")) ?: MessagesContainer()
-}
-
 @Serializable
-data class MessagesContainer(
+data class Messages(
     val mainMenuMessage: String = "mainMenuMessage",
     val mainMenuButtonWallet: String = "mainMenuButtonWallet",
     val mainMenuButtonReceipts: String = "mainMenuButtonReceipts",
@@ -91,25 +87,34 @@ data class MessagesContainer(
     val menuDepositsCurrent: String = "menuDepositsCurrent",
     val menuReferralsMessage: String = "menuReferralsMessage",
     val menuSelectInvalidAmount: String = "menuSelectInvalidAmount",
+    val walletMenuDepositMessage: String = "walletMenuDepositMessage",
+    val menuWalletWithdrawSelectAmountMessage: String = "menuWalletWithdrawSelectAmountMessage",
+    val walletMenuWithdrawMessage: String = "walletMenuWithdrawMessage",
+    val walletMenuWithdrawInvalidAddress: String = "walletMenuWithdrawInvalidAddress",
+    val walletSoon: String = "walletSoon",
 ) {
     companion object {
 
         val messages = Language.values()
-            .map { loadFromFile(File("messages_${it.short.lowercase()}.properties")) ?: MessagesContainer() }
+            .map { loadFromFile(File("messages_${it.short.lowercase()}.properties")) ?: Messages() }
 
-        operator fun get(language: Language): MessagesContainer {
+        operator fun get(language: Language): Messages {
             return messages[language.ordinal]
         }
 
+        operator fun get(user: User): Messages {
+            return get(user.settings.lang)
+        }
+
         @OptIn(ExperimentalSerializationApi::class)
-        fun loadFromFile(file: File?): MessagesContainer? {
+        fun loadFromFile(file: File?): Messages? {
             if (file == null || !file.exists()) return null
             val properties = java.util.Properties().apply {
                 file.reader().use {
                     load(it)
                 }
             }.map { it.key.toString() to it.value }.toMap()
-            return Properties.decodeFromMap<MessagesContainer>(properties)
+            return Properties.decodeFromMap<Messages>(properties)
         }
     }
 }

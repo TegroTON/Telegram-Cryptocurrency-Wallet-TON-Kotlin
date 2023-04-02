@@ -5,7 +5,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
@@ -19,27 +19,27 @@ class StockMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = MessagesContainer[user.settings.lang].menuStockMessage,
+            message = Messages[user.settings.lang].menuStockMessage,
             keyboard = BotKeyboard {
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuStockStart,
+                        Messages[user.settings.lang].menuStockStart,
                         ButtonPayload.serializer(),
                         ButtonPayload.START
                     )
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuStockHistory,
+                        Messages[user.settings.lang].menuStockHistory,
                         ButtonPayload.serializer(),
                         ButtonPayload.HISTORY
                     )
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
-                        WalletMenu.ButtonPayload.serializer(),
-                        WalletMenu.ButtonPayload.BACK
+                        Messages[user.settings.lang].menuButtonBack,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.BACK
                     )
                 }
             }
@@ -65,7 +65,7 @@ class StockMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         START,
         HISTORY,
         BACK

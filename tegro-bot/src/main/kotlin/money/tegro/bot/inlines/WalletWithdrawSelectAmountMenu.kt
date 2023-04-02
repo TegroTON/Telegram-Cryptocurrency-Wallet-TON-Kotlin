@@ -4,19 +4,22 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
+import money.tegro.bot.exceptions.NegativeCoinsException
 import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
+import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.wallet.PostgresWalletPersistent
 
 @Serializable
-class ReceiptSelectAmountMenu(
+class WalletWithdrawSelectAmountMenu(
     val user: User,
     val currency: CryptoCurrency,
+    val network: BlockchainType,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
@@ -47,7 +50,7 @@ class ReceiptSelectAmountMenu(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = String.format(
-                Messages[user.settings.lang].menuReceiptsSelectAmountMessage,
+                Messages[user.settings.lang].menuWalletWithdrawSelectAmountMessage,
                 currency.ticker,
                 available
             ),
@@ -79,16 +82,24 @@ class ReceiptSelectAmountMenu(
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload
-        val available = PostgresWalletPersistent.loadWalletState(user).active[currency]
+        val available = try {
+            PostgresWalletPersistent.loadWalletState(user).active[currency] // TODO: Calc bot fee
+        } catch (e: NegativeCoinsException) {
+            return true
+        }
         val min = Coins(currency, currency.minAmount)
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.MIN -> {
-                    user.setMenu(bot, ReceiptSelectActivationsMenu(user, min, this), message.lastMenuMessageId)
+                    user.setMenu(bot, WalletWithdrawMenu(user, currency, network, min, this), message.lastMenuMessageId)
                 }
 
                 ButtonPayload.MAX -> {
-                    user.setMenu(bot, ReceiptSelectActivationsMenu(user, available, this), message.lastMenuMessageId)
+                    user.setMenu(
+                        bot,
+                        WalletWithdrawMenu(user, currency, network, available, this),
+                        message.lastMenuMessageId
+                    )
                 }
 
                 ButtonPayload.BACK -> {
@@ -103,7 +114,7 @@ class ReceiptSelectAmountMenu(
                     bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                     return false
                 }
-                user.setMenu(bot, ReceiptSelectActivationsMenu(user, coins, this), message.lastMenuMessageId)
+                user.setMenu(bot, WalletWithdrawMenu(user, currency, network, coins, this), message.lastMenuMessageId)
                 return true
             } else {
                 bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)

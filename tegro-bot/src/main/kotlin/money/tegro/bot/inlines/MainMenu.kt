@@ -5,7 +5,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
@@ -17,62 +17,62 @@ data class MainMenu(
     private fun createKeyboard(): BotKeyboard = BotKeyboard {
         row {
             button(
-                MessagesContainer[user.settings.lang].mainMenuButtonWallet,
+                Messages[user.settings.lang].mainMenuButtonWallet,
                 CommandPayload.serializer(),
                 CommandPayload.WALLET
             )
             button(
-                MessagesContainer[user.settings.lang].mainMenuButtonReceipts,
+                Messages[user.settings.lang].mainMenuButtonReceipts,
                 CommandPayload.serializer(),
                 CommandPayload.RECEIPTS
             )
         }
         row {
             button(
-                MessagesContainer[user.settings.lang].mainMenuButtonExchange,
+                Messages[user.settings.lang].mainMenuButtonExchange,
                 CommandPayload.serializer(),
                 CommandPayload.EXCHANGE
             )
             button(
-                MessagesContainer[user.settings.lang].mainMenuButtonStock,
+                Messages[user.settings.lang].mainMenuButtonStock,
                 CommandPayload.serializer(),
                 CommandPayload.STOCK
             )
         }
         row {
             button(
-                MessagesContainer[user.settings.lang].mainMenuButtonMarket,
+                Messages[user.settings.lang].mainMenuButtonMarket,
                 CommandPayload.serializer(),
                 CommandPayload.MARKET
             )
             button(
-                MessagesContainer[user.settings.lang].mainMenuButtonAccounts,
+                Messages[user.settings.lang].mainMenuButtonAccounts,
                 CommandPayload.serializer(),
                 CommandPayload.ACCOUNTS
             )
         }
         row {
             button(
-                MessagesContainer[user.settings.lang].mainMenuButtonDeals,
+                Messages[user.settings.lang].mainMenuButtonDeals,
                 CommandPayload.serializer(),
                 CommandPayload.DEALS
             )
             button(
-                MessagesContainer[user.settings.lang].mainMenuButtonDeposits,
+                Messages[user.settings.lang].mainMenuButtonDeposits,
                 CommandPayload.serializer(),
                 CommandPayload.DEPOSITS
             )
         }
         row {
             button(
-                MessagesContainer[user.settings.lang].mainMenuButtonNFT,
+                Messages[user.settings.lang].mainMenuButtonNFT,
                 CommandPayload.serializer(),
                 CommandPayload.NFT
             )
         }
         row {
             button(
-                MessagesContainer[user.settings.lang].mainMenuButtonSettings,
+                Messages[user.settings.lang].mainMenuButtonSettings,
                 CommandPayload.serializer(),
                 CommandPayload.SETTINGS
             )
@@ -84,7 +84,7 @@ data class MainMenu(
         bot.updateKeyboard(
             user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId,
-            MessagesContainer[user.settings.lang].mainMenuMessage,
+            Messages[user.settings.lang].mainMenuMessage,
             keyboard
         )
     }
@@ -92,7 +92,10 @@ data class MainMenu(
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload ?: return false
         when (Json.decodeFromString<CommandPayload>(payload)) {
-            CommandPayload.WALLET -> user.setMenu(bot, WalletMenu(user, this), message.lastMenuMessageId)
+            CommandPayload.WALLET -> {
+                user.setMenu(bot, WalletMenu(user, this), message.lastMenuMessageId)
+            }
+
             CommandPayload.RECEIPTS -> user.setMenu(bot, ReceiptsMenu(user, this), message.lastMenuMessageId)
             CommandPayload.EXCHANGE -> user.setMenu(bot, ExchangeMenu(user, this), message.lastMenuMessageId)
             CommandPayload.STOCK -> user.setMenu(bot, StockMenu(user, this), message.lastMenuMessageId)

@@ -5,7 +5,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
@@ -24,12 +24,12 @@ class ReceiptSelectActivationsMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = MessagesContainer[user.settings.lang].menuReceiptsSelectActivationsMessage,
+            message = Messages[user.settings.lang].menuReceiptsSelectActivationsMessage,
             keyboard = BotKeyboard {
                 row {
                     //skip
                     button(
-                        MessagesContainer[user.settings.lang].menuReceiptsSelectActivationsSkip,
+                        Messages[user.settings.lang].menuReceiptsSelectActivationsSkip,
                         ButtonPayload.serializer(),
                         ButtonPayload.SKIP
                     )
@@ -38,7 +38,7 @@ class ReceiptSelectActivationsMenu(
                     val maxActivations = maxCoins / coins.amount
                     button(
                         String.format(
-                            MessagesContainer[user.settings.lang].menuReceiptsSelectActivationsMax,
+                            Messages[user.settings.lang].menuReceiptsSelectActivationsMax,
                             maxActivations.toString()
                         ),
                         ButtonPayload.serializer(),
@@ -47,7 +47,7 @@ class ReceiptSelectActivationsMenu(
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
+                        Messages[user.settings.lang].menuButtonBack,
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
                     )
@@ -90,7 +90,7 @@ class ReceiptSelectActivationsMenu(
             if (isStringInt(message.body)) {
                 val count = message.body!!.toInt()
                 if (count > maxActivations) {
-                    bot.sendMessage(message.peerId, MessagesContainer[user.settings.lang].menuSelectInvalidAmount)
+                    bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                     return false
                 }
                 user.setMenu(
@@ -103,7 +103,7 @@ class ReceiptSelectActivationsMenu(
                     message.lastMenuMessageId
                 )
             } else {
-                bot.sendMessage(message.peerId, MessagesContainer[user.settings.lang].menuSelectInvalidAmount)
+                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                 return false
             }
         }

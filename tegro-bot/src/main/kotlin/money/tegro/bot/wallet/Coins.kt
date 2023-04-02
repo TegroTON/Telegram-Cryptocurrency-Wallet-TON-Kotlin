@@ -33,11 +33,15 @@ data class Coins(
         return Coins(currency, amount + other.amount)
     }
 
+    operator fun plus(other: BigInteger): Coins = plus(Coins(currency, other))
+
     operator fun minus(other: Coins): Coins {
         require(currency == other.currency) { "expected: $currency, actual: ${other.currency}" }
         val newAmount = amount - other.amount
         return Coins(currency, newAmount)
     }
+
+    operator fun minus(other: BigInteger): Coins = minus(Coins(currency, other))
 
     override fun toString(): String = "${currency.fromNano(amount)} ${currency.ticker}"
 

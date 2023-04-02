@@ -1,14 +1,12 @@
 package money.tegro.bot.api
 
-import money.tegro.bot.menuPersistent
+import kotlinx.coroutines.*
 import money.tegro.bot.inlines.MainMenu
+import money.tegro.bot.menuPersistent
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import money.tegro.bot.wallet.WalletObserver
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.TelegramBotsApi
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
@@ -23,6 +21,7 @@ import java.io.InputStream
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
+@OptIn(DelicateCoroutinesApi::class)
 class TgBot : Bot, TelegramLongPollingBot(System.getenv("TG_API_TOKEN")), CoroutineScope {
     private val job = SupervisorJob()
 
@@ -149,8 +148,22 @@ class TgBot : Bot, TelegramLongPollingBot(System.getenv("TG_API_TOKEN")), Corout
                 Commands.execute(user, botMessage, this@TgBot, menu)
                 return@launch
             }
-            if (menu?.handleMessage(this@TgBot, botMessage) == true) {
-                return@launch
+            try {
+                GlobalScope.launch {
+                    repeat(6) {
+                        println("[$it] Check deposit iteration for $user")
+                        WalletObserver.checkDeposit(user).forEach { coins ->
+                            println("send message: $coins")
+                            sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
+                        }
+                        delay(15_000)
+                    }
+                }
+                if (menu?.handleMessage(this@TgBot, botMessage) == true) {
+                    return@launch
+                }
+            } catch (e: Throwable) {
+                throw RuntimeException("Failed handle message for user $user in menu: $menu", e)
             }
 
             user.setMenu(this@TgBot, MainMenu(user), botMessage.lastMenuMessageId)

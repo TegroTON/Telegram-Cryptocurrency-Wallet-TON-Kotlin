@@ -5,7 +5,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
@@ -19,8 +19,9 @@ class ExchangeMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = MessagesContainer[user.settings.lang].menuExchangeMessage,
+            message = Messages[user.settings.lang].menuExchangeMessage,
             keyboard = BotKeyboard {
+                // TODO: переделать под Enum.values()
                 row {
                     button("TON", ButtonPayload.serializer(), ButtonPayload.TON)
                 }
@@ -32,9 +33,9 @@ class ExchangeMenu(
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
-                        WalletMenu.ButtonPayload.serializer(),
-                        WalletMenu.ButtonPayload.BACK
+                        Messages[user.settings.lang].menuButtonBack,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.BACK
                     )
                 }
             }
@@ -55,7 +56,7 @@ class ExchangeMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         TON,
         TGR,
         USDT,

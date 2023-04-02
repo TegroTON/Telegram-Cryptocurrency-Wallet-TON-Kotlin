@@ -8,42 +8,51 @@ enum class CryptoCurrency(
     val ticker: String,
     val decimals: Int,
     val minAmount: BigInteger,
-    val feeReserve: BigInteger = BigInteger.ZERO,
+    val networkFeeReserve: BigInteger = BigInteger.ZERO,
+    val botFee: BigInteger = BigInteger.ZERO,
     val tokenContracts: List<Pair<BlockchainType, String>> = emptyList(),
-    val nativeBlockchainType: BlockchainType? = null
+    val nativeBlockchainType: BlockchainType? = null,
+    val isEnabled: Boolean = true
 ) {
     TON(
         displayName = "Toncoin",
         ticker = "TON",
         decimals = 9,
-        minAmount = 10000000.toBigInteger(),
-        feeReserve = 100000000.toBigInteger(),
+        minAmount = 200_000_000.toBigInteger(),
+        networkFeeReserve = 100_000_000.toBigInteger(),
+//        botFee = 100_000_000.toBigInteger(), // TODO: Calc & check bot fee EVERYWHERE!!!!!!!! EVERY FUCKING WHERE!!!!!!!!
         tokenContracts = emptyList(),
-        nativeBlockchainType = BlockchainType.TON
+        nativeBlockchainType = BlockchainType.TON,
     ),
     TGR(
         displayName = "Tegro",
         ticker = "TGR",
         decimals = 9,
-        minAmount = 10000000.toBigInteger(),
+        minAmount = 5_000_000_000.toBigInteger(),
+//        botFee = 1_000_000_000.toBigInteger(),
         tokenContracts = listOf(
             BlockchainType.TON to "0:2f0df5851b4a185f5f63c0d0cd0412f5aca353f577da18ff47c936f99dbd849a",
-            BlockchainType.BSC to ""
-        )
+//            BlockchainType.BSC to ""
+        ),
+        isEnabled = false
     ),
     USDT(
         displayName = "Tether USD",
         ticker = "USDT",
         decimals = 6,
-        minAmount = 2.toBigInteger(),
+        minAmount = 1_000_000.toBigInteger(),
+//        botFee = 100_000.toBigInteger(),
         tokenContracts = listOf(
             BlockchainType.TON to "0:bfd58a0cf11062c4df79973ee875c17756b91cfcdf0d7bb8108bb01bb657adfc"
-        )
+        ),
+        isEnabled = false
     );
+    ;
 
     val ZERO = Coins(this, BigInteger.ZERO)
 
     private val factor = BigDecimal.TEN.pow(decimals)
+    val isNative = nativeBlockchainType != null
 
     fun getTokenContractAddress(
         blockchainType: BlockchainType
@@ -66,4 +75,8 @@ enum class CryptoCurrency(
 
     fun toNano(value: BigDecimal): BigInteger =
         value.multiply(factor).toBigInteger()
+
+    companion object {
+        val enabledCurrencies: List<CryptoCurrency> = values().filter { it.isEnabled }
+    }
 }

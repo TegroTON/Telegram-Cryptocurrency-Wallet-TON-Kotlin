@@ -1,11 +1,12 @@
 package money.tegro.bot.inlines
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
@@ -20,22 +21,26 @@ class ReceiptSelectCurrencyMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = MessagesContainer[user.settings.lang].menuReceiptsSelectCurrencyMessage,
+            message = Messages[user.settings.lang].menuReceiptsSelectCurrencyMessage,
             keyboard = BotKeyboard {
-                row {
-                    button("TON", ButtonPayload.serializer(), ButtonPayload.TON)
-                }
-                row {
-                    button("TGR", ButtonPayload.serializer(), ButtonPayload.TGR)
-                }
-                row {
-                    button("USDT", ButtonPayload.serializer(), ButtonPayload.USDT)
+                CryptoCurrency.values().forEach { cryptoCurrency ->
+                    row {
+                        button(
+                            label = if (cryptoCurrency.isEnabled) {
+                                cryptoCurrency.ticker
+                            } else {
+                                "${cryptoCurrency.ticker} ${Messages[user].walletSoon}"
+                            },
+                            serializer = ButtonPayload.serializer(),
+                            payload = ButtonPayload.Currency(cryptoCurrency)
+                        )
+                    }
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
-                        WalletMenu.ButtonPayload.serializer(),
-                        WalletMenu.ButtonPayload.BACK
+                        Messages[user.settings.lang].menuButtonBack,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.Back
                     )
                 }
             }
@@ -43,28 +48,19 @@ class ReceiptSelectCurrencyMenu(
     }
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
-        when (Json.decodeFromString<ButtonPayload>(payload)) {
+        val rawPayload = message.payload ?: return false
+        when (val payload = Json.decodeFromString<ButtonPayload>(rawPayload)) {
+            is ButtonPayload.Currency -> {
+                val currency = payload.value
+                if (!currency.isEnabled) return false
+                user.setMenu(
+                    bot,
+                    ReceiptSelectAmountMenu(user, payload.value, this),
+                    message.lastMenuMessageId
+                )
+            }
 
-            ButtonPayload.TON -> user.setMenu(
-                bot,
-                ReceiptSelectAmountMenu(user, CryptoCurrency.TON, this),
-                message.lastMenuMessageId
-            )
-
-            ButtonPayload.TGR -> user.setMenu(
-                bot,
-                ReceiptSelectAmountMenu(user, CryptoCurrency.TGR, this),
-                message.lastMenuMessageId
-            )
-
-            ButtonPayload.USDT -> user.setMenu(
-                bot,
-                ReceiptSelectAmountMenu(user, CryptoCurrency.USDT, this),
-                message.lastMenuMessageId
-            )
-
-            ButtonPayload.BACK -> {
+            ButtonPayload.Back -> {
                 user.setMenu(bot, parentMenu, message.lastMenuMessageId)
             }
         }
@@ -72,10 +68,15 @@ class ReceiptSelectCurrencyMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
-        TON,
-        TGR,
-        USDT,
-        BACK
+    private sealed class ButtonPayload {
+        @Serializable
+        @SerialName("back")
+        object Back : ButtonPayload()
+
+        @Serializable
+        @SerialName("currency")
+        data class Currency(
+            val value: CryptoCurrency
+        ) : ButtonPayload()
     }
 }

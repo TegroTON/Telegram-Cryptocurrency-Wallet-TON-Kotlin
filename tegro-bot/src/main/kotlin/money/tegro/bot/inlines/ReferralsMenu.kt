@@ -6,7 +6,7 @@ import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.api.TgBot
 import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
@@ -24,15 +24,15 @@ class ReferralsMenu(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = String.format(
-                MessagesContainer[user.settings.lang].menuReferralsMessage,
+                Messages[user.settings.lang].menuReferralsMessage,
                 if (bot is TgBot) tgLink else vkLink
             ),
             keyboard = BotKeyboard {
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
-                        WalletMenu.ButtonPayload.serializer(),
-                        WalletMenu.ButtonPayload.BACK
+                        Messages[user.settings.lang].menuButtonBack,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.BACK
                     )
                 }
             }
@@ -50,7 +50,7 @@ class ReferralsMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         BACK
     }
 }

@@ -1,16 +1,17 @@
 package money.tegro.bot.inlines
 
-import money.tegro.bot.api.Bot
-import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
-import money.tegro.bot.objects.User
-import money.tegro.bot.objects.keyboard.BotKeyboard
-import money.tegro.bot.utils.button
-import money.tegro.bot.wallet.CryptoCurrency
-import money.tegro.bot.walletPersistent
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import money.tegro.bot.api.Bot
+import money.tegro.bot.objects.BotMessage
+import money.tegro.bot.objects.Messages
+import money.tegro.bot.objects.User
+import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.testnet
+import money.tegro.bot.utils.button
+import money.tegro.bot.wallet.CryptoCurrency
+import money.tegro.bot.walletPersistent
 import java.math.BigInteger
 
 @Serializable
@@ -25,7 +26,7 @@ class WalletMenu(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = buildString {
-                appendLine(MessagesContainer[user.settings.lang].walletMenuTitle)
+                appendLine(Messages[user.settings.lang].walletMenuTitle + if (testnet) "   ‼\uFE0FTESTNET‼\uFE0F" else "")
                 appendLine()
                 val values = CryptoCurrency.values().toMutableList()
                 walletState.active.forEach {
@@ -38,7 +39,7 @@ class WalletMenu(
                 val frozen = walletState.frozen.filter { it.amount > BigInteger.ZERO }
                 if (frozen.isNotEmpty()) {
                     appendLine()
-                    appendLine(MessagesContainer[user.settings.lang].menuWalletFrozenTitle)
+                    appendLine(Messages[user.settings.lang].menuWalletFrozenTitle)
                     appendLine()
                     frozen.forEach {
                         appendLine("· ${it.currency.displayName}: $it")
@@ -48,31 +49,31 @@ class WalletMenu(
             keyboard = BotKeyboard {
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuWalletButtonDeposit,
+                        Messages[user.settings.lang].menuWalletButtonDeposit,
                         ButtonPayload.serializer(),
                         ButtonPayload.DEPOSIT
                     )
                     button(
-                        MessagesContainer[user.settings.lang].menuWalletButtonWithdraw,
+                        Messages[user.settings.lang].menuWalletButtonWithdraw,
                         ButtonPayload.serializer(),
                         ButtonPayload.WITHDRAW
                     )
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuWalletButtonTransfer,
+                        Messages[user.settings.lang].menuWalletButtonTransfer,
                         ButtonPayload.serializer(),
                         ButtonPayload.TRANSFER
                     )
                     button(
-                        MessagesContainer[user.settings.lang].menuWalletButtonHistory,
+                        Messages[user.settings.lang].menuWalletButtonHistory,
                         ButtonPayload.serializer(),
                         ButtonPayload.HISTORY
                     )
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
+                        Messages[user.settings.lang].menuButtonBack,
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
                     )
@@ -104,7 +105,7 @@ class WalletMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         DEPOSIT,
         WITHDRAW,
         TRANSFER,

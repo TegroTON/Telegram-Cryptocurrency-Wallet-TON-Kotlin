@@ -6,6 +6,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import money.tegro.bot.blockchain.BlockchainManager
+import money.tegro.bot.exceptions.InvalidAddressException
+import money.tegro.bot.testnet
 import money.tegro.bot.utils.base64
 import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.Coins
@@ -20,16 +22,25 @@ import org.ton.cell.buildCell
 import org.ton.lite.client.LiteClient
 import java.math.BigInteger
 import java.util.concurrent.TimeUnit
-import kotlin.random.Random
 
 object TonBlockchainManager : BlockchainManager {
     @OptIn(DelicateCoroutinesApi::class)
     val liteClient = LiteClient(
-        newSingleThreadContext("lite-client"), LiteServerDesc(
-            id = PublicKeyEd25519(base64("n4VDnSCUuSpjnCyUk9e3QOOd6o0ItSWYbTnW3Wnn8wk=")),
-            ip = 84478511,
-            port = 19949
-        )
+        newSingleThreadContext("lite-client"),
+
+        if (testnet) {
+            LiteServerDesc(
+                id = PublicKeyEd25519(base64("QpVqQiv1u3nCHuBR3cg3fT6NqaFLlnLGbEgtBRukDpU=")),
+                ip = 1592601963,
+                port = 13833
+            )
+        } else {
+            LiteServerDesc(
+                id = PublicKeyEd25519(base64("n4VDnSCUuSpjnCyUk9e3QOOd6o0ItSWYbTnW3Wnn8wk=")),
+                ip = 84478511,
+                port = 19949
+            )
+        }
     )
 
     override val type: BlockchainType
@@ -51,25 +62,27 @@ object TonBlockchainManager : BlockchainManager {
         })
 
     fun getAddress(privateKey: PrivateKeyEd25519): String {
-        return getAddrStd(privateKey).toString(userFriendly = true, bounceable = false)
+        return getAddrStd(privateKey).toString(userFriendly = true, bounceable = false, testOnly = testnet)
     }
 
     override fun getAddress(privateKey: ByteArray): String =
         getAddress(PrivateKeyEd25519(privateKey))
 
     override suspend fun getBalance(address: String): Coins {
-        val addrStd = AddrStd(address)
+        val addrStd = checkedAddrStd(address)
         val contract = WalletV3Contract(liteClient, addrStd)
         val balance = contract.balance().coins.amount.value
         return Coins(CryptoCurrency.TON, balance)
     }
 
     override suspend fun getTokenBalance(cryptoCurrency: CryptoCurrency, ownerAddress: String): Coins {
+        if (cryptoCurrency.nativeBlockchainType == type) return getBalance(ownerAddress)
         val tokenAddress = requireNotNull(cryptoCurrency.getTokenContractAddress(type)) {
             "$cryptoCurrency not support $type"
         }
-        val jettonMasterContract = jettonMasterContractCache[AddrStd(tokenAddress)]
-        val jettonWalletContract = jettonWalletContractCache[jettonMasterContract to AddrStd(ownerAddress)].await()
+        val jettonMasterContract = jettonMasterContractCache[checkedAddrStd(tokenAddress)]
+        val jettonWalletContract =
+            jettonWalletContractCache[jettonMasterContract to checkedAddrStd(ownerAddress)].await()
         val walletData = try {
             jettonWalletContract.getWalletData()
         } catch (e: TvmException) {
@@ -82,7 +95,8 @@ object TonBlockchainManager : BlockchainManager {
         val pk = PrivateKeyEd25519(privateKey)
         val walletContract = WalletV3Contract(liteClient, getAddrStd(pk))
         walletContract.transfer(pk) {
-            destination = AddrStd(destinationAddress)
+            bounceable = false
+            destination = checkedAddrStd(destinationAddress)
             coins = Coins(VarUInteger(value.amount))
         }
     }
@@ -93,25 +107,27 @@ object TonBlockchainManager : BlockchainManager {
         destinationAddress: String,
         value: Coins
     ) {
+        if (cryptoCurrency.nativeBlockchainType == type) return transfer(privateKey, destinationAddress, value)
         val pk = PrivateKeyEd25519(privateKey)
         val ownerAddress = getAddrStd(pk)
         val tokenAddress = requireNotNull(cryptoCurrency.getTokenContractAddress(type)) {
             "$cryptoCurrency not support $type"
         }
-        val jettonMasterContract = jettonMasterContractCache[AddrStd(tokenAddress)]
+        val jettonMasterContract = jettonMasterContractCache[checkedAddrStd(tokenAddress)]
         val jettonWalletContract = jettonWalletContractCache[jettonMasterContract to ownerAddress].await()
 
         println(jettonWalletContract.address)
         val walletContract = WalletV3Contract(liteClient, ownerAddress)
         walletContract.transfer(pk) {
+            bounceable = false
             destination = jettonWalletContract.address
-            coins = org.ton.block.Coins.of(0.1)
+            coins = org.ton.block.Coins.of(0.036)
             body = buildCell {
                 JettonTransfer.storeTlb(
                     this, JettonTransfer(
                         queryId = 0,
                         amount = Coins(value.amount),
-                        destination = AddrStd(destinationAddress),
+                        destination = checkedAddrStd(destinationAddress),
                         responseDestination = ownerAddress,
                         customPayload = Maybe.of(null),
                         forwardTonAmount = Coins(0),
@@ -123,19 +139,36 @@ object TonBlockchainManager : BlockchainManager {
     }
 
     private fun getAddrStd(privateKey: PrivateKeyEd25519): AddrStd = WalletV3Contract.getAddress(privateKey)
+
+    override fun isValidAddress(address: String?): Boolean {
+        return try {
+            AddrStd(address ?: return false)
+            true
+        } catch (e: Throwable) {
+            false
+        }
+    }
+
+    private fun checkedAddrStd(address: String): AddrStd {
+        return try {
+            AddrStd(address)
+        } catch (e: Exception) {
+            throw InvalidAddressException(address)
+        }
+    }
 }
 
-suspend fun main() {
-    val pk = Random(123123).nextBytes(32)
-    val address = TonBlockchainManager.getAddress(pk)
-    println(address)
-    println(TonBlockchainManager.getBalance(address))
-    println(TonBlockchainManager.getTokenBalance(CryptoCurrency.USDT, address))
-
-    TonBlockchainManager.transferToken(
-        privateKey = Random(123123).nextBytes(32),
-        cryptoCurrency = CryptoCurrency.USDT,
-        destinationAddress = "EQAKtVj024T9MfYaJzU1xnDAkf_GGbHNu-V2mgvyjTuP6rvC",
-        value = Coins(currency = CryptoCurrency.USDT, amount = 0.1.toBigDecimal())
-    )
-}
+//suspend fun main() {
+//    val pk = Random(123123).nextBytes(32)
+//    val address = TonBlockchainManager.getAddress(pk)
+//    println(address)
+//    println(TonBlockchainManager.getBalance(address))
+//    println(TonBlockchainManager.getTokenBalance(CryptoCurrency.USDT, address))
+//
+//    TonBlockchainManager.transferToken(
+//        privateKey = Random(123123).nextBytes(32),
+//        cryptoCurrency = CryptoCurrency.USDT,
+//        destinationAddress = "EQAKtVj024T9MfYaJzU1xnDAkf_GGbHNu-V2mgvyjTuP6rvC",
+//        value = Coins(currency = CryptoCurrency.USDT, amount = 0.1.toBigDecimal())
+//    )
+//}

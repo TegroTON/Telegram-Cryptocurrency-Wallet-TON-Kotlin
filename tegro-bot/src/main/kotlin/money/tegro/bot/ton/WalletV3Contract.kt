@@ -32,15 +32,17 @@ class WalletV3Contract(
         )
     }
 
+    suspend fun getWalletDataOrNull(): WalletV3Data? = try {
+        getWalletData()
+    } catch (e: AccountNotInitializedException) {
+        null
+    }
+
     suspend fun transfer(
         privateKey: PrivateKeyEd25519,
         transfer: WalletTransferBuilder.() -> Unit
     ) {
-        val walletData = try {
-            getWalletData()
-        } catch (e: AccountNotInitializedException) {
-            null
-        }
+        val walletData = getWalletDataOrNull()
         val seqno = walletData?.seqno ?: 0
         val walletId = walletData?.subWalletId ?: WalletContract.DEFAULT_WALLET_ID
         val stateInit = if (walletData == null) createStateInit(seqno, walletId, privateKey.publicKey()).value else null
@@ -55,6 +57,14 @@ class WalletV3Contract(
         )
         println("Send message: $message")
         liteClient.sendMessage(message)
+        while (true) {
+            if ((getWalletDataOrNull()?.seqno ?: 0) != (walletData?.seqno ?: 0)) {
+                println("$address changed!")
+                return
+            } else {
+                println("Check $address")
+            }
+        }
     }
 
     data class WalletV3Data(

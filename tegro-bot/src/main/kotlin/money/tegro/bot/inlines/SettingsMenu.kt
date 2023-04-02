@@ -18,11 +18,11 @@ class SettingsMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = MessagesContainer[user.settings.lang].menuSettingsMessage,
+            message = Messages[user.settings.lang].menuSettingsMessage,
             keyboard = BotKeyboard {
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuSettingsRefs,
+                        Messages[user.settings.lang].menuSettingsRefs,
                         ButtonPayload.serializer(),
                         SettingsMenu.ButtonPayload.REFS
                     )
@@ -30,7 +30,7 @@ class SettingsMenu(
                 row {
                     button(
                         String.format(
-                            MessagesContainer[user.settings.lang].menuSettingsLang,
+                            Messages[user.settings.lang].menuSettingsLang,
                             user.settings.lang.displayName
                         ),
                         ButtonPayload.serializer(),
@@ -40,7 +40,7 @@ class SettingsMenu(
                 row {
                     button(
                         String.format(
-                            MessagesContainer[user.settings.lang].menuSettingsCurrency,
+                            Messages[user.settings.lang].menuSettingsCurrency,
                             user.settings.localCurrency.ticker
                         ),
                         ButtonPayload.serializer(),
@@ -49,23 +49,23 @@ class SettingsMenu(
                 }
                 row {
                     linkButton(
-                        MessagesContainer[user.settings.lang].menuSettingsHints,
-                        "https://justkiwi.ru",
+                        Messages[user.settings.lang].menuSettingsHints,
+                        "https://t.me/TegroForum",
                         ButtonPayload.serializer(),
                         ButtonPayload.HINTS
                     )
                     linkButton(
-                        MessagesContainer[user.settings.lang].menuSettingsHelp,
-                        "https://vk.me/justkiwi_bot",
+                        Messages[user.settings.lang].menuSettingsHelp,
+                        "https://t.me/TegroLive",
                         ButtonPayload.serializer(),
                         ButtonPayload.HELP
                     )
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
-                        WalletMenu.ButtonPayload.serializer(),
-                        WalletMenu.ButtonPayload.BACK
+                        Messages[user.settings.lang].menuButtonBack,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.BACK
                     )
                 }
             }
@@ -84,9 +84,11 @@ class SettingsMenu(
                     user.settings.localCurrency,
                     user.settings.referralId
                 )
-                user.settings = userSettings
                 PostgresUserPersistent.saveSettings(userSettings)
-                user.setMenu(bot, SettingsMenu(user, MainMenu(user)), message.lastMenuMessageId)
+                val newUser = user.copy(
+                    settings = userSettings
+                )
+                newUser.setMenu(bot, SettingsMenu(newUser, MainMenu(newUser)), message.lastMenuMessageId)
             }
 
             ButtonPayload.CURRENCY -> {
@@ -98,9 +100,11 @@ class SettingsMenu(
                     changeTo,
                     user.settings.referralId
                 )
-                user.settings = userSettings
                 PostgresUserPersistent.saveSettings(userSettings)
-                user.setMenu(bot, SettingsMenu(user, MainMenu(user)), message.lastMenuMessageId)
+                val newUser = user.copy(
+                    settings = userSettings
+                )
+                newUser.setMenu(bot, SettingsMenu(newUser, MainMenu(newUser)), message.lastMenuMessageId)
             }
 
             ButtonPayload.HINTS -> TODO()
@@ -113,7 +117,7 @@ class SettingsMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         REFS,
         LANG,
         CURRENCY,

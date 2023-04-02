@@ -5,7 +5,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.MessagesContainer
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
@@ -19,27 +19,27 @@ class AccountsMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = MessagesContainer[user.settings.lang].menuAccountsMessage,
+            message = Messages[user.settings.lang].menuAccountsMessage,
             keyboard = BotKeyboard {
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuAccountsCreate,
+                        Messages[user.settings.lang].menuAccountsCreate,
                         ButtonPayload.serializer(),
                         ButtonPayload.CREATE
                     )
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuAccountsList,
+                        Messages[user.settings.lang].menuAccountsList,
                         ButtonPayload.serializer(),
                         ButtonPayload.LIST
                     )
                 }
                 row {
                     button(
-                        MessagesContainer[user.settings.lang].menuButtonBack,
-                        WalletMenu.ButtonPayload.serializer(),
-                        WalletMenu.ButtonPayload.BACK
+                        Messages[user.settings.lang].menuButtonBack,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.BACK
                     )
                 }
             }
