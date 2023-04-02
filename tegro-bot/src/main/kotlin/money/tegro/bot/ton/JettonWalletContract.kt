@@ -1,5 +1,6 @@
 package money.tegro.bot.ton
 
+import org.ton.bitstring.BitString
 import org.ton.block.Coins
 import org.ton.block.Either
 import org.ton.block.Maybe
@@ -57,6 +58,7 @@ class JettonWalletContract(
             forwardTonAmount: Coins,
             forwardPayload: Cell
         ) = buildCell {
+            storeBits(BitString("0f8a7ea5"))
             storeUInt(queryId, 64)
             storeTlb(Coins, amount)
             storeTlb(MsgAddressInt, destination)

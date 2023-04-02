@@ -14,9 +14,9 @@ import org.ton.api.exception.TvmException
 import org.ton.api.liteserver.LiteServerDesc
 import org.ton.api.pk.PrivateKeyEd25519
 import org.ton.api.pub.PublicKeyEd25519
-import org.ton.block.AddrStd
-import org.ton.block.MsgAddressInt
-import org.ton.block.VarUInteger
+import org.ton.block.*
+import org.ton.cell.Cell
+import org.ton.cell.buildCell
 import org.ton.lite.client.LiteClient
 import java.math.BigInteger
 import java.util.concurrent.TimeUnit
@@ -83,7 +83,7 @@ object TonBlockchainManager : BlockchainManager {
         val walletContract = WalletV3Contract(liteClient, getAddrStd(pk))
         walletContract.transfer(pk) {
             destination = AddrStd(destinationAddress)
-            coins = org.ton.block.Coins(VarUInteger(value.amount))
+            coins = Coins(VarUInteger(value.amount))
         }
     }
 
@@ -93,68 +93,49 @@ object TonBlockchainManager : BlockchainManager {
         destinationAddress: String,
         value: Coins
     ) {
-        TODO()
-//        val pk = PrivateKeyEd25519(privateKey)
-//        val walletContract = getWalletContract(getAddrStd(pk))
-//        val (_, tokenAddress) = requireNotNull(
-//            cryptoCurrency.tokenContracts.find { it.first == type }
-//        ) {
-//            "$cryptoCurrency not support $type"
-//        }
-//        walletContract.transfer(liteClient, pk) {
-//            destination = AddrStd(tokenAddress)
-//            body = JettonWalletContract.transferMessageBody(
-//                queryId = System.currentTimeMillis(),
-//                amount = org.ton.block.Coins(value.amount),
-//                destination = AddrStd(destinationAddress),
-//                responseDestination = walletContract.address,
-//                customPayload = null,
-//                forwardTonAmount = org.ton.block.Coins(0),
-//                forwardPayload = Cell.empty()
-//            )
-//        }
+        val pk = PrivateKeyEd25519(privateKey)
+        val ownerAddress = getAddrStd(pk)
+        val tokenAddress = requireNotNull(cryptoCurrency.getTokenContractAddress(type)) {
+            "$cryptoCurrency not support $type"
+        }
+        val jettonMasterContract = jettonMasterContractCache[AddrStd(tokenAddress)]
+        val jettonWalletContract = jettonWalletContractCache[jettonMasterContract to ownerAddress].await()
+
+        println(jettonWalletContract.address)
+        val walletContract = WalletV3Contract(liteClient, ownerAddress)
+        walletContract.transfer(pk) {
+            destination = jettonWalletContract.address
+            coins = org.ton.block.Coins.of(0.1)
+            body = buildCell {
+                JettonTransfer.storeTlb(
+                    this, JettonTransfer(
+                        queryId = 0,
+                        amount = Coins(value.amount),
+                        destination = AddrStd(destinationAddress),
+                        responseDestination = ownerAddress,
+                        customPayload = Maybe.of(null),
+                        forwardTonAmount = Coins(0),
+                        forwardPayload = Either.of(Cell("00000000"), null)
+                    )
+                )
+            }
+        }
     }
 
     private fun getAddrStd(privateKey: PrivateKeyEd25519): AddrStd = WalletV3Contract.getAddress(privateKey)
-
-//    private suspend fun getWalletContract(addrStd: AddrStd): WalletV3Contract {
-//        val accountState = liteClient.getAccountState(addrStd)
-//        return WalletV3Contract(accountState)
-//    }
-//
-//    private suspend fun getJettonMasterContract(addrStd: AddrStd): JettonMasterContract {
-//        val accountState = liteClient.getAccountState(addrStd)
-//        println("get jetton master: $addrStd - $accountState")
-//        return JettonMasterContract(accountState)
-//    }
-//
-//    private suspend fun getJettonWalletContract(addrStd: MsgAddressInt): JettonWalletContract {
-//        val accountState = liteClient.getAccountState(addrStd as AddrStd)
-//        return JettonWalletContract(accountState)
-//    }
-//
-//    private suspend fun getJettonWalletContact(
-//        tokenAddress: AddrStd,
-//        ownerAddress: AddrStd
-//    ): JettonWalletContract {
-//        val jettonMasterContract = getJettonMasterContract(tokenAddress)
-//        val jettonWalletAddress = jettonMasterContract.getWalletAddress(ownerAddress)
-//        return getJettonWalletContract(jettonWalletAddress)
-//    }
 }
 
 suspend fun main() {
-
-
     val pk = Random(123123).nextBytes(32)
     val address = TonBlockchainManager.getAddress(pk)
     println(address)
     println(TonBlockchainManager.getBalance(address))
+    println(TonBlockchainManager.getTokenBalance(CryptoCurrency.USDT, address))
 
-
-//    TonBlockchainManager.transfer(
-//        privateKey = Random(123123).nextBytes(32),
-//        destinationAddress = "EQAKtVj024T9MfYaJzU1xnDAkf_GGbHNu-V2mgvyjTuP6rvC",
-//        value = Coins(currency = CryptoCurrency.TON, amount = 1.toBigInteger())
-//    )
+    TonBlockchainManager.transferToken(
+        privateKey = Random(123123).nextBytes(32),
+        cryptoCurrency = CryptoCurrency.USDT,
+        destinationAddress = "EQAKtVj024T9MfYaJzU1xnDAkf_GGbHNu-V2mgvyjTuP6rvC",
+        value = Coins(currency = CryptoCurrency.USDT, amount = 0.1.toBigDecimal())
+    )
 }
