@@ -1,6 +1,6 @@
 package money.tegro.bot.ton
 
-import kotlinx.atomicfu.atomic
+import money.tegro.bot.wallet.AccountNotInitializedException
 import org.ton.api.pk.PrivateKeyEd25519
 import org.ton.api.pub.PublicKeyEd25519
 import org.ton.bitstring.BitString
@@ -12,50 +12,38 @@ import org.ton.contract.wallet.WalletContract
 import org.ton.contract.wallet.WalletTransfer
 import org.ton.contract.wallet.WalletTransferBuilder
 import org.ton.lite.client.LiteClient
-import org.ton.lite.client.internal.FullAccountState
 import org.ton.tlb.CellRef
 import org.ton.tlb.constructor.AnyTlbConstructor
 import org.ton.tlb.storeRef
 
 class WalletV3Contract(
-    accountState: FullAccountState
-) {
-    private val _accountState = atomic(accountState)
-    val accountState get() = _accountState.value
-
-    val address: AddrStd get() = accountState.address
-
-    val stateInit get() = ((accountState.account.value as? AccountInfo)?.storage?.state as? AccountActive)?.value
-    val balance: CurrencyCollection
-        get() = ((accountState.account.value as? AccountInfo)?.storage?.balance) ?: CurrencyCollection(
-            Coins(),
-            ExtraCurrencyCollection()
+    override val liteClient: LiteClient,
+    override val address: AddrStd
+) : Contract {
+    @Throws(AccountNotInitializedException::class)
+    suspend fun getWalletData(): WalletV3Data {
+        val data =
+            ((liteClient.getAccountState(address).account.value as? AccountInfo)?.storage?.state as? AccountActive)?.value?.data?.value?.value?.beginParse()
+        require(data != null) { throw AccountNotInitializedException(address) }
+        return WalletV3Data(
+            seqno = data.loadUInt(32).toInt(),
+            subWalletId = data.loadUInt(32).toInt(),
+            publicKey = PublicKeyEd25519(data.loadBits(256).toByteArray())
         )
-    val data get() = stateInit?.data?.value?.value
-    val code get() = stateInit?.code?.value?.value
-
-    public fun getSeqno(): Int = requireNotNull(data).beginParse().run {
-        preloadInt(32).toInt()
-    }
-
-    public fun getSubWalletId(): Int = requireNotNull(data).beginParse().run {
-        skipBits(32)
-        preloadInt(32).toInt()
-    }
-
-    public fun getPublicKey(): PublicKeyEd25519 = requireNotNull(data).beginParse().run {
-        skipBits(64)
-        PublicKeyEd25519(loadBits(256).toByteArray())
     }
 
     suspend fun transfer(
-        liteClient: LiteClient,
         privateKey: PrivateKeyEd25519,
         transfer: WalletTransferBuilder.() -> Unit
     ) {
-        val seqno = if (data != null) getSeqno() else 0
-        val walletId = if (data != null) getSubWalletId() else WalletContract.DEFAULT_WALLET_ID
-        val stateInit = if (data == null) createStateInit(seqno, walletId, privateKey.publicKey()).value else null
+        val walletData = try {
+            getWalletData()
+        } catch (e: AccountNotInitializedException) {
+            null
+        }
+        val seqno = walletData?.seqno ?: 0
+        val walletId = walletData?.subWalletId ?: WalletContract.DEFAULT_WALLET_ID
+        val stateInit = if (walletData == null) createStateInit(seqno, walletId, privateKey.publicKey()).value else null
         val message = createTransferMessage(
             address = address,
             stateInit = stateInit,
@@ -68,6 +56,12 @@ class WalletV3Contract(
         println("Send message: $message")
         liteClient.sendMessage(message)
     }
+
+    data class WalletV3Data(
+        val seqno: Int,
+        val subWalletId: Int,
+        val publicKey: PublicKeyEd25519
+    )
 
     companion object {
         const val DEFAULT_WALLET_ID: Int = 698983191

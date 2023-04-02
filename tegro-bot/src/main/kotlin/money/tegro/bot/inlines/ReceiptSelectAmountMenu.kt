@@ -21,7 +21,7 @@ class ReceiptSelectAmountMenu(
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         val avalible = PostgresWalletPersistent.loadWalletState(user).active[currency]
-        val min = Coins(currency, currency.minAmount.toBigInteger())
+        val min = Coins(currency, currency.minAmount)
         if (avalible < min) {
             bot.updateKeyboard(
                 to = user.vkId ?: user.tgId ?: 0,
@@ -80,7 +80,7 @@ class ReceiptSelectAmountMenu(
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload
         val available = PostgresWalletPersistent.loadWalletState(user).active[currency]
-        val min = Coins(currency, currency.minAmount.toBigInteger())
+        val min = Coins(currency, currency.minAmount)
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.MIN -> {

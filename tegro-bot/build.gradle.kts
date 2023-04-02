@@ -36,8 +36,7 @@ dependencies {
     implementation("tech.ydb.auth:yc-auth-provider:$ydbVersion")
     implementation("org.ton:ton-kotlin:$tonKotlinVersion")
     implementation("com.github.bnb-chain:java-sdk:1.1.5")
-    implementation("com.github.centerprime:BinanceSmartChain-Android-SDK:2.1.0")
-
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.5")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties:1.5.0")
     implementation(project(":bnb-sdk"))
 }
