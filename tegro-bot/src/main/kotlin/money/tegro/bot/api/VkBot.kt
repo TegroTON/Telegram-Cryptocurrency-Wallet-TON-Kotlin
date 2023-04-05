@@ -43,7 +43,7 @@ class VkBot : Bot, CoroutineScope {
             launch {
                 val message = messageNew.message
                 val ref = getRefId(message.ref)
-                val randomUUID = UUID.randomUUID()
+                val randomUUID = UUID.nameUUIDFromBytes("vk_${message.peerId}".toByteArray())
                 val user =
                     PostgresUserPersistent.loadByVk(message.peerId.toLong()) ?: PostgresUserPersistent.save(
                         User(
@@ -66,7 +66,8 @@ class VkBot : Bot, CoroutineScope {
                         fwdMessage.text,
                         null,
                         null,
-                        emptyList()
+                        emptyList(),
+                        emptyMap()
                     )
                     fwdMessages.add(fwdBotMessage)
                 }
@@ -79,7 +80,8 @@ class VkBot : Bot, CoroutineScope {
                     body,
                     message.payload,
                     null,
-                    fwdMessages
+                    fwdMessages,
+                    emptyMap()
                 )
                 if (message.text.startsWith("/")) {
                     Commands.execute(user, botMessage, this@VkBot, menu)
@@ -154,6 +156,23 @@ class VkBot : Bot, CoroutineScope {
             this.keyboard = keyboard?.toVk()
             attachment = imageAttachmentString
         }.execute()
+    }
+
+    override suspend fun deleteMessage(peerId: Long, messageId: Long) {
+        val deleteRequest =
+            client.call(
+                "messages.delete",
+                paramsOf("peer_id" to peerId, "message_ids" to messageId, "delete_for_all" to 1)
+            )
+        deleteRequest.execute()
+    }
+
+    override suspend fun sendPopup(botMessage: BotMessage, message: String): Boolean {
+        client.sendMessage {
+            peerId = botMessage.peerId.toInt()
+            this.message = message
+        }.execute()
+        return false
     }
 
     private suspend fun getRefId(ref: String?): UUID? {

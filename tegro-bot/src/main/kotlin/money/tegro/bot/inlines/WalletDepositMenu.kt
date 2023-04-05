@@ -25,13 +25,18 @@ class WalletDepositMenu(
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         val privateKey = UserPrivateKey(user.id, MASTER_KEY)
         val userTonAddress = TonBlockchainManager.getAddress(privateKey)
+        val displayAddress = buildString {
+            if (bot is TgBot) append("<code>")
+            append(userTonAddress)
+            if (bot is TgBot) append("</code>")
+        }
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = String.format(
                 Messages[user.settings.lang].menuWalletDepositMessage,
                 currency.ticker,
-                userTonAddress
+                displayAddress
             ),
             keyboard = BotKeyboard {
                 if (currency == CryptoCurrency.TON && bot is TgBot) {
@@ -44,6 +49,7 @@ class WalletDepositMenu(
                         )
                     }
                 }
+                /*
                 row {
                     button(
                         Messages[user.settings.lang].menuWalletDepositQR,
@@ -51,6 +57,7 @@ class WalletDepositMenu(
                         ButtonPayload.QR
                     )
                 }
+                 */
                 row {
                     button(
                         Messages[user.settings.lang].menuButtonBack,
@@ -77,7 +84,7 @@ class WalletDepositMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         LINK,
         QR,
         BACK

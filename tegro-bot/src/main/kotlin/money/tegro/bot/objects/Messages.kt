@@ -26,7 +26,7 @@ data class Messages(
     val menuWalletButtonTransfer: String = "menuWalletButtonTransfer",
     val menuWalletButtonHistory: String = "menuWalletButtonHistory",
     val menuWalletFrozenTitle: String = "menuWalletFrozenTitle",
-    val menuReceiptsMessage: String = "menuReceiptsTitle",
+    val menuReceiptsMessage: String = "menuReceiptsMessage",
     val menuReceiptsCreate: String = "menuReceiptsCreate",
     val menuReceiptsSelectCurrencyMessage: String = "menuReceiptsSelectCurrencyMessage",
     val menuReceiptsSelectAmountNoMoney: String = "menuReceiptsSelectAmountNoMoney",

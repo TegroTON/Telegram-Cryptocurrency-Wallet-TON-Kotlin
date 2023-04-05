@@ -161,7 +161,7 @@ object PostgresReceiptPersistent : ReceiptPersistent {
         val receipt = suspendedTransactionAsync {
             val result = UsersReceipts.select {
                 UsersReceipts.id.eq(receiptId)
-            }.singleOrNull() ?: return@suspendedTransactionAsync null
+            }.firstOrNull() ?: return@suspendedTransactionAsync null
             val issuer = PostgresUserPersistent.load(result[issuerId]) ?: return@suspendedTransactionAsync null
             val recipient = result[recipientId]?.let { uuid -> PostgresUserPersistent.load(uuid) }
             Receipt(

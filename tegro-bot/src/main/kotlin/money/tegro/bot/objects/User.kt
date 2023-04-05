@@ -20,6 +20,7 @@ data class User(
 
     suspend fun setMenu(bot: Bot, menu: Menu, lastMenuMessageId: Long?) {
         menuPersistent.saveMenu(this, menu)
+//        println("setMenu: $id - $menu")
         menu.sendKeyboard(bot, lastMenuMessageId)
     }
 

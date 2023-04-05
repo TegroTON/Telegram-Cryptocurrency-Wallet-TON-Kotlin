@@ -73,7 +73,7 @@ data class ReceiptRecipientMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         UNATTACH,
         BACK
     }

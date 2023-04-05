@@ -145,7 +145,7 @@ class WalletWithdrawSelectAmountMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         MIN,
         MAX,
         BACK

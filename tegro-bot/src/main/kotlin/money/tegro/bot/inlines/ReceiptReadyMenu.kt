@@ -27,30 +27,43 @@ data class ReceiptReadyMenu(
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+        bot.updateKeyboard(
+            to = user.vkId ?: user.tgId ?: 0,
+            lastMenuMessageId = lastMenuMessageId,
+            message = getBody(bot),
+            keyboard = getKeyboard(bot, true)
+        )
+    }
+
+    private fun getBody(bot: Bot): String {
         val code = receipt.id.toString()
         val tgLink = String.format("t.me/%s?start=RC-%s", System.getenv("TG_USER_NAME"), code)
         val vkLink = String.format("https://vk.com/write-%s?ref=RC-%s", System.getenv("VK_GROUP_ID"), code)
         val date = Date.from(receipt.issueTime.toJavaInstant())
         val time =
             SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(date)
-        bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
-            message = String.format(
-                Messages[user.settings.lang].menuReceiptReadyMessage,
-                receipt.coins,
-                receipt.activations,
-                time
-            ),
-            keyboard = BotKeyboard {
-                row {
-                    linkButton(
-                        Messages[user.settings.lang].menuReceiptReadyShare,
-                        if (bot is TgBot) tgLink else vkLink,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.SHARE
-                    )
-                }
+        return Messages[user.settings.lang].menuReceiptReadyMessage.format(
+            receipt.coins,
+            receipt.activations,
+            time,
+            if (bot is TgBot) tgLink else vkLink
+        )
+    }
+
+    private fun getKeyboard(bot: Bot, qrButton: Boolean): BotKeyboard {
+        val code = receipt.id.toString()
+        val tgLink = String.format("t.me/%s?start=RC-%s", System.getenv("TG_USER_NAME"), code)
+        val vkLink = String.format("https://vk.com/write-%s?ref=RC-%s", System.getenv("VK_GROUP_ID"), code)
+        return BotKeyboard {
+            row {
+                linkButton(
+                    Messages[user.settings.lang].menuReceiptReadyShare,
+                    if (bot is TgBot) tgLink else vkLink,
+                    ButtonPayload.serializer(),
+                    ButtonPayload.SHARE
+                )
+            }
+            if (qrButton) {
                 row {
                     button(
                         Messages[user.settings.lang].menuReceiptReadyQr,
@@ -58,29 +71,29 @@ data class ReceiptReadyMenu(
                         ButtonPayload.QR
                     )
                 }
-                row {
-                    button(
-                        Messages[user.settings.lang].menuReceiptReadyLimitations,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.LIMITATIONS
-                    )
-                }
-                row {
-                    button(
-                        Messages[user.settings.lang].menuReceiptReadyDelete,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.DELETE
-                    )
-                }
-                row {
-                    button(
-                        Messages[user.settings.lang].menuButtonBack,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.BACK
-                    )
-                }
             }
-        )
+            row {
+                button(
+                    Messages[user.settings.lang].menuReceiptReadyLimitations,
+                    ButtonPayload.serializer(),
+                    ButtonPayload.LIMITATIONS
+                )
+            }
+            row {
+                button(
+                    Messages[user.settings.lang].menuReceiptReadyDelete,
+                    ButtonPayload.serializer(),
+                    ButtonPayload.DELETE
+                )
+            }
+            row {
+                button(
+                    Messages[user.settings.lang].menuButtonBack,
+                    ButtonPayload.serializer(),
+                    ButtonPayload.BACK
+                )
+            }
+        }
     }
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
@@ -102,18 +115,27 @@ data class ReceiptReadyMenu(
                     QRCode(if (bot is TgBot) tgLink else vkLink).render(darkColor = lightColor, brightColor = darkColor)
                 val imageBytes = qrCodeCanvas.getBytes()
 
-                user.setMenu(
-                    bot,
-                    ReceiptReadyMenu(user, receipt, ReceiptsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
-                )
                 bot.sendPhoto(
                     message.peerId,
-                    if (bot is TgBot) tgLink else vkLink,
+                    getBody(bot),
                     ByteArrayInputStream(imageBytes),
                     filename,
                     null
                 )
+
+                val list = PostgresReceiptPersistent.loadReceipts(user).filter { it.isActive }
+                user.setMenu(bot, ReceiptsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+
+                /*
+                bot.deleteMessage(message.peerId, message.messageId)
+                bot.sendPhoto(
+                    message.peerId,
+                    getBody(bot),
+                    ByteArrayInputStream(imageBytes),
+                    filename,
+                    getKeyboard(bot, false)
+                )
+                 */
             }
 
             ButtonPayload.LIMITATIONS -> user.setMenu(
@@ -129,14 +151,15 @@ data class ReceiptReadyMenu(
             }
 
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                val list = PostgresReceiptPersistent.loadReceipts(user).filter { it.isActive }
+                user.setMenu(bot, ReceiptsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
             }
         }
         return true
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         SHARE,
         QR,
         LIMITATIONS,

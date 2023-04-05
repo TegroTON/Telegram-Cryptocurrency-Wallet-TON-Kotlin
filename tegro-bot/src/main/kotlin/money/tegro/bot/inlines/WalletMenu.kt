@@ -59,6 +59,7 @@ class WalletMenu(
                         ButtonPayload.WITHDRAW
                     )
                 }
+                /*
                 row {
                     button(
                         Messages[user.settings.lang].menuWalletButtonTransfer,
@@ -71,6 +72,7 @@ class WalletMenu(
                         ButtonPayload.HISTORY
                     )
                 }
+                 */
                 row {
                     button(
                         Messages[user.settings.lang].menuButtonBack,

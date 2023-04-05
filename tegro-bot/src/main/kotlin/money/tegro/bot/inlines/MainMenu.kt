@@ -9,6 +9,7 @@ import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
+import money.tegro.bot.utils.linkButton
 
 @Serializable
 data class MainMenu(
@@ -27,6 +28,7 @@ data class MainMenu(
                 CommandPayload.RECEIPTS
             )
         }
+        /*
         row {
             button(
                 Messages[user.settings.lang].mainMenuButtonExchange,
@@ -39,11 +41,19 @@ data class MainMenu(
                 CommandPayload.STOCK
             )
         }
+         */
         row {
+            /*
             button(
                 Messages[user.settings.lang].mainMenuButtonMarket,
                 CommandPayload.serializer(),
                 CommandPayload.MARKET
+            )
+             */
+            button(
+                Messages[user.settings.lang].mainMenuButtonDeposits,
+                CommandPayload.serializer(),
+                CommandPayload.DEPOSITS
             )
             button(
                 Messages[user.settings.lang].mainMenuButtonAccounts,
@@ -51,6 +61,7 @@ data class MainMenu(
                 CommandPayload.ACCOUNTS
             )
         }
+        /*
         row {
             button(
                 Messages[user.settings.lang].mainMenuButtonDeals,
@@ -63,9 +74,11 @@ data class MainMenu(
                 CommandPayload.DEPOSITS
             )
         }
+         */
         row {
-            button(
+            linkButton(
                 Messages[user.settings.lang].mainMenuButtonNFT,
+                "https://libermall.com/",
                 CommandPayload.serializer(),
                 CommandPayload.NFT
             )

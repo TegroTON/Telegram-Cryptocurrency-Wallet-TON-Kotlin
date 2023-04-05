@@ -112,7 +112,7 @@ class WalletWithdrawMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         BACK
     }
 }

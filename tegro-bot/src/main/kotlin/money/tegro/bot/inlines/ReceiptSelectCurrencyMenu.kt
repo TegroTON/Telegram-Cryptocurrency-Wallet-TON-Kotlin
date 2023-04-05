@@ -52,7 +52,9 @@ class ReceiptSelectCurrencyMenu(
         when (val payload = Json.decodeFromString<ButtonPayload>(rawPayload)) {
             is ButtonPayload.Currency -> {
                 val currency = payload.value
-                if (!currency.isEnabled) return false
+                if (!currency.isEnabled) {
+                    return bot.sendPopup(message, Messages[user.settings.lang].walletSoon)
+                }
                 user.setMenu(
                     bot,
                     ReceiptSelectAmountMenu(user, payload.value, this),

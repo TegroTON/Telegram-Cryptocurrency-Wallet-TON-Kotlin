@@ -1,6 +1,7 @@
 package money.tegro.bot.api
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.future.await
 import money.tegro.bot.inlines.MainMenu
 import money.tegro.bot.menuPersistent
 import money.tegro.bot.objects.*
@@ -9,9 +10,11 @@ import money.tegro.bot.receipts.PostgresReceiptPersistent
 import money.tegro.bot.wallet.WalletObserver
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.TelegramBotsApi
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.InputFile
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -38,12 +41,16 @@ class TgBot(
     }
 
     override suspend fun sendMessage(to: Long, message: String) {
+        sendMessage(to, message, true)
+    }
+
+    suspend fun sendMessage(to: Long, message: String, html: Boolean) {
         val sendMessage = SendMessage().apply {
             chatId = to.toString()
-            enableMarkdown(true)
+            enableHtml(html)
             text = message
         }
-        execute(sendMessage)
+        executeAsync(sendMessage).await()
     }
 
     override suspend fun sendPhoto(to: Long, message: String, file: File, keyboard: BotKeyboard?) {
@@ -53,7 +60,7 @@ class TgBot(
             photo = InputFile(file)
             if (keyboard != null) replyMarkup = keyboard.toTg()
         }
-        execute(sendPhoto)
+        executeAsync(sendPhoto).await()
     }
 
     override suspend fun sendPhoto(
@@ -69,7 +76,7 @@ class TgBot(
             photo = InputFile(inputStream, filename)
             if (keyboard != null) replyMarkup = keyboard.toTg()
         }
-        execute(sendPhoto)
+        executeAsync(sendPhoto).await()
     }
 
     override suspend fun sendMessageKeyboard(
@@ -77,24 +84,66 @@ class TgBot(
         message: String,
         keyboard: BotKeyboard
     ) {
+        sendMessageKeyboard(to, message, true, keyboard)
+    }
+
+    suspend fun sendMessageKeyboard(
+        to: Long,
+        message: String,
+        html: Boolean,
+        keyboard: BotKeyboard
+    ) {
         val sendMessage = SendMessage().apply {
             chatId = to.toString()
-            enableMarkdown(false)
+            enableHtml(html)
             text = message
             replyMarkup = keyboard.toTg()
         }
-        executeAsync(sendMessage)
+        executeAsync(sendMessage).await()
     }
 
     override suspend fun updateKeyboard(to: Long, lastMenuMessageId: Long?, message: String, keyboard: BotKeyboard) {
+        updateKeyboard(to, lastMenuMessageId, message, true, keyboard)
+    }
+
+    suspend fun updateKeyboard(
+        to: Long,
+        lastMenuMessageId: Long?,
+        message: String,
+        html: Boolean,
+        keyboard: BotKeyboard
+    ) {
         if (lastMenuMessageId != null) {
-            val deleteMessage = DeleteMessage().apply {
+            val updated = EditMessageText().apply {
                 chatId = to.toString()
                 messageId = lastMenuMessageId.toInt()
+                enableHtml(html)
+                text = message
+                replyMarkup = keyboard.toTg()
             }
-            executeAsync(deleteMessage)
+            executeAsync(updated).await()
+        } else {
+            sendMessageKeyboard(to, message, keyboard)
         }
-        sendMessageKeyboard(to, message, keyboard)
+    }
+
+    override suspend fun deleteMessage(peerId: Long, messageId: Long) {
+        val deleteMessage = DeleteMessage().apply {
+            chatId = peerId.toString()
+            this.messageId = messageId.toInt()
+        }
+        executeAsync(deleteMessage)
+    }
+
+    override suspend fun sendPopup(botMessage: BotMessage, message: String): Boolean {
+        val id = botMessage.otherData["callbackQueryId"] as String
+        val popup = AnswerCallbackQuery().apply {
+            showAlert = true
+            text = message
+            callbackQueryId = id
+        }
+        executeAsync(popup).await()
+        return true
     }
 
     override fun getBotUsername(): String {
@@ -104,7 +153,7 @@ class TgBot(
     override fun onUpdateReceived(update: Update) {
         val userTgId = update.message?.from?.id ?: update.callbackQuery.from.id
         launch {
-            val randomUUID = UUID.randomUUID()
+            val randomUUID = UUID.nameUUIDFromBytes("tg_$userTgId".toByteArray())
             val ref = getRefId(update.message?.text)
             val user =
                 PostgresUserPersistent.loadByTg(userTgId) ?: PostgresUserPersistent.save(
@@ -129,7 +178,8 @@ class TgBot(
                     message.text,
                     null,
                     null,
-                    fwdMessages
+                    fwdMessages,
+                    emptyMap()
                 )
                 fwdMessages.add(fwdBotMessage)
             }
@@ -141,7 +191,8 @@ class TgBot(
                 message.text,
                 update.callbackQuery?.data,
                 update.callbackQuery?.message?.messageId?.toLong(),
-                fwdMessages
+                fwdMessages,
+                if (update.callbackQuery != null) mapOf("callbackQueryId" to update.callbackQuery.id) else emptyMap()
             )
             if (message.text != null && message.text.startsWith("/")) {
                 Commands.execute(user, botMessage, this@TgBot, menu)
@@ -150,9 +201,7 @@ class TgBot(
             try {
                 GlobalScope.launch {
                     repeat(6) {
-                        println("[$it] Check deposit iteration for $user")
                         WalletObserver.checkDeposit(user).forEach { coins ->
-                            println("send message: $coins")
                             sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
                         }
                         delay(15_000)

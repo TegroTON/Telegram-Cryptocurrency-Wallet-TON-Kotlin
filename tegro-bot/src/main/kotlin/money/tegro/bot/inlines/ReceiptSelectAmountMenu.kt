@@ -134,7 +134,7 @@ class ReceiptSelectAmountMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         MIN,
         MAX,
         BACK

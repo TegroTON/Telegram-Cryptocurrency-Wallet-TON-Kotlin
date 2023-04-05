@@ -84,7 +84,7 @@ data class ReceiptLimitationsMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         REF,
         SUB,
         USER,

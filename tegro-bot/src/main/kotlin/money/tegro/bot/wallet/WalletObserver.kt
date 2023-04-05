@@ -22,15 +22,15 @@ import kotlin.coroutines.suspendCoroutine
 object WalletObserver {
     @OptIn(DelicateCoroutinesApi::class)
     private val nativeCache = Caffeine.newBuilder()
-        .expireAfterWrite(5000, TimeUnit.MILLISECONDS)
+        .expireAfterWrite(15000, TimeUnit.MILLISECONDS)
         .buildAsync<UUID, List<Coins>> { userId, e ->
             GlobalScope.async(e.asCoroutineDispatcher()) {
-                println("Start checking: $userId")
+//                println("Start checking: $userId")
                 val user = PostgresUserPersistent.load(userId) ?: return@async emptyList()
                 listOf(
                     async { checkForNewDeposits(user, TonBlockchainManager, CryptoCurrency.TON) },
                 ).awaitAll().also {
-                    println("User deposits $user:\n ${it.joinToString("\n ")}")
+//                    println("User deposits $user:\n ${it.joinToString("\n ")}")
                 }
             }.asCompletableFuture()
         }

@@ -69,10 +69,10 @@ object PostgresUserPersistent : UserPersistent {
         return transaction {
             val userRow = Users.select {
                 Users.id.eq(uuid)
-            }.singleOrNull() ?: return@transaction null
+            }.firstOrNull() ?: return@transaction null
             val settingsRow = UsersSettings.select {
                 UsersSettings.userId.eq(uuid)
-            }.singleOrNull()
+            }.firstOrNull()
             if (settingsRow == null) {
                 val userSettings = UserSettings(
                     uuid,
@@ -101,11 +101,11 @@ object PostgresUserPersistent : UserPersistent {
         return transaction {
             val userRow = Users.select {
                 Users.vkId.eq(long)
-            }.singleOrNull() ?: return@transaction null
+            }.firstOrNull() ?: return@transaction null
             val userId: UUID = userRow[Users.id].value
             val settingsRow = UsersSettings.select {
                 UsersSettings.userId.eq(userId)
-            }.singleOrNull()
+            }.firstOrNull()
             if (settingsRow == null) {
                 val userSettings = UserSettings(
                     userId,
@@ -134,11 +134,16 @@ object PostgresUserPersistent : UserPersistent {
         return transaction {
             val userRow = Users.select {
                 Users.tgId.eq(long)
-            }.singleOrNull() ?: return@transaction null
+            }.toList().also {
+//                println("Users by $long - ${it.size} - $it")
+            }.firstOrNull() ?: return@transaction null.also {
+//                println("tg not found: $long")
+            }
+//            println("userRow: $userRow")
             val userId: UUID = userRow[Users.id].value
             val settingsRow = UsersSettings.select {
                 UsersSettings.userId.eq(userId)
-            }.singleOrNull()
+            }.firstOrNull()
             if (settingsRow == null) {
                 val userSettings = UserSettings(
                     userId,

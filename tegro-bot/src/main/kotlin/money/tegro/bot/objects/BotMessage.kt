@@ -8,6 +8,7 @@ data class BotMessage(
     val body: String?,
     val payload: String?,
     val lastMenuMessageId: Long?,
-    val forwardMessages: List<BotMessage>
+    val forwardMessages: List<BotMessage>,
+    val otherData: Map<String, Any>
 ) {
 }

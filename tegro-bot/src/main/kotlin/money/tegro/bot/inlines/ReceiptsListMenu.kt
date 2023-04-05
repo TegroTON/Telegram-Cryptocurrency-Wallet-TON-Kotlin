@@ -203,11 +203,16 @@ class ReceiptsListMenu(
     }
 
     private fun getText(receipt: Receipt, id: String): String {
-        return String.format(Messages[user.settings.lang].menuReceiptsListKeyboardEntry, id, receipt.coins)
+        return buildString {
+            append(Messages[user.settings.lang].menuReceiptsListKeyboardEntry.format(id, receipt.coins))
+            if (receipt.activations > 1) {
+                append(" · ${receipt.activations}")
+            }
+        }
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         ONE_ONE,
         ONE_TWO,
         TWO_ONE,

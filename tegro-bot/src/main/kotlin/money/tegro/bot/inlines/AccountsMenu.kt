@@ -50,11 +50,11 @@ class AccountsMenu(
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.CREATE -> {
-
+                return false
             }
 
             ButtonPayload.LIST -> {
-
+                return false
             }
 
             ButtonPayload.BACK -> {
@@ -65,7 +65,7 @@ class AccountsMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         CREATE,
         LIST,
         BACK

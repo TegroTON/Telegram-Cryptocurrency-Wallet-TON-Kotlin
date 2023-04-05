@@ -121,7 +121,7 @@ class ReceiptSelectActivationsMenu(
     }
 
     @Serializable
-    enum class ButtonPayload {
+    private enum class ButtonPayload {
         SKIP,
         MAX,
         BACK

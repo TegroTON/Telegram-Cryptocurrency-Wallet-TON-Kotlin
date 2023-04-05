@@ -35,7 +35,7 @@ object PostgresMenuPersistent : MenuPersistent {
         return transaction {
             val menuRow = UsersMenus.select {
                 UsersMenus.userId.eq(user.id)
-            }.singleOrNull() ?: return@transaction null
+            }.firstOrNull() ?: return@transaction null
 
             JSON.decodeFromString<Menu>(menuRow[UsersMenus.menuJson] ?: return@transaction null)
         }
