@@ -3,9 +3,9 @@ package money.tegro.bot.inlines
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import money.tegro.bot.MASTER_KEY
 import money.tegro.bot.api.Bot
 import money.tegro.bot.blockchain.BlockchainManager
-import money.tegro.bot.masterKey
 import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
@@ -78,7 +78,7 @@ class WalletWithdrawMenu(
             )
             walletPersistent.freeze(user, amount + currency.botFee)
             try {
-                val pk = UserPrivateKey(UUID(0, 0), masterKey)
+                val pk = UserPrivateKey(UUID(0, 0), MASTER_KEY)
                 if (amount.currency.isNative) {
                     blockchainManager.transfer(
                         pk.key.toByteArray(),

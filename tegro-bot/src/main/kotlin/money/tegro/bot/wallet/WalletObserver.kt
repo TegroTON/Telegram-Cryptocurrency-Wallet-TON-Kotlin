@@ -4,8 +4,8 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
+import money.tegro.bot.MASTER_KEY
 import money.tegro.bot.blockchain.BlockchainManager
-import money.tegro.bot.masterKey
 import money.tegro.bot.objects.PostgresUserPersistent
 import money.tegro.bot.objects.User
 import money.tegro.bot.ton.TonBlockchainManager
@@ -13,11 +13,15 @@ import money.tegro.bot.utils.UserPrivateKey
 import money.tegro.bot.walletPersistent
 import java.math.BigInteger
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 object WalletObserver {
     @OptIn(DelicateCoroutinesApi::class)
-    private val cache = Caffeine.newBuilder()
+    private val nativeCache = Caffeine.newBuilder()
         .expireAfterWrite(5000, TimeUnit.MILLISECONDS)
         .buildAsync<UUID, List<Coins>> { userId, e ->
             GlobalScope.async(e.asCoroutineDispatcher()) {
@@ -31,13 +35,53 @@ object WalletObserver {
             }.asCompletableFuture()
         }
 
+    private val tokenDepositFlowCache = ConcurrentHashMap<Pair<UUID, CryptoCurrency>, Job>()
+
     suspend fun checkDeposit(user: User): List<Coins> {
-        val coins = cache.get(user.id).await().filter { it.amount > BigInteger.ZERO }
-        return if (cache.asMap().remove(user.id) != null) {
+        val coins = nativeCache.get(user.id).await().filter { it.amount > BigInteger.ZERO }
+        return if (nativeCache.asMap().remove(user.id) != null) {
             coins
         } else {
             emptyList()
         }
+    }
+
+    suspend fun checkDeposit(user: User, blockchainManager: BlockchainManager, currency: CryptoCurrency): Coins {
+        val key = user.id to currency
+        val coins = suspendCoroutine { continuation ->
+            tokenDepositFlowCache.getOrPut(key) {
+                GlobalScope.launch {
+                    val flow = TokenDepositFlow(
+                        blockchainManager = blockchainManager,
+                        currency = currency,
+                        userPk = UserPrivateKey(user.id).key.toByteArray()
+                    )
+                    flow.collect {
+                        when (it) {
+                            is TokenDepositFlow.Event.Complete -> {
+                                continuation.resume(it.amount)
+                            }
+
+                            is TokenDepositFlow.Event.NotEnoughDeposit -> {
+                                continuation.resume(currency.ZERO)
+                            }
+
+                            is TokenDepositFlow.Event.NotEnoughCoinsOnMasterContract -> {
+                                continuation.resumeWithException(RuntimeException("Not enough $currency on master contract"))
+                            }
+
+                            else -> {
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        tokenDepositFlowCache[key]?.join()?.also {
+            tokenDepositFlowCache.remove(key)
+        }
+        return coins
     }
 
     private suspend fun checkForNewDeposits(
@@ -45,14 +89,14 @@ object WalletObserver {
         blockchainManager: BlockchainManager,
         cryptoCurrency: CryptoCurrency
     ): Coins {
-        val userWalletPk = UserPrivateKey(user.id, masterKey).key.toByteArray()
+        val userWalletPk = UserPrivateKey(user.id, MASTER_KEY).key.toByteArray()
         val userWalletAddress = TonBlockchainManager.getAddress(userWalletPk)
         val balance = blockchainManager.getTokenBalance(cryptoCurrency, userWalletAddress)
         val reserve = cryptoCurrency.networkFeeReserve
         if (balance.amount > reserve) {
             println("Нашли у $user ($userWalletAddress) денег на контракте: $balance")
             val depositCoins = balance - reserve
-            val masterWalletPk = UserPrivateKey(UUID(0, 0), masterKey).key.toByteArray()
+            val masterWalletPk = UserPrivateKey(UUID(0, 0), MASTER_KEY).key.toByteArray()
             val masterWalletAddress = blockchainManager.getAddress(masterWalletPk)
             if (cryptoCurrency.isNative) {
                 println("transfer $depositCoins | $userWalletAddress -> $masterWalletAddress")

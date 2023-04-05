@@ -30,7 +30,7 @@ private const val ENV_TESTNET = "TESTNET"
 val menuPersistent = PostgresMenuPersistent
 val walletPersistent = PostgresWalletPersistent
 val receiptPersistent = PostgresReceiptPersistent
-val masterKey get() = hex(System.getenv(ENV_MASTER_KEY) ?: error("'$ENV_MASTER_KEY' not set"))
+val MASTER_KEY get() = hex(System.getenv(ENV_MASTER_KEY) ?: error("'$ENV_MASTER_KEY' not set"))
 val testnet get() = (System.getenv(ENV_TESTNET) ?: "true").toBoolean()
 
 suspend fun main() {
@@ -66,7 +66,7 @@ private fun printMasterContracts() {
         if (blockchainType != BlockchainType.TON) return@forEach // TODO: other blockchains
 
         val blockchainManager = BlockchainManager[blockchainType]
-        val masterAddress = blockchainManager.getAddress(UserPrivateKey(UUID(0, 0), masterKey).key.toByteArray())
+        val masterAddress = blockchainManager.getAddress(UserPrivateKey(UUID(0, 0), MASTER_KEY).key.toByteArray())
         println("${blockchainType.displayName}: $masterAddress")
     }
     println("=".repeat(masterContractsString.length))

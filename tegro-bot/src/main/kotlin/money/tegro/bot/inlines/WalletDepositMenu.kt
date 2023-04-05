@@ -3,9 +3,9 @@ package money.tegro.bot.inlines
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import money.tegro.bot.MASTER_KEY
 import money.tegro.bot.api.Bot
 import money.tegro.bot.api.TgBot
-import money.tegro.bot.masterKey
 import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
@@ -23,7 +23,7 @@ class WalletDepositMenu(
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
-        val privateKey = UserPrivateKey(user.id, masterKey)
+        val privateKey = UserPrivateKey(user.id, MASTER_KEY)
         val userTonAddress = TonBlockchainManager.getAddress(privateKey)
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
