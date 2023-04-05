@@ -9,30 +9,26 @@ import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
+import money.tegro.bot.wallet.Coins
 
 @Serializable
-class DepositsMenu(
+class DepositApproveMenu(
     val user: User,
+    val coins: Coins,
+    val period: Int,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages[user.settings.lang].menuDepositsMessage,
+            message = Messages[user.settings.lang].menuDepositApproveMessage,
             keyboard = BotKeyboard {
                 row {
                     button(
                         Messages[user.settings.lang].menuDepositsNew,
                         ButtonPayload.serializer(),
-                        ButtonPayload.NEW
-                    )
-                }
-                row {
-                    button(
-                        Messages[user.settings.lang].menuDepositsCurrent,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.CURRENT
+                        ButtonPayload.APPROVE
                     )
                 }
                 row {
@@ -49,11 +45,7 @@ class DepositsMenu(
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
-            ButtonPayload.NEW -> {
-                user.setMenu(bot, DepositSelectAmountMenu(user, this), message.lastMenuMessageId)
-            }
-
-            ButtonPayload.CURRENT -> {
+            ButtonPayload.APPROVE -> {
                 return false
             }
 
@@ -66,8 +58,7 @@ class DepositsMenu(
 
     @Serializable
     private enum class ButtonPayload {
-        NEW,
-        CURRENT,
+        APPROVE,
         BACK
     }
 }

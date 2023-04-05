@@ -91,7 +91,19 @@ data class Messages(
     val menuWalletWithdrawSelectAmountMessage: String = "menuWalletWithdrawSelectAmountMessage",
     val walletMenuWithdrawMessage: String = "walletMenuWithdrawMessage",
     val walletMenuWithdrawInvalidAddress: String = "walletMenuWithdrawInvalidAddress",
-    val walletSoon: String = "walletSoon",
+    val menuDepositSelectAmountMessage: String = "menuDepositSelectAmountMessage",
+    val menuDepositSelectPeriodMessage: String = "menuDepositSelectPeriodMessage",
+    val menuDepositSelectPeriodM3: String = "menuDepositSelectPeriodM3",
+    val menuDepositSelectPeriodM6: String = "menuDepositSelectPeriodM6",
+    val menuDepositSelectPeriodM12: String = "menuDepositSelectPeriodM12",
+    val menuDepositSelectPeriodM24: String = "menuDepositSelectPeriodM24",
+    val menuDepositSelectPeriod: String = "menuDepositSelectPeriod",
+    val menuDepositApproveMessage: String = "menuDepositApproveMessage",
+    val menuDepositApproveButton: String = "menuDepositApproveButton",
+    val mouthOne: String = "mouthOne",
+    val mouthTwo: String = "mouthTwo",
+    val mouthThree: String = "mouthThree",
+    val soon: String = "soon",
 ) {
     companion object {
 

@@ -29,7 +29,7 @@ class WalletWithdrawSelectMenu(
                             label = if (cryptoCurrency.isEnabled) {
                                 cryptoCurrency.ticker
                             } else {
-                                "${cryptoCurrency.ticker} ${Messages[user].walletSoon}"
+                                "${cryptoCurrency.ticker} ${Messages[user].soon}"
                             },
                             ButtonPayload.serializer(),
                             ButtonPayload.Currency(cryptoCurrency)

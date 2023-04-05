@@ -29,7 +29,7 @@ class ReceiptSelectCurrencyMenu(
                             label = if (cryptoCurrency.isEnabled) {
                                 cryptoCurrency.ticker
                             } else {
-                                "${cryptoCurrency.ticker} ${Messages[user].walletSoon}"
+                                "${cryptoCurrency.ticker} ${Messages[user].soon}"
                             },
                             serializer = ButtonPayload.serializer(),
                             payload = ButtonPayload.Currency(cryptoCurrency)
@@ -53,7 +53,7 @@ class ReceiptSelectCurrencyMenu(
             is ButtonPayload.Currency -> {
                 val currency = payload.value
                 if (!currency.isEnabled) {
-                    return bot.sendPopup(message, Messages[user.settings.lang].walletSoon)
+                    return bot.sendPopup(message, Messages[user.settings.lang].soon)
                 }
                 user.setMenu(
                     bot,

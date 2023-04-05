@@ -29,7 +29,7 @@ class WalletDepositSelectMenu(
                             label = if (cryptoCurrency.isEnabled) {
                                 cryptoCurrency.ticker
                             } else {
-                                "${cryptoCurrency.ticker} ${Messages[user].walletSoon}"
+                                "${cryptoCurrency.ticker} ${Messages[user].soon}"
                             },
                             serializer = ButtonPayload.serializer(),
                             payload = ButtonPayload.Currency(cryptoCurrency)
