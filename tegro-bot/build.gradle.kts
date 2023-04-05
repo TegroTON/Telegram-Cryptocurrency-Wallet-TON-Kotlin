@@ -1,6 +1,9 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
+    application
 }
 
 dependencies {
@@ -16,10 +19,11 @@ dependencies {
 
     // In this case, `ktor-client` is required. You can use any.
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
-    implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-logging-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-cio:$ktorVersion")
+    implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
     implementation("org.jetbrains.kotlinx:atomicfu:0.19.0")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
@@ -38,5 +42,29 @@ dependencies {
     implementation("com.github.bnb-chain:java-sdk:1.1.5")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.5")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties:1.5.0")
-    implementation(project(":bnb-sdk"))
+    implementation("ch.qos.logback:logback-classic:1.4.6")
+    implementation("org.web3j:core:5.0.0")
 }
+
+tasks.withType<JavaCompile> {
+    sourceCompatibility = "18"
+    targetCompatibility = "18"
+}
+
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        jvmTarget = "18"
+    }
+}
+
+application {
+    mainClass.set("money.tegro.bot.LauncherKt")
+}
+
+//kotlin {
+//    sourceSets.all {
+//        languageSettings {
+//            languageVersion = "2.0"
+//        }
+//    }
+//}

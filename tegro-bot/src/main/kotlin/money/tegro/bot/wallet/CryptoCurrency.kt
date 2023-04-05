@@ -47,9 +47,6 @@ enum class CryptoCurrency(
         ),
         isEnabled = false
     );
-    ;
-
-    val ZERO = Coins(this, BigInteger.ZERO)
 
     private val factor = BigDecimal.TEN.pow(decimals)
     val isNative = nativeBlockchainType != null

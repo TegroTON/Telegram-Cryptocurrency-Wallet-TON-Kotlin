@@ -1,4 +1,4 @@
 rootProject.name = "tgr-bot"
 
-include(":bnb-sdk")
+//include(":bnb-sdk")
 include(":tegro-bot")

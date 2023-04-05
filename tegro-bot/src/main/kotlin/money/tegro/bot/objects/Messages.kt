@@ -4,7 +4,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.properties.Properties
 import kotlinx.serialization.properties.decodeFromMap
-import java.io.File
+import java.io.InputStream
 
 @Serializable
 data class Messages(
@@ -96,7 +96,9 @@ data class Messages(
     companion object {
 
         val messages = Language.values()
-            .map { loadFromFile(File("messages_${it.short.lowercase()}.properties")) ?: Messages() }
+            .map {
+                loadFromResources(it)
+            }
 
         operator fun get(language: Language): Messages {
             return messages[language.ordinal]
@@ -106,13 +108,17 @@ data class Messages(
             return get(user.settings.lang)
         }
 
+        fun loadFromResources(language: Language): Messages {
+            val classloader = Thread.currentThread().contextClassLoader
+            return classloader.getResourceAsStream("messages_${language.short.lowercase()}.properties")?.use {
+                load(it)
+            } ?: Messages()
+        }
+
         @OptIn(ExperimentalSerializationApi::class)
-        fun loadFromFile(file: File?): Messages? {
-            if (file == null || !file.exists()) return null
+        fun load(inputStream: InputStream): Messages {
             val properties = java.util.Properties().apply {
-                file.reader().use {
-                    load(it)
-                }
+                load(inputStream.bufferedReader())
             }.map { it.key.toString() to it.value }.toMap()
             return Properties.decodeFromMap<Messages>(properties)
         }

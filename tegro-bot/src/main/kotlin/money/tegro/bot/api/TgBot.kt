@@ -22,19 +22,18 @@ import java.util.*
 import kotlin.coroutines.CoroutineContext
 
 @OptIn(DelicateCoroutinesApi::class)
-class TgBot : Bot, TelegramLongPollingBot(System.getenv("TG_API_TOKEN")), CoroutineScope {
+class TgBot(
+    val apiToken: String
+) : Bot, TelegramLongPollingBot(apiToken), CoroutineScope {
     private val job = SupervisorJob()
 
     override val coroutineContext: CoroutineContext = Dispatchers.Default + job
 
-    private var apiToken: String = ""
     private var botUsername: String = ""
 
-
-    fun start(username: String, accessToken: String) {
+    fun start(username: String) {
         val botsApi = TelegramBotsApi(DefaultBotSession::class.java)
         botsApi.registerBot(this)
-        apiToken = accessToken
         botUsername = username
     }
 

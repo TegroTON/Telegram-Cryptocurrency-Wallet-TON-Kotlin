@@ -8,7 +8,7 @@ data class CoinsCollection(
 ) : Collection<Coins> by coins {
     operator fun get(currency: CryptoCurrency): Coins = coins.find {
         it.currency == currency
-    } ?: currency.ZERO
+    } ?: Coins(currency, 0.toBigInteger())
 
     fun withCoins(coins: Coins): CoinsCollection {
         val newCoinsCollection = this.coins.toMutableList()
@@ -20,7 +20,7 @@ data class CoinsCollection(
     companion object {
         val ZERO = CoinsCollection(
             CryptoCurrency.values().map {
-                it.ZERO
+                Coins(it, 0.toBigInteger())
             }
         )
     }

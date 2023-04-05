@@ -63,7 +63,7 @@ object WalletObserver {
                             }
 
                             is TokenDepositFlow.Event.NotEnoughDeposit -> {
-                                continuation.resume(currency.ZERO)
+                                continuation.resume(Coins(currency, 0.toBigInteger()))
                             }
 
                             is TokenDepositFlow.Event.NotEnoughCoinsOnMasterContract -> {

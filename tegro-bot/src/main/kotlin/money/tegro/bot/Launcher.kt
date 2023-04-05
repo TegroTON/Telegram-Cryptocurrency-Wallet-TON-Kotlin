@@ -13,6 +13,7 @@ import money.tegro.bot.utils.UserPrivateKey
 import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.PostgresWalletPersistent
 import org.jetbrains.exposed.sql.Database
+import org.slf4j.LoggerFactory
 import java.util.*
 
 private const val ENV_VK_API_TOKEN = "VK_API_TOKEN"
@@ -27,6 +28,7 @@ private const val ENV_PG_PASSWORD = "PG_PASSWORD"
 private const val ENV_MASTER_KEY = "MASTER_KEY"
 private const val ENV_TESTNET = "TESTNET"
 
+private val logger = LoggerFactory.getLogger("Launcher")
 val menuPersistent = PostgresMenuPersistent
 val walletPersistent = PostgresWalletPersistent
 val receiptPersistent = PostgresReceiptPersistent
@@ -34,40 +36,60 @@ val MASTER_KEY get() = hex(System.getenv(ENV_MASTER_KEY) ?: error("'$ENV_MASTER_
 val testnet get() = (System.getenv(ENV_TESTNET) ?: "true").toBoolean()
 
 suspend fun main() {
-    val vkGroupId = System.getenv(ENV_VK_GROUP_ID) ?: error("'$ENV_VK_GROUP_ID' not set")
-    val vkAccessToken = System.getenv(ENV_VK_API_TOKEN) ?: error("'$ENV_VK_API_TOKEN' not set")
-
-    val tgUsername = System.getenv(ENV_TG_USER_NAME) ?: error("'$ENV_TG_USER_NAME' not set")
-    val tgAccessToken = System.getenv(ENV_TG_API_TOKEN) ?: error("'$ENV_TG_API_TOKEN' not set")
-
-    val pgLink = System.getenv(ENV_PG_URL) ?: error("'$ENV_PG_URL' not set")
+    val pgUrl = System.getenv(ENV_PG_URL) ?: error("'$ENV_PG_URL' not set")
     val pgUser = System.getenv(ENV_PG_USER) ?: error("'$ENV_PG_USER' not set")
     val pgPassword = System.getenv(ENV_PG_PASSWORD) ?: error("'$ENV_PG_PASSWORD' not set")
 
     printMasterContracts()
-    Database.connect(pgLink, user = pgUser, password = pgPassword)
-
-    val vkScope = CoroutineScope(Dispatchers.Default).launch {
-        VkBot().start(vkGroupId, vkAccessToken)
+    try {
+        Database.connect(pgUrl, user = pgUser, password = pgPassword)
+        logger.info("Success connection to $pgUrl")
+    } catch (e: Exception) {
+        logger.error("Failed connect to DB", e)
     }
 
-    val tgScope = CoroutineScope(Dispatchers.Default).launch {
-        TgBot().start(tgUsername, tgAccessToken)
+    val vkGroupId = System.getenv(ENV_VK_GROUP_ID)
+    val vkAccessToken = System.getenv(ENV_VK_API_TOKEN)
+
+    val vkScope = if (vkGroupId != null && vkAccessToken != null) {
+        CoroutineScope(Dispatchers.Default).launch {
+            VkBot().start(vkGroupId, vkAccessToken)
+        }
+    } else {
+        logger.warn(
+            "VK not initialized: ${
+                buildList {
+                    if (vkGroupId == null) add(ENV_VK_GROUP_ID)
+                    if (vkAccessToken == null) add(ENV_VK_API_TOKEN)
+                }.joinToString()
+            }"
+        )
+        null
     }
 
-    vkScope.join()
-    tgScope.join()
+    val tgUsername = System.getenv(ENV_TG_USER_NAME) ?: error("'$ENV_TG_USER_NAME' not set")
+    val tgAccessToken = System.getenv(ENV_TG_API_TOKEN) ?: error("'$ENV_TG_API_TOKEN' not set")
+
+    val tgBot = TgBot(tgAccessToken)
+    tgBot.start(tgUsername)
+
+    vkScope?.join()
+
+    while (true) {
+    }
 }
 
 private fun printMasterContracts() {
     val masterContractsString = "=".repeat(5) + " MASTER CONTRACTS " + "=".repeat(5)
-    println(masterContractsString)
-    BlockchainType.values().forEach { blockchainType ->
-        if (blockchainType != BlockchainType.TON) return@forEach // TODO: other blockchains
+    logger.info(buildString {
+        appendLine(masterContractsString)
+        BlockchainType.values().forEach { blockchainType ->
+            if (blockchainType != BlockchainType.TON) return@forEach // TODO: other blockchains
 
-        val blockchainManager = BlockchainManager[blockchainType]
-        val masterAddress = blockchainManager.getAddress(UserPrivateKey(UUID(0, 0), MASTER_KEY).key.toByteArray())
-        println("${blockchainType.displayName}: $masterAddress")
-    }
-    println("=".repeat(masterContractsString.length))
+            val blockchainManager = BlockchainManager[blockchainType]
+            val masterAddress = blockchainManager.getAddress(UserPrivateKey(UUID(0, 0), MASTER_KEY).key.toByteArray())
+            appendLine("${blockchainType.displayName}: $masterAddress")
+        }
+        appendLine("=".repeat(masterContractsString.length))
+    })
 }
