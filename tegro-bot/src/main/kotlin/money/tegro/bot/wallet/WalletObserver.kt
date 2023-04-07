@@ -117,6 +117,24 @@ object WalletObserver {
                 }
             } else {
                 TODO()
+
+                // if (hashMap.cintains(user) // идем нахуй
+                // else hashMap.put(TokenDepositFlow).collect {
+                //  hashmap.remove
+                // }
+
+//                val a = Any() as TokenDepositFlow
+//                a.collect {
+//                    when(it) {
+//                        is TokenDepositFlow.Event.Complete -> {
+//                            // remove from hashmap
+//                            it.amount
+//                        }
+//                        else -> {
+//                            println(it)
+//                        }
+//                    }
+//                }
 //                val nativeBalance = blockchainManager.getBalance(
 //                    blockchainManager.getAddress(userWalletPk)
 //                )

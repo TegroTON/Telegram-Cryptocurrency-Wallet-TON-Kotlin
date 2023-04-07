@@ -96,21 +96,3 @@ class WalletWithdrawSelectMenu(
         data class Currency(val value: CryptoCurrency) : ButtonPayload()
     }
 }
-
-//sealed class Result
-//object Success : Result()
-//class Error(val string: String) : Result()
-//
-//fun a() {
-//    val r = Any() as Result
-//
-//
-//    when (r) {
-//        is Error -> {
-//            r.string
-//        }
-//        Success -> {
-//
-//        }
-//    }
-//}

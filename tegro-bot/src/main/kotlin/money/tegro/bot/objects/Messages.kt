@@ -100,9 +100,9 @@ data class Messages(
     val menuDepositSelectPeriod: String = "menuDepositSelectPeriod",
     val menuDepositApproveMessage: String = "menuDepositApproveMessage",
     val menuDepositApproveButton: String = "menuDepositApproveButton",
-    val mouthOne: String = "mouthOne",
-    val mouthTwo: String = "mouthTwo",
-    val mouthThree: String = "mouthThree",
+    val monthOne: String = "monthOne",
+    val monthTwo: String = "monthTwo",
+    val monthThree: String = "monthThree",
     val soon: String = "soon",
 ) {
     companion object {

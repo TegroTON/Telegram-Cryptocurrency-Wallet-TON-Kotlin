@@ -5,6 +5,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
+import money.tegro.bot.objects.DepositPeriod
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
@@ -15,18 +16,35 @@ import money.tegro.bot.wallet.Coins
 class DepositApproveMenu(
     val user: User,
     val coins: Coins,
-    val period: Int,
+    val depositPeriod: DepositPeriod,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+        val profit = (
+                coins.toBigInteger()
+                        * depositPeriod.yield
+                        * (depositPeriod.period.toBigInteger() * 30.toBigInteger())
+                        / 365.toBigInteger()) / 100.toBigInteger()
+        val profitCoins = Coins(coins.currency, coins.currency.fromNano(profit))
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages[user.settings.lang].menuDepositApproveMessage,
+            message = Messages[user.settings.lang].menuDepositApproveMessage.format(
+                coins,
+                depositPeriod.period,
+                DepositPeriod.getWord(
+                    depositPeriod.period,
+                    Messages[user.settings.lang].monthOne,
+                    Messages[user.settings.lang].monthTwo,
+                    Messages[user.settings.lang].monthThree
+                ),
+                depositPeriod.yield.toString(),
+                profitCoins
+            ),
             keyboard = BotKeyboard {
                 row {
                     button(
-                        Messages[user.settings.lang].menuDepositsNew,
+                        Messages[user.settings.lang].menuDepositApproveButton,
                         ButtonPayload.serializer(),
                         ButtonPayload.APPROVE
                     )
