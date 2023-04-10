@@ -1,6 +1,6 @@
 package money.tegro.bot.inlines
 
-import kotlinx.datetime.Clock
+import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -10,26 +10,31 @@ import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.PostgresDepositsPersistent
-import money.tegro.bot.wallet.PostgresWalletPersistent
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Serializable
-class DepositApproveMenu(
+data class DepositReadyMenu(
     val user: User,
-    val coins: Coins,
-    val depositPeriod: DepositPeriod,
+    val deposit: Deposit,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+        val coins = deposit.coins
+        val depositPeriod = deposit.depositPeriod
         val profit = (
                 coins.toBigInteger()
                         * depositPeriod.yield
                         * (depositPeriod.period.toBigInteger() * 30.toBigInteger())
                         / 365.toBigInteger()) / 100.toBigInteger()
         val profitCoins = Coins(coins.currency, coins.currency.fromNano(profit))
+        val date = Date.from(deposit.finishDate.toJavaInstant())
+        val time =
+            SimpleDateFormat("dd.MM.yyyy HH:mm").format(date)
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages[user.settings.lang].menuDepositApproveMessage.format(
+            message = Messages[user.settings.lang].menuDepositReadyMessage.format(
                 coins,
                 depositPeriod.period,
                 DepositPeriod.getWord(
@@ -39,16 +44,10 @@ class DepositApproveMenu(
                     Messages[user.settings.lang].monthThree
                 ),
                 depositPeriod.yield.toString(),
-                profitCoins
+                profitCoins,
+                time
             ),
             keyboard = BotKeyboard {
-                row {
-                    button(
-                        Messages[user.settings.lang].menuDepositApproveButton,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.APPROVE
-                    )
-                }
                 row {
                     button(
                         Messages[user.settings.lang].menuButtonBack,
@@ -63,28 +62,9 @@ class DepositApproveMenu(
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
-            ButtonPayload.APPROVE -> {
-                val deposit = Deposit(
-                    user.id,
-                    depositPeriod,
-                    Clock.System.now(),
-                    coins
-                )
-                val available = PostgresWalletPersistent.loadWalletState(user).active[coins.currency]
-                if (deposit.coins >= available) {
-                    PostgresDepositsPersistent.saveDeposit(deposit)
-                    user.setMenu(
-                        bot,
-                        DepositReadyMenu(user, deposit, DepositsMenu(user, MainMenu(user))),
-                        message.lastMenuMessageId
-                    )
-                    //user.setMenu(bot, DepositsMenu(user, MainMenu(user)), message.lastMenuMessageId)
-                    return true
-                } else return bot.sendPopup(message, Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney)
-            }
-
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                val list = PostgresDepositsPersistent.getAllByUser(user)
+                user.setMenu(bot, DepositsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
             }
         }
         return true
@@ -92,7 +72,6 @@ class DepositApproveMenu(
 
     @Serializable
     private enum class ButtonPayload {
-        APPROVE,
         BACK
     }
 }

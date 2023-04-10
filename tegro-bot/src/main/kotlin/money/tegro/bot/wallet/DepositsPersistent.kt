@@ -1,27 +1,21 @@
 package money.tegro.bot.wallet
 
-import kotlinx.atomicfu.locks.reentrantLock
-import kotlinx.atomicfu.locks.withLock
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import money.tegro.bot.exceptions.NotEnoughCoinsException
 import money.tegro.bot.objects.Deposit
 import money.tegro.bot.objects.DepositPeriod
 import money.tegro.bot.objects.PostgresUserPersistent
 import money.tegro.bot.objects.User
-import money.tegro.bot.utils.JSON
-import net.dzikoysk.exposed.upsert.upsert
+import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.amount
+import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.cryptoCurrency
+import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.depositPeriod
+import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.finishDate
 import net.dzikoysk.exposed.upsert.withUnique
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.File
-import java.util.*
 
 interface DepositsPersistent {
     suspend fun saveDeposit(deposit: Deposit)
@@ -34,6 +28,7 @@ object PostgresDepositsPersistent : DepositsPersistent {
     object UsersDeposits : Table("users_deposits") {
         val userId = uuid("user_id").references(PostgresUserPersistent.Users.id)
         val depositPeriod = enumeration<DepositPeriod>("deposit_period")
+        val finishDate = timestamp("finish_date")
         val cryptoCurrency = enumeration<CryptoCurrency>("crypto_currency")
         val amount = long("amount")
 
@@ -49,6 +44,7 @@ object PostgresDepositsPersistent : DepositsPersistent {
             UsersDeposits.insert {
                 it[userId] = deposit.userId
                 it[depositPeriod] = deposit.depositPeriod
+                it[finishDate] = deposit.finishDate
                 it[cryptoCurrency] = deposit.coins.currency
                 it[amount] = deposit.coins.amount.toLong()
             }
@@ -56,7 +52,22 @@ object PostgresDepositsPersistent : DepositsPersistent {
     }
 
     override suspend fun getAllByUser(user: User): List<Deposit> {
-        TODO("Not yet implemented")
+        val deposits = suspendedTransactionAsync {
+            UsersDeposits.select {
+                UsersDeposits.userId.eq(user.id)
+            }.mapNotNull {
+                Deposit(
+                    user.id,
+                    it[depositPeriod],
+                    it[finishDate],
+                    Coins(
+                        currency = it[cryptoCurrency],
+                        amount = it[amount].toBigInteger()
+                    )
+                )
+            }
+        }
+        return deposits.await()
     }
 
     override suspend fun check(): List<Deposit> {

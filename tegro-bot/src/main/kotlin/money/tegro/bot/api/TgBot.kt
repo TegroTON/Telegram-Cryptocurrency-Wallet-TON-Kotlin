@@ -211,9 +211,9 @@ class TgBot(
                     return@launch
                 }
             } catch (e: Throwable) {
-                throw RuntimeException("Failed handle message for user $user in menu: $menu", e)
+                user.setMenu(this@TgBot, MainMenu(user), botMessage.lastMenuMessageId)
+                //throw RuntimeException("Failed handle message for user $user in menu: $menu", e)
             }
-
             user.setMenu(this@TgBot, MainMenu(user), botMessage.lastMenuMessageId)
         }
     }
