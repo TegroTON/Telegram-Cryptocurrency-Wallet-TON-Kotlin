@@ -11,8 +11,8 @@ data class Account(
     @Serializable(UUIDSerializer::class)
     val id: UUID,
     val issueTime: Instant,
-    val oneTime: Boolean,
     val issuer: User,
+    val oneTime: Boolean,
     val coins: Coins,
     val minAmount: Coins?,
     val maxCoins: Coins?,

@@ -27,7 +27,6 @@ class ReceiptSelectActivationsMenu(
             message = Messages[user.settings.lang].menuReceiptsSelectActivationsMessage,
             keyboard = BotKeyboard {
                 row {
-                    //skip
                     button(
                         Messages[user.settings.lang].menuReceiptsSelectActivationsSkip,
                         ButtonPayload.serializer(),

@@ -11,7 +11,7 @@ import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
-import money.tegro.bot.wallet.PostgresDepositsPersistent
+import money.tegro.bot.wallet.PostgresAccountsPersistent
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -53,9 +53,8 @@ data class AccountReadyMenu(
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.BACK -> {
-                TODO()
-                val list = PostgresDepositsPersistent.getAllByUser(user)
-                user.setMenu(bot, DepositsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+                val list = PostgresAccountsPersistent.loadAccounts(user)
+                user.setMenu(bot, AccountsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
             }
         }
         return true
