@@ -54,7 +54,11 @@ data class AccountReadyMenu(
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.BACK -> {
                 val list = PostgresAccountsPersistent.loadAccounts(user)
-                user.setMenu(bot, AccountsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+                user.setMenu(
+                    bot,
+                    AccountsListMenu(user, list.toMutableList(), 1, AccountsMenu(user, MainMenu(user))),
+                    message.lastMenuMessageId
+                )
             }
         }
         return true

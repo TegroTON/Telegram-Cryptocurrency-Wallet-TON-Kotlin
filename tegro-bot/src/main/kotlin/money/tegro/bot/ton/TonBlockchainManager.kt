@@ -20,6 +20,7 @@ import org.ton.block.*
 import org.ton.cell.Cell
 import org.ton.cell.buildCell
 import org.ton.lite.client.LiteClient
+import org.ton.tl.asByteString
 import java.math.BigInteger
 import java.util.concurrent.TimeUnit
 
@@ -30,13 +31,13 @@ object TonBlockchainManager : BlockchainManager {
 
         if (testnet) {
             LiteServerDesc(
-                id = PublicKeyEd25519(base64("QpVqQiv1u3nCHuBR3cg3fT6NqaFLlnLGbEgtBRukDpU=")),
+                id = PublicKeyEd25519(base64("QpVqQiv1u3nCHuBR3cg3fT6NqaFLlnLGbEgtBRukDpU=").asByteString()),
                 ip = 1592601963,
                 port = 13833
             )
         } else {
             LiteServerDesc(
-                id = PublicKeyEd25519(base64("n4VDnSCUuSpjnCyUk9e3QOOd6o0ItSWYbTnW3Wnn8wk=")),
+                id = PublicKeyEd25519(base64("n4VDnSCUuSpjnCyUk9e3QOOd6o0ItSWYbTnW3Wnn8wk=").asByteString()),
                 ip = 84478511,
                 port = 19949
             )

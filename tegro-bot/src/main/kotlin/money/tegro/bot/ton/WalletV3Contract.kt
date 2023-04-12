@@ -12,6 +12,7 @@ import org.ton.contract.wallet.WalletContract
 import org.ton.contract.wallet.WalletTransfer
 import org.ton.contract.wallet.WalletTransferBuilder
 import org.ton.lite.client.LiteClient
+import org.ton.tl.asByteString
 import org.ton.tlb.CellRef
 import org.ton.tlb.constructor.AnyTlbConstructor
 import org.ton.tlb.storeRef
@@ -28,7 +29,7 @@ class WalletV3Contract(
         return WalletV3Data(
             seqno = data.loadUInt(32).toInt(),
             subWalletId = data.loadUInt(32).toInt(),
-            publicKey = PublicKeyEd25519(data.loadBits(256).toByteArray())
+            publicKey = PublicKeyEd25519(data.loadBits(256).toByteArray().asByteString())
         )
     }
 
