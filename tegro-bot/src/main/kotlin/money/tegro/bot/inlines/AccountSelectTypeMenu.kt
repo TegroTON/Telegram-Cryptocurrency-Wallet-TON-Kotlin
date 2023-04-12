@@ -9,10 +9,9 @@ import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
-import money.tegro.bot.wallet.PostgresAccountsPersistent
 
 @Serializable
-class AccountsMenu(
+class AccountSelectTypeMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
@@ -20,20 +19,18 @@ class AccountsMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages[user.settings.lang].menuAccountsMessage,
+            message = Messages[user.settings.lang].menuAccountSelectTypeMessage,
             keyboard = BotKeyboard {
                 row {
                     button(
-                        Messages[user.settings.lang].menuAccountsCreate,
+                        Messages[user.settings.lang].menuAccountSelectTypeOneTime,
                         ButtonPayload.serializer(),
-                        ButtonPayload.CREATE
+                        ButtonPayload.ONETIME
                     )
-                }
-                row {
                     button(
-                        Messages[user.settings.lang].menuAccountsList,
+                        Messages[user.settings.lang].menuAccountSelectTypeNotOneTime,
                         ButtonPayload.serializer(),
-                        ButtonPayload.LIST
+                        ButtonPayload.NOTONETIME
                     )
                 }
                 row {
@@ -50,17 +47,16 @@ class AccountsMenu(
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
-            ButtonPayload.CREATE -> {
-                user.setMenu(bot, AccountSelectTypeMenu(user, this), message.lastMenuMessageId)
-            }
-
-            ButtonPayload.LIST -> {
-                val list = PostgresAccountsPersistent.loadAccounts(user)
-                user.setMenu(bot, AccountsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
-            }
-
             ButtonPayload.BACK -> {
                 user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+            }
+
+            ButtonPayload.ONETIME -> {
+                user.setMenu(bot, AccountSelectCurrencyMenu(user, 1, this), message.lastMenuMessageId)
+            }
+
+            ButtonPayload.NOTONETIME -> {
+                user.setMenu(bot, AccountSelectActivationsMenu(user, this), message.lastMenuMessageId)
             }
         }
         return true
@@ -68,8 +64,8 @@ class AccountsMenu(
 
     @Serializable
     private enum class ButtonPayload {
-        CREATE,
-        LIST,
+        ONETIME,
+        NOTONETIME,
         BACK
     }
 }

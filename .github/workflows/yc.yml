@@ -1,0 +1,39 @@
+env:
+  REGISTRY: cr.yandex/crpl9spta5uhik9m169r
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  tegro-bot:
+    env:
+      IMAGE: tegro-bot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: corretto
+          java-version: 17
+
+      - name: Ensure gradlew is executable
+        run: chmod +x ./gradlew
+
+      - name: Build image with gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: installDist
+
+      - name: Login to Yandex Cloud Container Registry
+        id: login-cr
+        uses: yc-actions/yc-cr-login@v1
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+
+      - name: Push to Yandex Cloud Container Registry
+        run: |
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ github.ref_name }} .
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ github.ref_name }}  
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ github.ref_name }} ${{ env.REGISTRY }}/${{ env.IMAGE }}:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE }}:latest
