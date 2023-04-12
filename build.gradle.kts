@@ -8,6 +8,7 @@ allprojects {
         mavenLocal()
         mavenCentral()
         maven("https://jitpack.io")
+        maven("https://s01.oss.sonatype.org/service/local/repositories/snapshots/content/")
     }
 }
 
