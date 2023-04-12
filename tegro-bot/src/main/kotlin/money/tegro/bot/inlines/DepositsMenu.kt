@@ -9,6 +9,7 @@ import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
+import money.tegro.bot.wallet.PostgresDepositsPersistent
 
 @Serializable
 class DepositsMenu(
@@ -50,11 +51,13 @@ class DepositsMenu(
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.NEW -> {
-                user.setMenu(bot, DepositSelectAmountMenu(user, this), message.lastMenuMessageId)
+                return false
+                //user.setMenu(bot, DepositSelectAmountMenu(user, this), message.lastMenuMessageId)
             }
 
             ButtonPayload.CURRENT -> {
-                return false
+                val list = PostgresDepositsPersistent.getAllByUser(user)
+                user.setMenu(bot, DepositsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
             }
 
             ButtonPayload.BACK -> {

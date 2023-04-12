@@ -78,7 +78,6 @@ class DepositApproveMenu(
                         DepositReadyMenu(user, deposit, DepositsMenu(user, MainMenu(user))),
                         message.lastMenuMessageId
                     )
-                    //user.setMenu(bot, DepositsMenu(user, MainMenu(user)), message.lastMenuMessageId)
                     return true
                 } else return bot.sendPopup(message, Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney)
             }

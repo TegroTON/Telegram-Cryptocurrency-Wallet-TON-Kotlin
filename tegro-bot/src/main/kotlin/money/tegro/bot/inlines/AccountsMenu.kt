@@ -51,7 +51,8 @@ class AccountsMenu(
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.CREATE -> {
-                user.setMenu(bot, AccountSelectTypeMenu(user, this), message.lastMenuMessageId)
+                return false
+                //user.setMenu(bot, AccountSelectTypeMenu(user, this), message.lastMenuMessageId)
             }
 
             ButtonPayload.LIST -> {
