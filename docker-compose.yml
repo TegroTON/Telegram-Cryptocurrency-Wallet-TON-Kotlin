@@ -10,3 +10,11 @@ services:
       - POSTGRES_DB=tgr-bot
     ports:
       - "5432:5432"
+  tgr-bot:
+    container_name: "tgr-bot"
+    image: crpl9spta5uhik9m169r/tegro-bot
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=qwerty
+      - POSTGRES_USER=tgr-bot
+      - POSTGRES_DB=tgr-bot
