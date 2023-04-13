@@ -19,6 +19,7 @@ import org.ton.api.pub.PublicKeyEd25519
 import org.ton.block.*
 import org.ton.cell.Cell
 import org.ton.cell.buildCell
+import org.ton.contract.wallet.MessageData
 import org.ton.lite.client.LiteClient
 import org.ton.tl.asByteString
 import java.math.BigInteger
@@ -123,19 +124,21 @@ object TonBlockchainManager : BlockchainManager {
             bounceable = false
             destination = jettonWalletContract.address
             coins = org.ton.block.Coins.of(0.036)
-            body = buildCell {
-                JettonTransfer.storeTlb(
-                    this, JettonTransfer(
-                        queryId = 0,
-                        amount = Coins(value.amount),
-                        destination = checkedAddrStd(destinationAddress),
-                        responseDestination = ownerAddress,
-                        customPayload = Maybe.of(null),
-                        forwardTonAmount = Coins(0),
-                        forwardPayload = Either.of(Cell("00000000"), null)
+            messageData = MessageData.raw(
+                buildCell {
+                    JettonTransfer.storeTlb(
+                        this, JettonTransfer(
+                            queryId = 0,
+                            amount = Coins(value.amount),
+                            destination = checkedAddrStd(destinationAddress),
+                            responseDestination = ownerAddress,
+                            customPayload = Maybe.of(null),
+                            forwardTonAmount = Coins(0),
+                            forwardPayload = Either.of(Cell("00000000"), null)
+                        )
                     )
-                )
-            }
+                }
+            )
         }
     }
 

@@ -178,11 +178,11 @@ class WalletV3Contract(
                 createdLt = 0u,
                 createdAt = 0u
             )
-            val init = Maybe.of(gift.stateInit?.let {
-                Either.of<StateInit, CellRef<StateInit>>(null, CellRef(it))
+            val init = Maybe.of(gift.messageData.stateInit?.let {
+                Either.of<StateInit, CellRef<StateInit>>(null, it)
             })
-            val giftBody = gift.body
-            val body = if (giftBody == null) {
+            val giftBody = gift.messageData.body
+            val body = if (giftBody.isEmpty()) {
                 Either.of<Cell, CellRef<Cell>>(Cell.empty(), null)
             } else {
                 Either.of<Cell, CellRef<Cell>>(null, CellRef(giftBody))
