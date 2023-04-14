@@ -1,6 +1,5 @@
 package money.tegro.bot.inlines
 
-import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -12,31 +11,20 @@ import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.Coins
-import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.wallet.PostgresAccountsPersistent
-import java.util.*
 
 @Serializable
-class AccountSelectAmountMenu(
+class AccountChangeMinAmountMenu(
     val user: User,
-    val activations: Int,
-    val currency: CryptoCurrency,
+    val account: Account,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
-        val min = Coins(currency, currency.minAmount)
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages[user.settings.lang].menuAccountSelectAmountMessage.format(currency.ticker),
+            message = Messages[user.settings.lang].menuAccountSelectMinAmountMessage.format(account.coins.currency.ticker),
             keyboard = BotKeyboard {
-                row {
-                    button(
-                        Messages[user.settings.lang].menuReceiptsSelectAmountMin + min,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.MIN
-                    )
-                }
                 row {
                     button(
                         Messages[user.settings.lang].menuButtonBack,
@@ -50,51 +38,27 @@ class AccountSelectAmountMenu(
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload
-        val min = Coins(currency, currency.minAmount)
-        val zero = Coins(currency, 0.toBigInteger())
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.BACK -> {
                     user.setMenu(bot, parentMenu, message.lastMenuMessageId)
                 }
-
-                ButtonPayload.MIN -> {
-                    val account = Account(
-                        UUID.randomUUID(),
-                        Clock.System.now(),
-                        user,
-                        activations == 0,
-                        zero,
-                        zero,
-                        min,
-                        activations,
-                        true
-                    )
-                    PostgresAccountsPersistent.saveAccount(account)
-                    user.setMenu(
-                        bot,
-                        AccountReadyMenu(user, account, AccountsMenu(user, MainMenu(user))),
-                        message.lastMenuMessageId
-                    )
-                }
             }
         } else {
             if (isStringLong(message.body)) {
+                val currency = account.coins.currency
                 val count = (message.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
                 val coins = Coins(currency, count)
-                if (count < min.amount) {
-                    return bot.sendPopup(message, Messages[user.settings.lang].menuSelectInvalidAmount)
-                }
                 val account = Account(
-                    UUID.randomUUID(),
-                    Clock.System.now(),
+                    account.id,
+                    account.issueTime,
                     user,
-                    activations == 1,
-                    zero,
-                    zero,
+                    account.oneTime,
+                    account.coins,
                     coins,
-                    activations,
-                    true
+                    account.maxCoins,
+                    account.activations,
+                    account.isActive
                 )
                 PostgresAccountsPersistent.saveAccount(account)
                 user.setMenu(
@@ -133,7 +97,6 @@ class AccountSelectAmountMenu(
 
     @Serializable
     private enum class ButtonPayload {
-        MIN,
         BACK
     }
 }

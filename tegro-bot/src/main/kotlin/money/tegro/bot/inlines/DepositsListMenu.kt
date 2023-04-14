@@ -35,7 +35,7 @@ class DepositsListMenu(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = buildString {
-                appendLine(Messages[user.settings.lang].menuReceiptsListMessage)
+                appendLine(Messages[user.settings.lang].menuDepositsListMessage)
                 if (deposits.isNotEmpty()) {
                     var count = 1
                     for (deposit in deposits.subList(start, min(deposits.size, start + 6))) {
@@ -45,7 +45,7 @@ class DepositsListMenu(
                         appendLine()
                         appendLine(
                             String.format(
-                                Messages[user.settings.lang].menuReceiptsListEntry,
+                                Messages[user.settings.lang].menuDepositsListEntry,
                                 count++.toString(),
                                 time,
                                 deposit.coins
@@ -54,7 +54,7 @@ class DepositsListMenu(
                     }
                 } else {
                     appendLine()
-                    appendLine(Messages[user.settings.lang].menuReceiptsListEmpty)
+                    appendLine(Messages[user.settings.lang].menuDepositsListEmpty)
                 }
             },
             keyboard = BotKeyboard {
@@ -95,7 +95,7 @@ class DepositsListMenu(
                             }
                         }
                     }
-                    if (start - deposits.size > 4 || start == 0) {
+                    if (start == 0 && deposits.size > 4) {
                         row {
                             var first = true
                             for (deposit: Deposit in deposits.subList(start + 4, min(deposits.size, start + 6))) {
@@ -104,6 +104,28 @@ class DepositsListMenu(
                                     first = false
                                 } else {
                                     button(getText(deposit, "6"), ButtonPayload.serializer(), ButtonPayload.THREE_TWO)
+                                }
+                            }
+                        }
+                    } else {
+                        if (start - deposits.size > 4) {
+                            row {
+                                var first = true
+                                for (deposit: Deposit in deposits.subList(start + 4, min(deposits.size, start + 6))) {
+                                    if (first) {
+                                        button(
+                                            getText(deposit, "5"),
+                                            ButtonPayload.serializer(),
+                                            ButtonPayload.THREE_ONE
+                                        )
+                                        first = false
+                                    } else {
+                                        button(
+                                            getText(deposit, "6"),
+                                            ButtonPayload.serializer(),
+                                            ButtonPayload.THREE_TWO
+                                        )
+                                    }
                                 }
                             }
                         }

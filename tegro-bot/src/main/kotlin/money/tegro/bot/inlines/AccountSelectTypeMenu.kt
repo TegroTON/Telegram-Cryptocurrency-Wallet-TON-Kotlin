@@ -23,14 +23,21 @@ class AccountSelectTypeMenu(
             keyboard = BotKeyboard {
                 row {
                     button(
-                        Messages[user.settings.lang].menuAccountSelectTypeOneTime,
+                        Messages[user.settings.lang].oneTime,
                         ButtonPayload.serializer(),
                         ButtonPayload.ONETIME
                     )
                     button(
-                        Messages[user.settings.lang].menuAccountSelectTypeNotOneTime,
+                        Messages[user.settings.lang].notOneTime,
                         ButtonPayload.serializer(),
                         ButtonPayload.NOTONETIME
+                    )
+                }
+                row {
+                    button(
+                        Messages[user.settings.lang].open,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.OPEN
                     )
                 }
                 row {
@@ -58,6 +65,10 @@ class AccountSelectTypeMenu(
             ButtonPayload.NOTONETIME -> {
                 user.setMenu(bot, AccountSelectActivationsMenu(user, this), message.lastMenuMessageId)
             }
+
+            ButtonPayload.OPEN -> {
+                user.setMenu(bot, OpenAccountSelectCurrencyMenu(user, this), message.lastMenuMessageId)
+            }
         }
         return true
     }
@@ -66,6 +77,7 @@ class AccountSelectTypeMenu(
     private enum class ButtonPayload {
         ONETIME,
         NOTONETIME,
+        OPEN,
         BACK
     }
 }

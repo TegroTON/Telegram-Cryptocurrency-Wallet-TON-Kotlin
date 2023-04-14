@@ -1,11 +1,13 @@
 package money.tegro.bot.objects
 
 import money.tegro.bot.api.Bot
+import money.tegro.bot.api.TgBot
 import money.tegro.bot.exceptions.IllegalRecipientException
 import money.tegro.bot.exceptions.ReceiptIssuerActivationException
 import money.tegro.bot.exceptions.ReceiptNotActiveException
 import money.tegro.bot.inlines.*
 import money.tegro.bot.receipts.PostgresReceiptPersistent
+import money.tegro.bot.wallet.PostgresAccountsPersistent
 import java.util.*
 
 class Commands {
@@ -35,21 +37,59 @@ class Commands {
                         "RC" -> {
                             val receipt = PostgresReceiptPersistent.loadReceipt(UUID.fromString(code))
                             if (receipt != null) {
+                                val lang = Messages[user.settings.lang]
+                                val id = buildString {
+                                    if (bot is TgBot) append("<code>")
+                                    append("#")
+                                    append(receipt.id.toString())
+                                    if (bot is TgBot) append("</code>")
+                                }
                                 val result = buildString {
                                     try {
                                         PostgresReceiptPersistent.activateReceipt(receipt, user)
-                                        appendLine("Вы получили ${receipt.coins}.")
+                                        append(lang.receiptMoneyReceived.format(receipt.coins))
+                                        val issuer = receipt.issuer
+                                        if (receipt.activations > 1) {
+                                            val updatedReceipt = PostgresReceiptPersistent.loadReceipt(receipt.id)
+                                            if (updatedReceipt != null)
+                                                bot.sendMessage(
+                                                    issuer.tgId ?: issuer.vkId ?: 0,
+                                                    Messages[issuer.settings.lang].multireceiptActivated.format(
+                                                        updatedReceipt.coins,
+                                                        updatedReceipt.activations
+                                                    )
+                                                )
+                                        } else {
+                                            bot.sendMessage(
+                                                issuer.tgId ?: issuer.vkId ?: 0,
+                                                Messages[issuer.settings.lang].receiptActivated.format(receipt.coins)
+                                            )
+                                        }
                                     } catch (ex: ReceiptIssuerActivationException) {
-                                        appendLine("Вы не можете активировать свой же чек")
+                                        append(lang.receiptIssuerActivationException)
                                     } catch (ex: IllegalRecipientException) {
-                                        appendLine("Ошибка: Чек не найден")
+                                        append(lang.illegalRecipientException.format(id))
                                     } catch (ex: ReceiptNotActiveException) {
-                                        appendLine("Ошибка: Чек уже неактивен: удален или активирован")
+                                        append(lang.receiptNotActiveException.format(id))
                                     }
                                 }
                                 bot.sendMessage(botMessage.peerId, result)
-                            } else
-                                user.setMenu(bot, MainMenu(user), null)
+                            } else user.setMenu(bot, MainMenu(user), null)
+                        }
+
+                        "AC" -> {
+                            val account = PostgresAccountsPersistent.loadAccount(UUID.fromString(code))
+                            if (account != null) {
+                                if (account.oneTime) {
+                                    user.setMenu(
+                                        bot,
+                                        AccountPayMenu(user, account, account.maxCoins, MainMenu(user)),
+                                        null
+                                    )
+                                } else {
+                                    user.setMenu(bot, AccountPaySelectAmountMenu(user, account, MainMenu(user)), null)
+                                }
+                            } else user.setMenu(bot, MainMenu(user), null)
                         }
 
                         "RF" -> {
@@ -61,14 +101,15 @@ class Commands {
                 "/menu" -> user.setMenu(bot, MainMenu(user), null)
                 "/wallet" -> user.setMenu(bot, WalletMenu(user, backMenu), botMessage.lastMenuMessageId)
                 "/receipts" -> user.setMenu(bot, ReceiptsMenu(user, backMenu), botMessage.lastMenuMessageId)
-                "/exchange" -> user.setMenu(bot, ExchangeMenu(user, backMenu), botMessage.lastMenuMessageId)
-                "/stock" -> user.setMenu(bot, StockMenu(user, backMenu), botMessage.lastMenuMessageId)
+                //"/exchange" -> user.setMenu(bot, ExchangeMenu(user, backMenu), botMessage.lastMenuMessageId)
+                //"/stock" -> user.setMenu(bot, StockMenu(user, backMenu), botMessage.lastMenuMessageId)
                 //market
                 "/accounts" -> user.setMenu(bot, AccountsMenu(user, backMenu), botMessage.lastMenuMessageId)
                 //deals
                 "/deposits" -> user.setMenu(bot, DepositsMenu(user, backMenu), botMessage.lastMenuMessageId)
                 //nft
                 "/settings" -> user.setMenu(bot, SettingsMenu(user, backMenu), botMessage.lastMenuMessageId)
+                else -> user.setMenu(bot, MainMenu(user), null)
             }
         }
     }

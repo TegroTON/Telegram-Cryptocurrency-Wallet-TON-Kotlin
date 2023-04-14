@@ -124,18 +124,11 @@ data class ReceiptReadyMenu(
                 )
 
                 val list = PostgresReceiptPersistent.loadReceipts(user).filter { it.isActive }
-                user.setMenu(bot, ReceiptsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
-
-                /*
-                bot.deleteMessage(message.peerId, message.messageId)
-                bot.sendPhoto(
-                    message.peerId,
-                    getBody(bot),
-                    ByteArrayInputStream(imageBytes),
-                    filename,
-                    getKeyboard(bot, false)
+                user.setMenu(
+                    bot,
+                    ReceiptsListMenu(user, list.toMutableList(), 1, ReceiptsMenu(user, MainMenu(user))),
+                    message.lastMenuMessageId
                 )
-                 */
             }
 
             ButtonPayload.LIMITATIONS -> user.setMenu(
@@ -147,12 +140,21 @@ data class ReceiptReadyMenu(
             ButtonPayload.DELETE -> {
                 PostgresReceiptPersistent.deleteReceipt(receipt)
                 bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptDeleted)
-                user.setMenu(bot, ReceiptsMenu(user, MainMenu(user)), message.lastMenuMessageId)
+                val list = PostgresReceiptPersistent.loadReceipts(user).filter { it.isActive }
+                user.setMenu(
+                    bot,
+                    ReceiptsListMenu(user, list.toMutableList(), 1, ReceiptsMenu(user, MainMenu(user))),
+                    message.lastMenuMessageId
+                )
             }
 
             ButtonPayload.BACK -> {
                 val list = PostgresReceiptPersistent.loadReceipts(user).filter { it.isActive }
-                user.setMenu(bot, ReceiptsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+                user.setMenu(
+                    bot,
+                    ReceiptsListMenu(user, list.toMutableList(), 1, ReceiptsMenu(user, MainMenu(user))),
+                    message.lastMenuMessageId
+                )
             }
         }
         return true

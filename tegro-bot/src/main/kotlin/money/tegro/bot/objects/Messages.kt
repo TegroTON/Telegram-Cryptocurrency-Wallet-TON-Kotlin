@@ -8,6 +8,9 @@ import java.io.InputStream
 
 @Serializable
 data class Messages(
+    /*************************
+     *   Main menu section   *
+     *************************/
     val mainMenuMessage: String = "mainMenuMessage",
     val mainMenuButtonWallet: String = "mainMenuButtonWallet",
     val mainMenuButtonReceipts: String = "mainMenuButtonReceipts",
@@ -19,13 +22,34 @@ data class Messages(
     val mainMenuButtonDeals: String = "mainMenuButtonDeals",
     val mainMenuButtonDeposits: String = "mainMenuButtonDeposits",
     val mainMenuButtonNFT: String = "mainMenuButtonNFT",
+
+    /***************************
+     *   Wallet menu section   *
+     ***************************/
     val walletMenuTitle: String = "walletMenuTitle",
-    val menuButtonBack: String = "menuButtonBack",
     val menuWalletButtonDeposit: String = "menuWalletButtonDeposit",
     val menuWalletButtonWithdraw: String = "menuWalletButtonWithdraw",
     val menuWalletButtonTransfer: String = "menuWalletButtonTransfer",
     val menuWalletButtonHistory: String = "menuWalletButtonHistory",
     val menuWalletFrozenTitle: String = "menuWalletFrozenTitle",
+    val menuWalletDepositSelectMessage: String = "menuWalletDepositSelectMessage",
+    val menuWalletWithdrawSelectMessage: String = "menuWalletWithdrawSelectMessage",
+    val menuWalletWithdrawMessage: String = "menuWalletWithdrawMessage",
+    val menuWalletWithdrawTON: String = "menuWalletWithdrawTON",
+    val menuWalletWithdrawTGR: String = "menuWalletWithdrawTGR",
+    val menuWalletWithdrawUSDT: String = "menuWalletWithdrawUSDT",
+    val menuWalletDepositMessage: String = "menuWalletDepositMessage",
+    val menuWalletDepositLink: String = "menuWalletDepositLink",
+    val menuWalletDepositQR: String = "menuWalletDepositQR",
+    val walletMenuDepositMessage: String = "walletMenuDepositMessage",
+    val menuWalletWithdrawSelectAmountMessage: String = "menuWalletWithdrawSelectAmountMessage",
+    val walletMenuWithdrawMessage: String = "walletMenuWithdrawMessage",
+    val walletMenuWithdrawInvalidAddress: String = "walletMenuWithdrawInvalidAddress",
+
+
+    /*****************************
+     *   Receipts menu section   *
+     *****************************/
     val menuReceiptsMessage: String = "menuReceiptsMessage",
     val menuReceiptsCreate: String = "menuReceiptsCreate",
     val menuReceiptsSelectCurrencyMessage: String = "menuReceiptsSelectCurrencyMessage",
@@ -59,49 +83,38 @@ data class Messages(
     val menuReceiptsListWithRecipient: String = "menuReceiptsListWithRecipient",
     val menuReceiptsListWithoutRecipient: String = "menuReceiptsListWithoutRecipient",
     val menuReceiptsListBack: String = "menuReceiptsListBack",
-    val menuAccountsMessage: String = "menuAccountsMessage",
-    val menuAccountsCreate: String = "menuAccountsCreate",
-    val menuAccountsList: String = "menuAccountsList",
-    val menuSettingsMessage: String = "menuSettingsMessage",
-    val menuSettingsRefs: String = "menuSettingsRefs",
-    val menuSettingsLang: String = "menuSettingsLang",
-    val menuSettingsCurrency: String = "menuSettingsCurrency",
-    val menuSettingsHints: String = "menuSettingsHints",
-    val menuSettingsHelp: String = "menuSettingsHelp",
-    val menuWalletDepositSelectMessage: String = "menuWalletDepositSelectMessage",
-    val menuWalletWithdrawSelectMessage: String = "menuWalletWithdrawSelectMessage",
-    val menuWalletWithdrawMessage: String = "menuWalletWithdrawMessage",
-    val menuWalletWithdrawTON: String = "menuWalletWithdrawTON",
-    val menuWalletWithdrawTGR: String = "menuWalletWithdrawTGR",
-    val menuWalletWithdrawUSDT: String = "menuWalletWithdrawUSDT",
-    val menuWalletDepositMessage: String = "menuWalletDepositMessage",
-    val menuWalletDepositLink: String = "menuWalletDepositLink",
-    val menuWalletDepositQR: String = "menuWalletDepositQR",
-    val menuExchangeMessage: String = "menuExchangeMessage",
-    val menuExchangeToMessage: String = "menuExchangeToMessage",
-    val menuStockMessage: String = "menuStockMessage",
-    val menuStockStart: String = "menuStockStart",
-    val menuStockHistory: String = "menuStockHistory",
+    val receiptActivated: String = "receiptActivated",
+    val multireceiptActivated: String = "multireceiptActivated",
+    val receiptMoneyReceived: String = "receiptMoneyReceived",
+    val receiptIssuerActivationException: String = "receiptIssuerActivationException",
+    val receiptNotActiveException: String = "receiptNotActiveException",
+    val illegalRecipientException: String = "illegalRecipientException",
+
+    /*****************************
+     *   Deposits menu section   *
+     *****************************/
     val menuDepositsMessage: String = "menuDepositsMessage",
     val menuDepositsNew: String = "menuDepositsNew",
     val menuDepositsCurrent: String = "menuDepositsCurrent",
-    val menuReferralsMessage: String = "menuReferralsMessage",
-    val menuSelectInvalidAmount: String = "menuSelectInvalidAmount",
-    val walletMenuDepositMessage: String = "walletMenuDepositMessage",
-    val menuWalletWithdrawSelectAmountMessage: String = "menuWalletWithdrawSelectAmountMessage",
-    val walletMenuWithdrawMessage: String = "walletMenuWithdrawMessage",
-    val walletMenuWithdrawInvalidAddress: String = "walletMenuWithdrawInvalidAddress",
     val menuDepositSelectAmountMessage: String = "menuDepositSelectAmountMessage",
     val menuDepositSelectPeriodMessage: String = "menuDepositSelectPeriodMessage",
-    val menuDepositSelectPeriodM3: String = "menuDepositSelectPeriodM3",
-    val menuDepositSelectPeriodM6: String = "menuDepositSelectPeriodM6",
-    val menuDepositSelectPeriodM12: String = "menuDepositSelectPeriodM12",
-    val menuDepositSelectPeriodM24: String = "menuDepositSelectPeriodM24",
     val menuDepositSelectPeriod: String = "menuDepositSelectPeriod",
     val menuDepositApproveMessage: String = "menuDepositApproveMessage",
     val menuDepositApproveButton: String = "menuDepositApproveButton",
     val menuDepositReadyMessage: String = "menuDepositReadyMessage",
+    val menuDepositsListMessage: String = "menuDepositsListMessage",
+    val menuDepositsListEmpty: String = "menuDepositsListEmpty",
+    val menuDepositsListEntry: String = "menuDepositsListEntry",
+
+    /*****************************
+     *   Accounts menu section   *
+     *****************************/
+    val menuAccountsMessage: String = "menuAccountsMessage",
+    val menuAccountsCreate: String = "menuAccountsCreate",
+    val menuAccountsList: String = "menuAccountsList",
     val menuAccountReadyMessage: String = "menuAccountReadyMessage",
+    val menuAccountReadyMinAmountButton: String = "menuAccountReadyMinAmountButton",
+    val menuAccountReadyActivationsButton: String = "menuAccountReadyActivationsButton",
     val menuAccountSelectTypeMessage: String = "menuAccountSelectTypeMessage",
     val menuAccountSelectTypeOneTime: String = "menuAccountSelectTypeOneTime",
     val menuAccountSelectTypeNotOneTime: String = "menuAccountSelectTypeNotOneTime",
@@ -109,12 +122,64 @@ data class Messages(
     val menuAccountSelectActivationsSkip: String = "menuAccountSelectActivationsSkip",
     val menuAccountSelectCurrencyMessage: String = "menuAccountSelectCurrencyMessage",
     val menuAccountSelectAmountMessage: String = "menuAccountSelectAmountMessage",
-    val oneTime: String = "oneTime",
-    val notOneTime: String = "notOneTime",
-    val notSet: String = "notSet",
+    val menuAccountsListMessage: String = "menuAccountsListMessage",
+    val menuAccountsListEmpty: String = "menuAccountsListEmpty",
+    val menuAccountsListEntry: String = "menuAccountsListEntry",
+    val menuAccountsListEntryOpen: String = "menuAccountsListEntryOpen",
+    val menuAccountSelectMinAmountMessage: String = "menuAccountSelectMinAmountMessage",
+    val menuAccountChangeActivationsMessage: String = "menuAccountChangeActivationsMessage",
+    val menuAccountChangeActivationsOneTimeButton: String = "menuAccountChangeActivationsOneTimeButton",
+    val menuAccountChangeActivationsNotSetButton: String = "menuAccountChangeActivationsNotSetButton",
+    val menuAccountReadyOneTimePopup: String = "menuAccountReadyOneTimePopup",
+    val menuAccountPaySelectAmountMessage: String = "menuAccountPaySelectAmountMessage",
+    val menuAccountPaySelectAmountErrorMinAmount: String = "menuAccountPaySelectAmountErrorMinAmount",
+    val menuAccountPaySelectAmountErrorMaxCoins: String = "menuAccountPaySelectAmountErrorMaxCoins",
+    val menuAccountPayMessage: String = "menuAccountPayMessage",
+    val menuAccountPayButton: String = "menuAccountPayButton",
+    val menuAccountPayDeclineButton: String = "menuAccountPayDeclineButton",
+    val menuAccountPaySuccess: String = "menuAccountPaySuccess",
+    val accountMoneyReceived: String = "accountMoneyReceived",
+    val accountIssuerActivationException: String = "accountIssuerActivationException",
+    val accountNotActiveException: String = "accountNotActiveException",
+    val accountMinAmountException: String = "accountMinAmountException",
+    val accountOverdraftException: String = "accountOverdraftException",
+
+    /*****************************
+     *   Settings menu section   *
+     *****************************/
+    val menuSettingsMessage: String = "menuSettingsMessage",
+    val menuSettingsRefs: String = "menuSettingsRefs",
+    val menuSettingsLang: String = "menuSettingsLang",
+    val menuSettingsCurrency: String = "menuSettingsCurrency",
+    val menuSettingsHints: String = "menuSettingsHints",
+    val menuSettingsHelp: String = "menuSettingsHelp",
+    val menuReferralsMessage: String = "menuReferralsMessage",
+
+    /*****************************
+     *   Exchange menu section   *
+     *****************************/
+    val menuExchangeMessage: String = "menuExchangeMessage",
+    val menuExchangeToMessage: String = "menuExchangeToMessage",
+
+    /**************************
+     *   Stock menu section   *
+     **************************/
+    val menuStockMessage: String = "menuStockMessage",
+    val menuStockStart: String = "menuStockStart",
+    val menuStockHistory: String = "menuStockHistory",
+
+    /**************
+     *   Others   *
+     **************/
+    val menuSelectInvalidAmount: String = "menuSelectInvalidAmount",
+    val menuButtonBack: String = "menuButtonBack",
     val monthOne: String = "monthOne",
     val monthTwo: String = "monthTwo",
     val monthThree: String = "monthThree",
+    val oneTime: String = "oneTime",
+    val notOneTime: String = "notOneTime",
+    val open: String = "open",
+    val notSet: String = "notSet",
     val soon: String = "soon",
 ) {
     companion object {

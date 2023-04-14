@@ -8,7 +8,6 @@ import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.amount
 import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.cryptoCurrency
 import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.depositPeriod
 import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.finishDate
-import net.dzikoysk.exposed.upsert.withUnique
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
@@ -31,8 +30,6 @@ object PostgresDepositsPersistent : DepositsPersistent {
         val finishDate = timestamp("finish_date")
         val cryptoCurrency = enumeration<CryptoCurrency>("crypto_currency")
         val amount = long("amount")
-
-        val uniqueTypeValue = withUnique("CyanP3tux", userId)
 
         init {
             transaction { SchemaUtils.create(this@UsersDeposits) }

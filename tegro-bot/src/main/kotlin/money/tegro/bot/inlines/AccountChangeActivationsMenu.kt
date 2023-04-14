@@ -1,6 +1,5 @@
 package money.tegro.bot.inlines
 
-import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -12,29 +11,32 @@ import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.Coins
-import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.wallet.PostgresAccountsPersistent
-import java.util.*
 
 @Serializable
-class AccountSelectAmountMenu(
+class AccountChangeActivationsMenu(
     val user: User,
-    val activations: Int,
-    val currency: CryptoCurrency,
+    val account: Account,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
-        val min = Coins(currency, currency.minAmount)
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages[user.settings.lang].menuAccountSelectAmountMessage.format(currency.ticker),
+            message = Messages[user.settings.lang].menuAccountChangeActivationsMessage,
             keyboard = BotKeyboard {
                 row {
                     button(
-                        Messages[user.settings.lang].menuReceiptsSelectAmountMin + min,
+                        Messages[user.settings.lang].menuAccountChangeActivationsOneTimeButton,
                         ButtonPayload.serializer(),
-                        ButtonPayload.MIN
+                        ButtonPayload.ONETIME
+                    )
+                }
+                row {
+                    button(
+                        Messages[user.settings.lang].menuAccountChangeActivationsNotSetButton,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.NOTSET
                     )
                 }
                 row {
@@ -50,25 +52,44 @@ class AccountSelectAmountMenu(
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload
-        val min = Coins(currency, currency.minAmount)
-        val zero = Coins(currency, 0.toBigInteger())
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.BACK -> {
                     user.setMenu(bot, parentMenu, message.lastMenuMessageId)
                 }
 
-                ButtonPayload.MIN -> {
+                ButtonPayload.ONETIME -> {
+                    val zero = Coins(account.coins.currency, 0.toBigInteger())
                     val account = Account(
-                        UUID.randomUUID(),
-                        Clock.System.now(),
+                        account.id,
+                        account.issueTime,
                         user,
-                        activations == 0,
+                        true,
+                        account.coins,
                         zero,
-                        zero,
-                        min,
-                        activations,
-                        true
+                        account.maxCoins,
+                        1,
+                        account.isActive
+                    )
+                    PostgresAccountsPersistent.saveAccount(account)
+                    user.setMenu(
+                        bot,
+                        AccountReadyMenu(user, account, AccountsMenu(user, MainMenu(user))),
+                        message.lastMenuMessageId
+                    )
+                }
+
+                ButtonPayload.NOTSET -> {
+                    val account = Account(
+                        account.id,
+                        account.issueTime,
+                        user,
+                        false,
+                        account.coins,
+                        account.minAmount,
+                        account.maxCoins,
+                        Int.MAX_VALUE,
+                        account.isActive
                     )
                     PostgresAccountsPersistent.saveAccount(account)
                     user.setMenu(
@@ -79,22 +100,20 @@ class AccountSelectAmountMenu(
                 }
             }
         } else {
-            if (isStringLong(message.body)) {
-                val count = (message.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
-                val coins = Coins(currency, count)
-                if (count < min.amount) {
-                    return bot.sendPopup(message, Messages[user.settings.lang].menuSelectInvalidAmount)
-                }
+            if (isStringInt(message.body)) {
+                val activations = message.body!!.toInt()
+                val oneTime = activations == 1
+                val zero = Coins(account.coins.currency, 0.toBigInteger())
                 val account = Account(
-                    UUID.randomUUID(),
-                    Clock.System.now(),
+                    account.id,
+                    account.issueTime,
                     user,
-                    activations == 1,
-                    zero,
-                    zero,
-                    coins,
+                    oneTime,
+                    account.coins,
+                    if (oneTime) zero else account.minAmount,
+                    account.maxCoins,
                     activations,
-                    true
+                    account.isActive
                 )
                 PostgresAccountsPersistent.saveAccount(account)
                 user.setMenu(
@@ -102,7 +121,6 @@ class AccountSelectAmountMenu(
                     AccountReadyMenu(user, account, AccountsMenu(user, MainMenu(user))),
                     message.lastMenuMessageId
                 )
-                return true
             } else {
                 bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                 return false
@@ -111,20 +129,10 @@ class AccountSelectAmountMenu(
         return true
     }
 
-    private fun getFactor(decimals: Int): Long {
-        val string = buildString {
-            append("1")
-            for (i in 1..decimals) {
-                append("0")
-            }
-        }
-        return string.toLong()
-    }
-
-    private fun isStringLong(s: String?): Boolean {
+    private fun isStringInt(s: String?): Boolean {
         if (s == null) return false
         return try {
-            s.toDouble()
+            s.toInt()
             true
         } catch (ex: NumberFormatException) {
             false
@@ -133,7 +141,8 @@ class AccountSelectAmountMenu(
 
     @Serializable
     private enum class ButtonPayload {
-        MIN,
+        ONETIME,
+        NOTSET,
         BACK
     }
 }

@@ -29,8 +29,8 @@ interface AccountsPersistent {
         issuer: User,
         oneTime: Boolean,
         coins: Coins,
-        minAmount: Coins?,
-        maxCoins: Coins?,
+        minAmount: Coins,
+        maxCoins: Coins,
         activations: Int
     ): Account
 
@@ -53,8 +53,8 @@ object PostgresAccountsPersistent : AccountsPersistent {
         val oneTime = bool("one_time")
         val currency = enumeration<CryptoCurrency>("currency")
         val amount = long("amount")
-        val minAmount = long("min_amount").nullable()
-        val maxCoins = long("max_coins").nullable()
+        val minAmount = long("min_amount")
+        val maxCoins = long("max_coins")
         val activations = integer("activations")
         val isActive = bool("is_active")
 
@@ -67,8 +67,8 @@ object PostgresAccountsPersistent : AccountsPersistent {
         issuer: User,
         oneTime: Boolean,
         coins: Coins,
-        minAmount: Coins?,
-        maxCoins: Coins?,
+        minAmount: Coins,
+        maxCoins: Coins,
         activations: Int
     ): Account {
         try {
@@ -107,8 +107,8 @@ object PostgresAccountsPersistent : AccountsPersistent {
                     oneTime.columnType to account.oneTime,
                     currency.columnType to account.coins.currency,
                     amount.columnType to account.coins.amount,
-                    minAmount.columnType to account.minAmount?.amount,
-                    maxCoins.columnType to account.maxCoins?.amount,
+                    minAmount.columnType to account.minAmount.amount,
+                    maxCoins.columnType to account.maxCoins.amount,
                     activations.columnType to account.activations,
                     isActive.columnType to account.isActive,
 
@@ -117,8 +117,8 @@ object PostgresAccountsPersistent : AccountsPersistent {
                     oneTime.columnType to account.oneTime,
                     currency.columnType to account.coins.currency,
                     amount.columnType to account.coins.amount,
-                    minAmount.columnType to account.minAmount?.amount,
-                    maxCoins.columnType to account.maxCoins?.amount,
+                    minAmount.columnType to account.minAmount.amount,
+                    maxCoins.columnType to account.maxCoins.amount,
                     activations.columnType to account.activations,
                     isActive.columnType to account.isActive,
                 )
@@ -152,19 +152,24 @@ object PostgresAccountsPersistent : AccountsPersistent {
         if (payerWallet.active[account.coins.currency] < coins) {
             throw NotEnoughCoinsException(payer, coins)
         }
-        if (account.minAmount != null && payerWallet.active[account.coins.currency] < account.minAmount) {
+        if (account.minAmount.amount != 0.toBigInteger() && coins < account.minAmount) {
             throw AccountMinAmountException(account)
         }
+        if (account.maxCoins.amount > 0.toBigInteger() && account.coins + coins > account.maxCoins) {
+            throw AccountOverdraftException(account)
+        }
+
         payer.freeze(coins)
         payer.transfer(account.issuer, coins)
         var currentActivations = account.activations
-        currentActivations--
+        if (currentActivations != Int.MAX_VALUE) currentActivations--
         if (currentActivations < 1) {
             inactivateAccount(account)
         } else {
             transaction {
                 UsersAccounts.update({ UsersAccounts.id eq account.id }) {
                     it[activations] = currentActivations
+                    it[amount] = account.coins.toBigInteger().toLong() + coins.amount.toLong()
                 }
             }
         }
@@ -185,13 +190,13 @@ object PostgresAccountsPersistent : AccountsPersistent {
                     currency = result[currency],
                     amount = result[amount].toBigInteger()
                 ),
-                minAmount = if (result[maxCoins] == null) null else Coins(
+                minAmount = Coins(
                     currency = result[currency],
-                    amount = result[minAmount]!!.toBigInteger()
+                    amount = result[minAmount].toBigInteger()
                 ),
-                maxCoins = if (result[maxCoins] == null) null else Coins(
+                maxCoins = Coins(
                     currency = result[currency],
-                    amount = result[maxCoins]!!.toBigInteger()
+                    amount = result[maxCoins].toBigInteger()
                 ),
                 activations = result[activations],
                 isActive = result[isActive]
@@ -215,13 +220,13 @@ object PostgresAccountsPersistent : AccountsPersistent {
                         currency = it[currency],
                         amount = it[amount].toBigInteger()
                     ),
-                    minAmount = if (it[maxCoins] == null) null else Coins(
+                    minAmount = Coins(
                         currency = it[currency],
-                        amount = it[minAmount]!!.toBigInteger()
+                        amount = it[minAmount].toBigInteger()
                     ),
-                    maxCoins = if (it[maxCoins] == null) null else Coins(
+                    maxCoins = Coins(
                         currency = it[currency],
-                        amount = it[maxCoins]!!.toBigInteger()
+                        amount = it[maxCoins].toBigInteger()
                     ),
                     activations = it[activations],
                     isActive = it[isActive]

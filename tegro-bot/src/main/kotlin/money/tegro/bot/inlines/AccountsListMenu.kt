@@ -35,7 +35,7 @@ class AccountsListMenu(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = buildString {
-                appendLine(Messages[user.settings.lang].menuReceiptsListMessage)
+                appendLine(Messages[user.settings.lang].menuAccountsListMessage)
                 if (accounts.isNotEmpty()) {
                     var count = 1
                     for (account in accounts.subList(start, min(accounts.size, start + 6))) {
@@ -43,18 +43,28 @@ class AccountsListMenu(
                         val time =
                             SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(date)
                         appendLine()
-                        appendLine(
-                            String.format(
-                                Messages[user.settings.lang].menuReceiptsListEntry,
-                                count++.toString(),
-                                time,
-                                account.coins
+                        if (account.maxCoins.amount > 0.toBigInteger()) {
+                            appendLine(
+                                String.format(
+                                    Messages[user.settings.lang].menuAccountsListEntry,
+                                    count++.toString(),
+                                    time,
+                                    account.maxCoins
+                                )
                             )
-                        )
+                        } else {
+                            appendLine(
+                                String.format(
+                                    Messages[user.settings.lang].menuAccountsListEntryOpen,
+                                    count++.toString(),
+                                    time
+                                )
+                            )
+                        }
                     }
                 } else {
                     appendLine()
-                    appendLine(Messages[user.settings.lang].menuReceiptsListEmpty)
+                    appendLine(Messages[user.settings.lang].menuAccountsListEmpty)
                 }
             },
             keyboard = BotKeyboard {
@@ -95,7 +105,7 @@ class AccountsListMenu(
                             }
                         }
                     }
-                    if (start - accounts.size > 4 || start == 0) {
+                    if (start == 0 && accounts.size > 4) {
                         row {
                             var first = true
                             for (account: Account in accounts.subList(start + 4, min(accounts.size, start + 6))) {
@@ -104,6 +114,28 @@ class AccountsListMenu(
                                     first = false
                                 } else {
                                     button(getText(account, "6"), ButtonPayload.serializer(), ButtonPayload.THREE_TWO)
+                                }
+                            }
+                        }
+                    } else {
+                        if (start - accounts.size > 4) {
+                            row {
+                                var first = true
+                                for (account: Account in accounts.subList(start + 4, min(accounts.size, start + 6))) {
+                                    if (first) {
+                                        button(
+                                            getText(account, "5"),
+                                            ButtonPayload.serializer(),
+                                            ButtonPayload.THREE_ONE
+                                        )
+                                        first = false
+                                    } else {
+                                        button(
+                                            getText(account, "6"),
+                                            ButtonPayload.serializer(),
+                                            ButtonPayload.THREE_TWO
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -197,8 +229,10 @@ class AccountsListMenu(
     }
 
     private fun getText(account: Account, id: String): String {
+        val valueOrOpen =
+            if (account.maxCoins.amount > 0.toBigInteger()) account.maxCoins else Messages[user.settings.lang].open
         return buildString {
-            append(Messages[user.settings.lang].menuReceiptsListKeyboardEntry.format(id, account.coins))
+            append(Messages[user.settings.lang].menuReceiptsListKeyboardEntry.format(id, valueOrOpen))
         }
     }
 

@@ -51,12 +51,12 @@ class AccountsMenu(
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.CREATE -> {
-                return false
-                //user.setMenu(bot, AccountSelectTypeMenu(user, this), message.lastMenuMessageId)
+                //return false
+                user.setMenu(bot, AccountSelectTypeMenu(user, this), message.lastMenuMessageId)
             }
 
             ButtonPayload.LIST -> {
-                val list = PostgresAccountsPersistent.loadAccounts(user)
+                val list = PostgresAccountsPersistent.loadAccounts(user).filter { it.isActive }
                 user.setMenu(bot, AccountsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
             }
 

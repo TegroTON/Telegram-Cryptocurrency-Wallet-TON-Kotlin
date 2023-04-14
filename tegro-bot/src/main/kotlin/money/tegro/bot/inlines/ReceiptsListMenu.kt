@@ -101,7 +101,7 @@ class ReceiptsListMenu(
                             }
                         }
                     }
-                    if (start - receipts.size > 4 || start == 0) {
+                    if (start == 0 && receipts.size > 4) {
                         row {
                             var first = true
                             for (receipt: Receipt in receipts.subList(start + 4, min(receipts.size, start + 6))) {
@@ -110,6 +110,28 @@ class ReceiptsListMenu(
                                     first = false
                                 } else {
                                     button(getText(receipt, "6"), ButtonPayload.serializer(), ButtonPayload.THREE_TWO)
+                                }
+                            }
+                        }
+                    } else {
+                        if (start - receipts.size > 4) {
+                            row {
+                                var first = true
+                                for (receipt: Receipt in receipts.subList(start + 4, min(receipts.size, start + 6))) {
+                                    if (first) {
+                                        button(
+                                            getText(receipt, "5"),
+                                            ButtonPayload.serializer(),
+                                            ButtonPayload.THREE_ONE
+                                        )
+                                        first = false
+                                    } else {
+                                        button(
+                                            getText(receipt, "6"),
+                                            ButtonPayload.serializer(),
+                                            ButtonPayload.THREE_TWO
+                                        )
+                                    }
                                 }
                             }
                         }
