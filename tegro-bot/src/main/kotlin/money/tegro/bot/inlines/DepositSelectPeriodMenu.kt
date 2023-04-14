@@ -17,6 +17,7 @@ import money.tegro.bot.wallet.Coins
 class DepositSelectPeriodMenu(
     val user: User,
     val coins: Coins,
+    val calc: Boolean,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
@@ -52,7 +53,7 @@ class DepositSelectPeriodMenu(
             ButtonPayload.Back -> user.setMenu(bot, parentMenu, message.lastMenuMessageId)
 
             is ButtonPayload.Period -> {
-                user.setMenu(bot, DepositApproveMenu(user, coins, payload.value, this), message.lastMenuMessageId)
+                user.setMenu(bot, DepositApproveMenu(user, coins, payload.value, calc, this), message.lastMenuMessageId)
             }
         }
         return true

@@ -20,6 +20,7 @@ class DepositApproveMenu(
     val user: User,
     val coins: Coins,
     val depositPeriod: DepositPeriod,
+    val calc: Boolean,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
@@ -32,25 +33,48 @@ class DepositApproveMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages[user.settings.lang].menuDepositApproveMessage.format(
-                coins,
-                depositPeriod.period,
-                DepositPeriod.getWord(
+            message = if (calc) {
+                Messages[user.settings.lang].menuDepositApproveMessageCalc.format(
+                    coins,
                     depositPeriod.period,
-                    Messages[user.settings.lang].monthOne,
-                    Messages[user.settings.lang].monthTwo,
-                    Messages[user.settings.lang].monthThree
-                ),
-                depositPeriod.yield.toString(),
-                profitCoins
-            ),
+                    DepositPeriod.getWord(
+                        depositPeriod.period,
+                        Messages[user.settings.lang].monthOne,
+                        Messages[user.settings.lang].monthTwo,
+                        Messages[user.settings.lang].monthThree
+                    ),
+                    depositPeriod.yield.toString(),
+                    profitCoins
+                )
+            } else {
+                Messages[user.settings.lang].menuDepositApproveMessage.format(
+                    coins,
+                    depositPeriod.period,
+                    DepositPeriod.getWord(
+                        depositPeriod.period,
+                        Messages[user.settings.lang].monthOne,
+                        Messages[user.settings.lang].monthTwo,
+                        Messages[user.settings.lang].monthThree
+                    ),
+                    depositPeriod.yield.toString(),
+                    profitCoins
+                )
+            },
             keyboard = BotKeyboard {
                 row {
-                    button(
-                        Messages[user.settings.lang].menuDepositApproveButton,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.APPROVE
-                    )
+                    if (calc) {
+                        button(
+                            Messages[user.settings.lang].menuDepositCalculatorButton,
+                            ButtonPayload.serializer(),
+                            ButtonPayload.CREATE
+                        )
+                    } else {
+                        button(
+                            Messages[user.settings.lang].menuDepositApproveButton,
+                            ButtonPayload.serializer(),
+                            ButtonPayload.APPROVE
+                        )
+                    }
                 }
                 row {
                     button(
@@ -66,6 +90,10 @@ class DepositApproveMenu(
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
+            ButtonPayload.CREATE -> {
+                user.setMenu(bot, DepositSelectAmountMenu(user, false, this), message.lastMenuMessageId)
+            }
+
             ButtonPayload.APPROVE -> {
                 val deposit = Deposit(
                     UUID.randomUUID(),
@@ -75,6 +103,13 @@ class DepositApproveMenu(
                     coins,
                     false
                 )
+                val min = Coins(deposit.coins.currency, 2_500_000_000_000.toBigInteger())
+                if (deposit.coins > min) {
+                    return bot.sendPopup(
+                        message,
+                        Messages[user.settings.lang].accountMinAmountException.format(min)
+                    )
+                }
                 val available = PostgresWalletPersistent.loadWalletState(user).active[coins.currency]
                 if (deposit.coins <= available) {
                     PostgresDepositsPersistent.saveDeposit(deposit)
@@ -98,6 +133,7 @@ class DepositApproveMenu(
 
     @Serializable
     private enum class ButtonPayload {
+        CREATE,
         APPROVE,
         BACK
     }

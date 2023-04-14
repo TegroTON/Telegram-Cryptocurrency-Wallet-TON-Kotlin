@@ -17,13 +17,14 @@ import money.tegro.bot.wallet.PostgresWalletPersistent
 @Serializable
 class DepositSelectAmountMenu(
     val user: User,
+    val calc: Boolean,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
-        val currency = CryptoCurrency.TON
+        val currency = CryptoCurrency.TGR
         val available = PostgresWalletPersistent.loadWalletState(user).active[currency]
-        val min = Coins(currency, currency.minAmount)
-        if (available < min) {
+        val min = Coins(currency, 2_500_000_000_000.toBigInteger())
+        if (!calc && available < min) {
             bot.updateKeyboard(
                 to = user.vkId ?: user.tgId ?: 0,
                 lastMenuMessageId = lastMenuMessageId,
@@ -47,25 +48,24 @@ class DepositSelectAmountMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = String.format(
-                Messages[user.settings.lang].menuDepositSelectAmountMessage.format(currency.ticker, available),
-                currency.ticker,
-                available
-            ),
+            message = if (calc) Messages[user.settings.lang].menuDepositSelectAmountMessageCalc.format(currency.ticker)
+            else Messages[user.settings.lang].menuDepositSelectAmountMessage.format(currency.ticker, available),
             keyboard = BotKeyboard {
-                row {
-                    button(
-                        Messages[user.settings.lang].menuReceiptsSelectAmountMin + min,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.MIN
-                    )
-                }
-                row {
-                    button(
-                        Messages[user.settings.lang].menuReceiptsSelectAmountMax + available,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.MAX
-                    )
+                if (!calc) {
+                    row {
+                        button(
+                            Messages[user.settings.lang].menuReceiptsSelectAmountMin + min,
+                            ButtonPayload.serializer(),
+                            ButtonPayload.MIN
+                        )
+                    }
+                    row {
+                        button(
+                            Messages[user.settings.lang].menuReceiptsSelectAmountMax + available,
+                            ButtonPayload.serializer(),
+                            ButtonPayload.MAX
+                        )
+                    }
                 }
                 row {
                     button(
@@ -80,22 +80,22 @@ class DepositSelectAmountMenu(
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload
-        val currency = CryptoCurrency.TON
+        val currency = CryptoCurrency.TGR
         val available = try {
             PostgresWalletPersistent.loadWalletState(user).active[currency] // TODO: Calc bot fee
         } catch (e: NegativeCoinsException) {
             return true
         }
-        val min = Coins(currency, currency.minAmount)
+        val min = Coins(currency, 2_500_000_000_000.toBigInteger())
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.MIN -> {
-                    user.setMenu(bot, DepositSelectPeriodMenu(user, min, this), message.lastMenuMessageId)
+                    user.setMenu(bot, DepositSelectPeriodMenu(user, min, false, this), message.lastMenuMessageId)
                     return true
                 }
 
                 ButtonPayload.MAX -> {
-                    user.setMenu(bot, DepositSelectPeriodMenu(user, available, this), message.lastMenuMessageId)
+                    user.setMenu(bot, DepositSelectPeriodMenu(user, available, false, this), message.lastMenuMessageId)
                     return true
                 }
 
@@ -107,10 +107,14 @@ class DepositSelectAmountMenu(
             if (isStringLong(message.body)) {
                 val count = (message.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
                 val coins = Coins(currency, count)
+                if (calc) {
+                    user.setMenu(bot, DepositSelectPeriodMenu(user, coins, true, this), message.lastMenuMessageId)
+                    return true
+                }
                 if (count < min.amount || count > available.amount) {
                     return bot.sendPopup(message, Messages[user.settings.lang].menuSelectInvalidAmount)
                 }
-                user.setMenu(bot, DepositSelectPeriodMenu(user, coins, this), message.lastMenuMessageId)
+                user.setMenu(bot, DepositSelectPeriodMenu(user, coins, false, this), message.lastMenuMessageId)
                 return true
             } else {
                 bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)

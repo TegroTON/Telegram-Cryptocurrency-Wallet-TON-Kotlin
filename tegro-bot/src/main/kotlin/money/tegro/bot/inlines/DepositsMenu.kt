@@ -38,6 +38,13 @@ class DepositsMenu(
                 }
                 row {
                     button(
+                        Messages[user.settings.lang].menuDepositsCalculator,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.CALC
+                    )
+                }
+                row {
+                    button(
                         Messages[user.settings.lang].menuButtonBack,
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
@@ -51,13 +58,16 @@ class DepositsMenu(
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.NEW -> {
-                //return false
-                user.setMenu(bot, DepositSelectAmountMenu(user, this), message.lastMenuMessageId)
+                user.setMenu(bot, DepositSelectAmountMenu(user, false, this), message.lastMenuMessageId)
             }
 
             ButtonPayload.CURRENT -> {
                 val list = PostgresDepositsPersistent.getAllByUser(user)
                 user.setMenu(bot, DepositsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+            }
+
+            ButtonPayload.CALC -> {
+                user.setMenu(bot, DepositSelectAmountMenu(user, true, this), message.lastMenuMessageId)
             }
 
             ButtonPayload.BACK -> {
@@ -71,6 +81,7 @@ class DepositsMenu(
     private enum class ButtonPayload {
         NEW,
         CURRENT,
+        CALC,
         BACK
     }
 }

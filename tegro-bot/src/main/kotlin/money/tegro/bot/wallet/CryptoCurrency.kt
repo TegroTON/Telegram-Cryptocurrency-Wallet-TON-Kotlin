@@ -20,7 +20,7 @@ enum class CryptoCurrency(
         decimals = 9,
         minAmount = 200_000_000.toBigInteger(),
         networkFeeReserve = 100_000_000.toBigInteger(),
-//        botFee = 100_000_000.toBigInteger(), // TODO: Calc & check bot fee EVERYWHERE!!!!!!!! EVERY FUCKING WHERE!!!!!!!!
+        botFee = 100_000_000.toBigInteger(), // TODO: Calc & check bot fee EVERYWHERE!!!!!!!! EVERY FUCKING WHERE!!!!!!!!
         tokenContracts = emptyList(),
         nativeBlockchainType = BlockchainType.TON,
     ),
@@ -29,12 +29,11 @@ enum class CryptoCurrency(
         ticker = "TGR",
         decimals = 9,
         minAmount = 5_000_000_000.toBigInteger(),
-//        botFee = 1_000_000_000.toBigInteger(),
+        botFee = 1_000_000_000.toBigInteger(),
         tokenContracts = listOf(
             BlockchainType.TON to "0:2f0df5851b4a185f5f63c0d0cd0412f5aca353f577da18ff47c936f99dbd849a",
 //            BlockchainType.BSC to ""
-        ),
-        isEnabled = false
+        )
     ),
     USDT(
         displayName = "Tether USD",
