@@ -105,6 +105,7 @@ data class Messages(
     val menuDepositsListMessage: String = "menuDepositsListMessage",
     val menuDepositsListEmpty: String = "menuDepositsListEmpty",
     val menuDepositsListEntry: String = "menuDepositsListEntry",
+    val menuDepositPaid: String = "menuDepositPaid",
 
     /*****************************
      *   Accounts menu section   *

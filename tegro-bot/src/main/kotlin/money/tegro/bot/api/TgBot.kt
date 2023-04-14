@@ -2,11 +2,13 @@ package money.tegro.bot.api
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
+import kotlinx.datetime.Clock
 import money.tegro.bot.inlines.MainMenu
 import money.tegro.bot.menuPersistent
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
+import money.tegro.bot.wallet.PostgresDepositsPersistent
 import money.tegro.bot.wallet.WalletObserver
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.TelegramBotsApi
@@ -23,6 +25,7 @@ import java.io.File
 import java.io.InputStream
 import java.util.*
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.hours
 
 @OptIn(DelicateCoroutinesApi::class)
 class TgBot(
@@ -38,6 +41,21 @@ class TgBot(
         val botsApi = TelegramBotsApi(DefaultBotSession::class.java)
         botsApi.registerBot(this)
         botUsername = username
+
+        launch {
+            while (true) {
+                val result = PostgresDepositsPersistent.check()
+                if (result.isNotEmpty()) {
+                    for (deposit: Deposit in result) {
+                        if (deposit.issuer.tgId == null) continue
+                        if (deposit.finishDate <= Clock.System.now()) {
+                            PostgresDepositsPersistent.payDeposit(deposit, this@TgBot)
+                        }
+                    }
+                }
+                delay(1.hours)
+            }
+        }
     }
 
     override suspend fun sendMessage(to: Long, message: String) {

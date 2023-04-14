@@ -8,16 +8,19 @@ import com.petersamokhin.vksdk.core.model.VkSettings
 import com.petersamokhin.vksdk.core.model.event.MessagePartial
 import com.petersamokhin.vksdk.http.VkOkHttpClient
 import kotlinx.coroutines.*
+import kotlinx.datetime.Clock
 import kotlinx.serialization.Contextual
 import money.tegro.bot.inlines.MainMenu
 import money.tegro.bot.menuPersistent
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
+import money.tegro.bot.wallet.PostgresDepositsPersistent
 import java.io.File
 import java.io.InputStream
 import java.util.*
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.hours
 
 class VkBot : Bot, CoroutineScope {
 
@@ -95,6 +98,21 @@ class VkBot : Bot, CoroutineScope {
                     throw RuntimeException("Failed handle message for user $user in menu: $menu", e)
                 }
                 user.setMenu(this@VkBot, MainMenu(user), null)
+            }
+        }
+
+        launch {
+            while (true) {
+                val result = PostgresDepositsPersistent.check()
+                if (result.isNotEmpty()) {
+                    for (deposit: Deposit in result) {
+                        if (deposit.issuer.vkId == null) continue
+                        if (deposit.finishDate <= Clock.System.now()) {
+                            PostgresDepositsPersistent.payDeposit(deposit, this@VkBot)
+                        }
+                    }
+                }
+                delay(1.hours)
             }
         }
 

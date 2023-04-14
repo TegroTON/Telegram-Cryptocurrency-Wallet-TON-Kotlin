@@ -76,6 +76,7 @@ suspend fun main() {
     vkScope?.join()
 
     while (true) {
+
     }
 }
 

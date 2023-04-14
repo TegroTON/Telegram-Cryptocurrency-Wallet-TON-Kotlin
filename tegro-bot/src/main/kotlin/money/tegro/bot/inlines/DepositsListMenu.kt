@@ -19,10 +19,12 @@ import kotlin.math.min
 @Serializable
 class DepositsListMenu(
     val user: User,
-    val deposits: MutableList<Deposit>,
+    val allDeposits: MutableList<Deposit>,
     val page: Int,
     val parentMenu: Menu
 ) : Menu {
+
+    private var deposits: MutableList<Deposit> = allDeposits.filter { !it.isPaid }.toMutableList()
 
     private var maxPages: Int = max(deposits.size - 1, 0) / 6 + 1
     private var start = if (page == 1) 0 else (page - 1) * 6

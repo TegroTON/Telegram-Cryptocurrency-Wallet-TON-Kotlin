@@ -1,6 +1,8 @@
 package money.tegro.bot.inlines
 
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.plus
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -11,6 +13,7 @@ import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.PostgresDepositsPersistent
 import money.tegro.bot.wallet.PostgresWalletPersistent
+import java.util.*
 
 @Serializable
 class DepositApproveMenu(
@@ -65,21 +68,25 @@ class DepositApproveMenu(
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.APPROVE -> {
                 val deposit = Deposit(
-                    user.id,
+                    UUID.randomUUID(),
+                    user,
                     depositPeriod,
-                    Clock.System.now(),
-                    coins
+                    Clock.System.now().plus(depositPeriod.period, DateTimeUnit.HOUR * 24 * 31),
+                    coins,
+                    false
                 )
                 val available = PostgresWalletPersistent.loadWalletState(user).active[coins.currency]
-                if (deposit.coins >= available) {
+                if (deposit.coins <= available) {
                     PostgresDepositsPersistent.saveDeposit(deposit)
                     user.setMenu(
                         bot,
                         DepositReadyMenu(user, deposit, DepositsMenu(user, MainMenu(user))),
                         message.lastMenuMessageId
                     )
-                    return true
-                } else return bot.sendPopup(message, Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney)
+                } else return bot.sendPopup(
+                    message,
+                    Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney.format(deposit.coins, available)
+                )
             }
 
             ButtonPayload.BACK -> {

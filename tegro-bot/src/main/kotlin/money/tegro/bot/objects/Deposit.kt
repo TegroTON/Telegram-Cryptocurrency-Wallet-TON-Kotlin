@@ -9,8 +9,11 @@ import java.util.*
 @Serializable
 data class Deposit(
     @Serializable(UUIDSerializer::class)
-    val userId: UUID,
+    val id: UUID,
+    val issuer: User,
     val depositPeriod: DepositPeriod,
     val finishDate: Instant,
     val coins: Coins,
+    val isPaid: Boolean,
+    val paidDate: Instant? = null
 )

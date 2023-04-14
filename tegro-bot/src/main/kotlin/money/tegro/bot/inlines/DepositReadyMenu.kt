@@ -64,7 +64,11 @@ data class DepositReadyMenu(
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.BACK -> {
                 val list = PostgresDepositsPersistent.getAllByUser(user)
-                user.setMenu(bot, DepositsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+                user.setMenu(
+                    bot,
+                    DepositsListMenu(user, list.toMutableList(), 1, DepositsMenu(user, MainMenu(user))),
+                    message.lastMenuMessageId
+                )
             }
         }
         return true

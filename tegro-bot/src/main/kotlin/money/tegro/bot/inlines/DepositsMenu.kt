@@ -51,8 +51,8 @@ class DepositsMenu(
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.NEW -> {
-                return false
-                //user.setMenu(bot, DepositSelectAmountMenu(user, this), message.lastMenuMessageId)
+                //return false
+                user.setMenu(bot, DepositSelectAmountMenu(user, this), message.lastMenuMessageId)
             }
 
             ButtonPayload.CURRENT -> {
