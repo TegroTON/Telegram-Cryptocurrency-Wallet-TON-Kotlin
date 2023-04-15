@@ -25,6 +25,7 @@ import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
 import java.io.File
 import java.io.InputStream
+import java.math.BigInteger
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.hours
@@ -232,7 +233,7 @@ class TgBot(
                                     CryptoCurrency.TGR
                                 )
                             },
-                        ).awaitAll().forEach { coins ->
+                        ).awaitAll().filter { it.amount > BigInteger.ZERO }.forEach { coins ->
                             sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
                         }
                         delay(15_000)
