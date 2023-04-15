@@ -7,6 +7,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
@@ -21,6 +22,7 @@ import org.web3j.crypto.TransactionEncoder
 import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.utils.Numeric
 import java.math.BigInteger
+import kotlin.random.Random
 
 class EthClient(
     val endpoint: String,
@@ -232,47 +234,48 @@ class EthClient(
     }
 }
 
-//fun main(): Unit = runBlocking {
-//    val client = EthClient(endpoint = "https://data-seed-prebsc-1-s1.binance.org:8545")
-//    val gasPrice = (client.gasPrice().toBigDecimal() * 1.1.toBigDecimal()).toBigInteger()
-//    val key1 = Random(123123).nextBytes(32)
-//    val key2 = Random(321321).nextBytes(32)
-//    val address = client.getAddress(key1)
-//    val address2 = client.getAddress(key2)
-//
-//    println("gas=${gasPrice * 2001212.toBigInteger()}")
-//    println("bal=" + client.getBalance(address))
-//
-//    println(gasPrice)
-//    println(address)
-//    println(address2)
-//
-//    val balance = client.getTokenBalance(
-//        tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
-//        ownerAddress = address
-//    )
-//    println(balance)
-//
-////    val estimateGas = client.estimateGas(
-////        from = address,
-////        to = address2,
-////        gasPrice = gasPrice,
-////        value = BigInteger.valueOf(1)
-////    )
-////    val r = estimateGas * gasPrice + BigInteger.valueOf(1)
-////    println("estimate gas = $estimateGas")
-////    println("res=$r")
-//    client.sendTransaction(
-//        privateKey = key1,
-//        gasPrice = gasPrice,
-//        gasLimit = BigInteger.valueOf(50000),
-//        destination = address2,
-//        value = BigInteger.valueOf(1)
-//    )
-//    val result = client.transfer(
-//        privateKey = key2,
-//        toAddress = address,
-//        amount = Uint256(BigInteger.valueOf(1))
-//    )
-//    println(result)
-//}
+fun main(): Unit = runBlocking {
+    val client = EthClient(endpoint = "https://data-seed-prebsc-1-s1.binance.org:8545")
+    val gasPrice = (client.gasPrice().toBigDecimal() * 1.1.toBigDecimal()).toBigInteger()
+    val key1 = Random(123123).nextBytes(32)
+    val key2 = Random(321321).nextBytes(32)
+    val address = client.getAddress(key1)
+    val address2 = client.getAddress(key2)
+
+    println("gas=${gasPrice * 2001212.toBigInteger()}")
+    println("bal=" + client.getBalance(address))
+
+    println(gasPrice)
+    println(address)
+    println(address2)
+
+    val balance = client.getTokenBalance(
+        tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
+        ownerAddress = address
+    )
+    println(balance)
+
+    val estimateGas = client.estimateGas(
+        from = address,
+        to = address2,
+        gasPrice = gasPrice,
+        value = BigInteger.valueOf(1)
+    )
+    val r = estimateGas * gasPrice + BigInteger.valueOf(1)
+    println("estimate gas = $estimateGas")
+    println("res=$r")
+    client.sendTransaction(
+        privateKey = key1,
+        gasPrice = gasPrice,
+        gasLimit = BigInteger.valueOf(50000),
+        destination = address2,
+        value = BigInteger.valueOf(1)
+    )
+    val result = client.transfer(
+        privateKey = key2,
+        tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
+        toAddress = address,
+        amount = BigInteger.valueOf(1)
+    )
+    println(result)
+}

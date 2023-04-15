@@ -84,7 +84,7 @@ object WalletObserver {
         return coins
     }
 
-    private suspend fun checkForNewDeposits(
+    suspend fun checkForNewDeposits(
         user: User,
         blockchainManager: BlockchainManager,
         cryptoCurrency: CryptoCurrency
@@ -116,42 +116,52 @@ object WalletObserver {
                     }
                 }
             } else {
-                TODO()
+                val a = TokenDepositFlow(blockchainManager, cryptoCurrency, userWalletPk)
+                val hashMap = emptyMap<User, TokenDepositFlow>().toMutableMap()
+                if (!hashMap.containsKey(user)) {
+                    hashMap[user] = a
+                    a.collect {
+                        when (it) {
+                            is TokenDepositFlow.Event.Complete -> {
+                                hashMap.remove(user)
+                                it.amount
+                            }
 
-                // if (hashMap.cintains(user) // идем нахуй
-                // else hashMap.put(TokenDepositFlow).collect {
-                //  hashmap.remove
-                // }
+                            else -> {
+                                println("Token deposit error: $it")
+                            }
+                        }
+                    }
+                    val nativeBalance = blockchainManager.getBalance(
+                        blockchainManager.getAddress(userWalletPk)
+                    )
+                    if (nativeBalance.amount < nativeBalance.currency.networkFeeReserve) {
+                        val additionalDeposit = nativeBalance.currency.networkFeeReserve - nativeBalance.amount
+                        blockchainManager.transfer(
+                            masterWalletPk,
+                            userWalletAddress,
+                            Coins(nativeBalance.currency, additionalDeposit)
+                        )
+                    }
+                    println("transfer $depositCoins | $userWalletAddress -> $masterWalletAddress")
+                    blockchainManager.transferToken(
+                        privateKey = userWalletPk,
+                        cryptoCurrency = cryptoCurrency,
+                        destinationAddress = masterWalletAddress,
+                        value = depositCoins
+                    )
+                    walletPersistent.updateActive(user, depositCoins.currency) { oldCoins ->
+                        (oldCoins + depositCoins).also { newCoins ->
+                            println(
+                                "New deposit: $user\n" +
+                                        "     old coins: $oldCoins\n" +
+                                        " deposit coins: $depositCoins\n" +
+                                        "     new coins: $newCoins"
+                            )
+                        }
+                    }
+                }
 
-//                val a = Any() as TokenDepositFlow
-//                a.collect {
-//                    when(it) {
-//                        is TokenDepositFlow.Event.Complete -> {
-//                            // remove from hashmap
-//                            it.amount
-//                        }
-//                        else -> {
-//                            println(it)
-//                        }
-//                    }
-//                }
-//                val nativeBalance = blockchainManager.getBalance(
-//                    blockchainManager.getAddress(userWalletPk)
-//                )
-//                if (nativeBalance.amount < nativeBalance.currency.networkFeeReserve) {
-//                    val additionalDeposit = nativeBalance.currency.networkFeeReserve - nativeBalance.amount
-//                    blockchainManager.transfer(
-//                        masterWalletPk,
-//                        userWalletAddress,
-//                        Coins(nativeBalance.currency, additionalDeposit)
-//                    )
-//                }
-//                blockchainManager.transferToken(
-//                    privateKey = userWalletPk,
-//                    cryptoCurrency = cryptoCurrency,
-//                    destinationAddress = masterWalletAddress,
-//                    value = depositCoins
-//                )
             }
             return depositCoins
         } else {

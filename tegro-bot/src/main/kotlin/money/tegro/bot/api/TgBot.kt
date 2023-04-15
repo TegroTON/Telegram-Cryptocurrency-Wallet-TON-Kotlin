@@ -8,6 +8,8 @@ import money.tegro.bot.menuPersistent
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
+import money.tegro.bot.ton.TonBlockchainManager
+import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.wallet.PostgresDepositsPersistent
 import money.tegro.bot.wallet.WalletObserver
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
@@ -220,6 +222,17 @@ class TgBot(
                 GlobalScope.launch {
                     repeat(6) {
                         WalletObserver.checkDeposit(user).forEach { coins ->
+                            sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
+                        }
+                        listOf(
+                            async {
+                                WalletObserver.checkForNewDeposits(
+                                    user,
+                                    TonBlockchainManager,
+                                    CryptoCurrency.TGR
+                                )
+                            },
+                        ).awaitAll().forEach { coins ->
                             sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
                         }
                         delay(15_000)
