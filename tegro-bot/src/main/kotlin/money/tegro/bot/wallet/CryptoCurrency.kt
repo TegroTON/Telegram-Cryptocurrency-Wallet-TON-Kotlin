@@ -33,7 +33,8 @@ enum class CryptoCurrency(
         tokenContracts = listOf(
             BlockchainType.TON to "0:2f0df5851b4a185f5f63c0d0cd0412f5aca353f577da18ff47c936f99dbd849a",
 //            BlockchainType.BSC to ""
-        )
+        ),
+        isEnabled = false
     ),
     USDT(
         displayName = "Tether USD",
