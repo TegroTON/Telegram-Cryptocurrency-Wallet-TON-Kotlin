@@ -24,7 +24,8 @@ class WalletWithdrawSelectAmountMenu(
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         val fee = Coins(currency, currency.botFee)
-        val available = PostgresWalletPersistent.loadWalletState(user).active[currency] - fee
+        val balance = PostgresWalletPersistent.loadWalletState(user).active[currency]
+        val available = balance - fee
         val min = Coins(currency, currency.minAmount)
         if (available < min) {
             bot.updateKeyboard(
@@ -53,7 +54,7 @@ class WalletWithdrawSelectAmountMenu(
             message = String.format(
                 Messages[user.settings.lang].menuWalletWithdrawSelectAmountMessage,
                 currency.ticker,
-                available
+                balance
             ),
             keyboard = BotKeyboard {
                 row {
