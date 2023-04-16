@@ -75,11 +75,12 @@ class WalletWithdrawMenu(
             }
             val active = walletPersistent.loadWalletState(user).active[currency]
             if (active < amount) return false
-            val amountWithFee = amount + currency.botFee
+            val fee = Coins(amount.currency, currency.botFee)
+            val amountWithFee = amount + fee
 
             bot.sendMessage(
                 message.peerId,
-                Messages[user].walletMenuWithdrawMessage.format(amount, currency.botFee)
+                Messages[user].walletMenuWithdrawMessage.format(amount, fee)
             )
             walletPersistent.freeze(user, amountWithFee)
             try {

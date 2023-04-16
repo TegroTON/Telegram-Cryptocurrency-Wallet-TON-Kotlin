@@ -23,7 +23,8 @@ class WalletWithdrawSelectAmountMenu(
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
-        val available = PostgresWalletPersistent.loadWalletState(user).active[currency]
+        val fee = Coins(currency, currency.botFee)
+        val available = PostgresWalletPersistent.loadWalletState(user).active[currency] - fee
         val min = Coins(currency, currency.minAmount)
         if (available < min) {
             bot.updateKeyboard(
@@ -82,10 +83,11 @@ class WalletWithdrawSelectAmountMenu(
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload
+        val fee = Coins(currency, currency.botFee)
         val available = try {
-            PostgresWalletPersistent.loadWalletState(user).active[currency] // TODO: Calc bot fee
+            PostgresWalletPersistent.loadWalletState(user).active[currency] - fee // TODO: Calc bot fee
         } catch (e: NegativeCoinsException) {
-            return true
+            return false
         }
         val min = Coins(currency, currency.minAmount)
         if (payload != null) {
