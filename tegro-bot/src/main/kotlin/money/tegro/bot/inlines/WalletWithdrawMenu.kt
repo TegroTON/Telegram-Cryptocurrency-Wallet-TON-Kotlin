@@ -75,12 +75,13 @@ class WalletWithdrawMenu(
             }
             val active = walletPersistent.loadWalletState(user).active[currency]
             if (active < amount) return false
+            val amountWithFee = amount + currency.botFee
 
             bot.sendMessage(
                 message.peerId,
-                Messages[user].walletMenuWithdrawMessage.format(amount)
+                Messages[user].walletMenuWithdrawMessage.format(amount, currency.botFee)
             )
-            walletPersistent.freeze(user, amount + currency.botFee)
+            walletPersistent.freeze(user, amountWithFee)
             try {
                 val pk = UserPrivateKey(UUID(0, 0), MASTER_KEY)
                 if (amount.currency.isNative) {
@@ -97,13 +98,14 @@ class WalletWithdrawMenu(
                         amount
                     )
                 }
+                val oldFreeze = walletPersistent.loadWalletState(user).frozen[amount.currency]
                 walletPersistent.updateFreeze(user, amount.currency) {
-                    (it - (amount + currency.botFee)).also {
+                    (it - amountWithFee).also {
                         println(
                             "Remove from freeze:\n" +
-                                    " old freeze: $it\n" +
-                                    " amount    : ${amount + currency.botFee}\n" +
-                                    " new freeze: ${it - amount.currency.botFee}"
+                                    " old freeze: $oldFreeze\n" +
+                                    " amount    : $amountWithFee\n" +
+                                    " new freeze: $it"
                         )
                     }
                 }
