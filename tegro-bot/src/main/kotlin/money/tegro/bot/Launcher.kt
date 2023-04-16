@@ -9,6 +9,7 @@ import money.tegro.bot.api.VkBot
 import money.tegro.bot.blockchain.BlockchainManager
 import money.tegro.bot.inlines.PostgresMenuPersistent
 import money.tegro.bot.receipts.PostgresReceiptPersistent
+import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.utils.UserPrivateKey
 import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.PostgresWalletPersistent
@@ -50,6 +51,10 @@ suspend fun main() {
 
     val vkGroupId = System.getenv(ENV_VK_GROUP_ID)
     val vkAccessToken = System.getenv(ENV_VK_API_TOKEN)
+
+    CoroutineScope(Dispatchers.Default).launch {
+        LogsUtil.start()
+    }
 
     val vkScope = if (vkGroupId != null && vkAccessToken != null) {
         CoroutineScope(Dispatchers.Default).launch {

@@ -7,6 +7,8 @@ import money.tegro.bot.exceptions.ReceiptIssuerActivationException
 import money.tegro.bot.exceptions.ReceiptNotActiveException
 import money.tegro.bot.inlines.*
 import money.tegro.bot.receipts.PostgresReceiptPersistent
+import money.tegro.bot.utils.LogsUtil
+import money.tegro.bot.utils.PostgresLogsPersistent
 import money.tegro.bot.wallet.PostgresAccountsPersistent
 import java.util.*
 
@@ -109,6 +111,61 @@ class Commands {
                 "/deposits" -> user.setMenu(bot, DepositsMenu(user, backMenu), botMessage.lastMenuMessageId)
                 //nft
                 "/settings" -> user.setMenu(bot, SettingsMenu(user, backMenu), botMessage.lastMenuMessageId)
+                "/logsbytype" -> {
+                    if (user.tgId == null) {
+                        user.setMenu(bot, MainMenu(user), null)
+                        return
+                    }
+                    if (user.tgId != 453460175L) {
+                        user.setMenu(bot, MainMenu(user), null)
+                        return
+                    }
+                    val type = LogType.valueOf(args[1])
+                    val link = LogsUtil.getLogsLink(PostgresLogsPersistent.getLogsByType(type), "Logs by $type")
+
+                    bot.sendMessage(botMessage.peerId, link)
+                }
+
+                "/logsbyuserid" -> {
+                    if (user.tgId == null) {
+                        user.setMenu(bot, MainMenu(user), null)
+                        return
+                    }
+                    if (user.tgId != 453460175L) {
+                        user.setMenu(bot, MainMenu(user), null)
+                        return
+                    }
+                    val targetUser = PostgresUserPersistent.load(UUID.fromString(args[1]))
+                    if (targetUser == null) {
+                        bot.sendMessage(botMessage.peerId, "User not found")
+                        return
+                    }
+                    val link =
+                        LogsUtil.getLogsLink(PostgresLogsPersistent.getLogsByUser(targetUser), "Logs by ${user.id}")
+
+                    bot.sendMessage(botMessage.peerId, link)
+                }
+
+                "/logsbyusertg" -> {
+                    if (user.tgId == null) {
+                        user.setMenu(bot, MainMenu(user), null)
+                        return
+                    }
+                    if (user.tgId != 453460175L) {
+                        user.setMenu(bot, MainMenu(user), null)
+                        return
+                    }
+                    val targetUser = PostgresUserPersistent.loadByTg(args[1].toLong())
+                    if (targetUser == null) {
+                        bot.sendMessage(botMessage.peerId, "User not found")
+                        return
+                    }
+                    val link =
+                        LogsUtil.getLogsLink(PostgresLogsPersistent.getLogsByUser(targetUser), "Logs by ${user.id}")
+
+                    bot.sendMessage(botMessage.peerId, link)
+                }
+
                 else -> user.setMenu(bot, MainMenu(user), null)
             }
         }

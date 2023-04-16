@@ -7,9 +7,11 @@ import money.tegro.bot.MASTER_KEY
 import money.tegro.bot.api.Bot
 import money.tegro.bot.blockchain.BlockchainManager
 import money.tegro.bot.objects.BotMessage
+import money.tegro.bot.objects.LogType
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.utils.UserPrivateKey
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.BlockchainType
@@ -71,6 +73,8 @@ class WalletWithdrawMenu(
                 )
                 return true
             }
+            val active = walletPersistent.loadWalletState(user).active[currency]
+            if (active < amount) return false
 
             bot.sendMessage(
                 message.peerId,
@@ -103,6 +107,12 @@ class WalletWithdrawMenu(
                         )
                     }
                 }
+                LogsUtil.log(user, "$amount", LogType.WITHDRAW)
+                LogsUtil.log(
+                    user,
+                    "$amount (fee: ${currency.botFee}), balance ${active - amount}",
+                    LogType.WITHDRAW_ADMIN
+                )
             } catch (e: Throwable) {
                 walletPersistent.unfreeze(user, amount + currency.botFee)
                 throw e

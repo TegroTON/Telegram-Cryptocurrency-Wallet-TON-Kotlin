@@ -104,14 +104,14 @@ class DepositApproveMenu(
                     false
                 )
                 val min = Coins(deposit.coins.currency, 2_500_000_000_000.toBigInteger())
-                if (deposit.coins > min) {
+                if (deposit.coins < min) {
                     return bot.sendPopup(
                         message,
                         Messages[user.settings.lang].accountMinAmountException.format(min)
                     )
                 }
                 val available = PostgresWalletPersistent.loadWalletState(user).active[coins.currency]
-                if (deposit.coins <= available) {
+                if (available >= deposit.coins) {
                     PostgresDepositsPersistent.saveDeposit(deposit)
                     user.setMenu(
                         bot,

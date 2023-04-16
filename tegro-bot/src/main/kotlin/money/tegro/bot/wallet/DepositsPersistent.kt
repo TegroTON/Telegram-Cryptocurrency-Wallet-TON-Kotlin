@@ -6,6 +6,7 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toJavaInstant
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.*
+import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.amount
 import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.cryptoCurrency
 import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.depositPeriod
@@ -55,12 +56,13 @@ object PostgresDepositsPersistent : DepositsPersistent {
                 it[isPaid] = false
             }
         }
+        LogsUtil.log(deposit.issuer, "base=${deposit.coins}", LogType.DEPOSIT_CREATE)
     }
 
     override suspend fun getAllByUser(user: User): List<Deposit> {
         val deposits = suspendedTransactionAsync {
             UsersDeposits.select {
-                UsersDeposits.issuerId.eq(user.id)
+                issuerId.eq(user.id)
             }.mapNotNull {
                 val issuer = PostgresUserPersistent.load(it[issuerId])
                     ?: return@mapNotNull null
@@ -104,6 +106,12 @@ object PostgresDepositsPersistent : DepositsPersistent {
     }
 
     suspend fun payDeposit(deposit: Deposit, bot: Bot) {
+        suspendedTransactionAsync {
+            UsersDeposits.update({ UsersDeposits.id eq deposit.id }) {
+                it[isPaid] = true
+                it[paidDate] = Clock.System.now()
+            }
+        }
         val coins = deposit.coins
         val depositPeriod = deposit.depositPeriod
         val profit = (
@@ -135,12 +143,7 @@ object PostgresDepositsPersistent : DepositsPersistent {
                 profitCoins
             )
         )
-        suspendedTransactionAsync {
-            UsersDeposits.update({ UsersDeposits.id eq deposit.id }) {
-                it[isPaid] = true
-                it[paidDate] = Clock.System.now()
-            }
-        }
+        LogsUtil.log(deposit.issuer, "profit=$profitCoins, base=${deposit.coins}", LogType.DEPOSIT_PAID)
     }
 
 }

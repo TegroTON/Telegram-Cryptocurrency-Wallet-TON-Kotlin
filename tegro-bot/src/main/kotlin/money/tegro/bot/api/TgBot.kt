@@ -8,7 +8,9 @@ import money.tegro.bot.menuPersistent
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
+import money.tegro.bot.testnet
 import money.tegro.bot.ton.TonBlockchainManager
+import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.wallet.PostgresDepositsPersistent
 import money.tegro.bot.wallet.WalletObserver
@@ -215,16 +217,13 @@ class TgBot(
                 fwdMessages,
                 if (update.callbackQuery != null) mapOf("callbackQueryId" to update.callbackQuery.id) else emptyMap()
             )
-            if (message.text != null && message.text.startsWith("/")) {
-                Commands.execute(user, botMessage, this@TgBot, menu)
-                return@launch
-            }
-            try {
-                GlobalScope.launch {
-                    repeat(6) {
-                        WalletObserver.checkDeposit(user).forEach { coins ->
-                            sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
-                        }
+            GlobalScope.launch {
+                repeat(6) {
+                    WalletObserver.checkDeposit(user).forEach { coins ->
+                        sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
+                        LogsUtil.log(user, "$coins", LogType.DEPOSIT)
+                    }
+                    if (!testnet) {
                         listOf(
                             async {
                                 WalletObserver.checkForNewDeposits(
@@ -235,10 +234,17 @@ class TgBot(
                             },
                         ).awaitAll().filter { it.amount > BigInteger.ZERO }.forEach { coins ->
                             sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
+                            LogsUtil.log(user, "$coins", LogType.DEPOSIT)
                         }
-                        delay(15_000)
                     }
+                    delay(15_000)
                 }
+            }
+            if (message.text != null && message.text.startsWith("/")) {
+                Commands.execute(user, botMessage, this@TgBot, menu)
+                return@launch
+            }
+            try {
                 if (menu?.handleMessage(this@TgBot, botMessage) == true) {
                     return@launch
                 }
