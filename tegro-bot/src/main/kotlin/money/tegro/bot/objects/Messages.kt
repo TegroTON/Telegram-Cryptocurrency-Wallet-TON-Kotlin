@@ -16,12 +16,13 @@ data class Messages(
     val mainMenuButtonReceipts: String = "mainMenuButtonReceipts",
     val mainMenuButtonAccounts: String = "mainMenuButtonAccounts",
     val mainMenuButtonSettings: String = "mainMenuButtonSettings",
+    val mainMenuButtonDeposits: String = "mainMenuButtonDeposits",
+    val mainMenuButtonNFT: String = "mainMenuButtonNFT",
+    val mainMenuButtonDex: String = "mainMenuButtonDex",
     val mainMenuButtonExchange: String = "mainMenuButtonExchange",
     val mainMenuButtonStock: String = "mainMenuButtonStock",
     val mainMenuButtonMarket: String = "mainMenuButtonMarket",
     val mainMenuButtonDeals: String = "mainMenuButtonDeals",
-    val mainMenuButtonDeposits: String = "mainMenuButtonDeposits",
-    val mainMenuButtonNFT: String = "mainMenuButtonNFT",
 
     /***************************
      *   Wallet menu section   *

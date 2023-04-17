@@ -78,9 +78,15 @@ data class MainMenu(
         row {
             linkButton(
                 Messages[user.settings.lang].mainMenuButtonNFT,
-                "https://libermall.com/",
+                "https://libermall.com/?utm_source=telegram&utm_medium=social&utm_campaign=bot&utm_content=telegrambot&utm_term=dex",
                 CommandPayload.serializer(),
                 CommandPayload.NFT
+            )
+            linkButton(
+                Messages[user.settings.lang].mainMenuButtonDex,
+                "https://tegro.finance/?utm_source=telegram&utm_medium=social&utm_campaign=bot&utm_content=telegrambot&utm_term=dex",
+                CommandPayload.serializer(),
+                CommandPayload.DEX
             )
         }
         row {
@@ -118,12 +124,13 @@ data class MainMenu(
             CommandPayload.DEPOSITS -> user.setMenu(bot, DepositsMenu(user, this), message.lastMenuMessageId)
             CommandPayload.SETTINGS -> user.setMenu(bot, SettingsMenu(user, this), message.lastMenuMessageId)
             CommandPayload.NFT -> TODO()
+            CommandPayload.DEX -> TODO()
         }
         return true
     }
 
     @Serializable
     enum class CommandPayload {
-        WALLET, RECEIPTS, EXCHANGE, STOCK, MARKET, ACCOUNTS, DEALS, DEPOSITS, NFT, SETTINGS
+        WALLET, RECEIPTS, EXCHANGE, STOCK, MARKET, ACCOUNTS, DEALS, DEPOSITS, NFT, DEX, SETTINGS
     }
 }

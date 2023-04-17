@@ -249,33 +249,59 @@ fun main(): Unit = runBlocking {
     println(address)
     println(address2)
 
-    val balance = client.getTokenBalance(
+    val balance1 = client.getTokenBalance(
         tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
         ownerAddress = address
     )
-    println(balance)
-
-    val estimateGas = client.estimateGas(
-        from = address,
-        to = address2,
-        gasPrice = gasPrice,
-        value = BigInteger.valueOf(1)
-    )
-    val r = estimateGas * gasPrice + BigInteger.valueOf(1)
-    println("estimate gas = $estimateGas")
-    println("res=$r")
-    client.sendTransaction(
-        privateKey = key1,
-        gasPrice = gasPrice,
-        gasLimit = BigInteger.valueOf(50000),
-        destination = address2,
-        value = BigInteger.valueOf(1)
-    )
-    val result = client.transfer(
-        privateKey = key2,
+    println("bal1 = $balance1")
+    val balance2 = client.getTokenBalance(
         tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
-        toAddress = address,
-        amount = BigInteger.valueOf(1)
+        ownerAddress = address2
     )
-    println(result)
+    println("bal2 = $balance2")
+
+    if (balance1 > balance2) {
+        val estimateGas = client.estimateGas(
+            from = address,
+            to = address2,
+            gasPrice = gasPrice,
+            value = BigInteger.valueOf(1)
+        )
+        val r = estimateGas * gasPrice + BigInteger.valueOf(1)
+        println("estimate gas = $estimateGas")
+        println("res=$r")
+
+        val result = client.transfer(
+            privateKey = key1,
+            tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
+            toAddress = address2,
+            amount = balance1
+        )
+        println(result)
+    } else {
+        val estimateGas = client.estimateGas(
+            from = address2,
+            to = address,
+            gasPrice = gasPrice,
+            value = BigInteger.valueOf(1)
+        )
+        val r = estimateGas * gasPrice + BigInteger.valueOf(1)
+        println("estimate gas = $estimateGas")
+        println("res=$r")
+
+        val result = client.transfer(
+            privateKey = key2,
+            tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
+            toAddress = address,
+            amount = balance2
+        )
+        println(result)
+    }
+    //        client.sendTransaction(
+    //            privateKey = key1,
+    //            gasPrice = gasPrice,
+    //            gasLimit = BigInteger.valueOf(50000),
+    //            destination = address2,
+    //            value = balance1
+    //        )
 }
