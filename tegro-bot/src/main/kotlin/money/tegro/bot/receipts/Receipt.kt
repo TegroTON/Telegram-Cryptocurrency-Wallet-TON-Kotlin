@@ -15,6 +15,6 @@ data class Receipt(
     val issuer: User,
     val coins: Coins,
     val activations: Int,
-    var recipient: User? = null,
+    val recipient: User? = null,
     val isActive: Boolean = true
 )

@@ -4,12 +4,15 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
-import money.tegro.bot.objects.*
+import money.tegro.bot.api.TgBot
+import money.tegro.bot.objects.BotMessage
+import money.tegro.bot.objects.Messages
+import money.tegro.bot.objects.PostgresUserPersistent
+import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
 import money.tegro.bot.receipts.Receipt
 import money.tegro.bot.utils.button
-import java.util.*
 
 @Serializable
 data class ReceiptRecipientMenu(
@@ -48,8 +51,8 @@ data class ReceiptRecipientMenu(
             val payload = message.payload
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.UNATTACH -> {
-                    receipt.recipient = null
-                    PostgresReceiptPersistent.saveReceipt(receipt)
+                    val newReceipt = receipt.copy(recipient = null)
+                    PostgresReceiptPersistent.saveReceipt(newReceipt)
                     user.setMenu(bot, parentMenu, message.lastMenuMessageId)
                 }
 
@@ -58,16 +61,29 @@ data class ReceiptRecipientMenu(
                 }
             }
         } else if (message.forwardMessages.isNotEmpty()) {
-            receipt.recipient = User(
-                UUID.randomUUID(), message.forwardMessages[0].userId, null, UserSettings(
-                    UUID.randomUUID(),
-                    Language.RU,
-                    LocalCurrency.RUB,
-                    null
-                )
+            val newRecipient: User? = if (bot is TgBot) {
+                PostgresUserPersistent.loadByTg(message.forwardMessages[0].userId)
+            } else {
+                PostgresUserPersistent.loadByVk(message.forwardMessages[0].userId)
+
+            }
+            if (newRecipient == null) {
+                bot.sendPopup(message, Messages[user.settings.lang].menuReceiptRecipientNotFound)
+                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                return true
+            }
+            val newReceipt = receipt.copy(recipient = newRecipient)
+            PostgresReceiptPersistent.saveReceipt(newReceipt)
+            user.setMenu(
+                bot,
+                ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
+                message.lastMenuMessageId
             )
         } else {
             //TODO get id from mention
+            bot.sendPopup(message, Messages[user.settings.lang].menuReceiptRecipientNotFound)
+            user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+            return true
         }
         return true
     }

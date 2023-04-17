@@ -74,6 +74,7 @@ data class Messages(
     val menuReceiptLimitationsUser: String = "menuReceiptLimitationsUser",
     val menuReceiptLimitationsCaptcha: String = "menuReceiptLimitationsCaptcha",
     val menuReceiptRecipientMessage: String = "menuReceiptRecipientMessage",
+    val menuReceiptRecipientNotFound: String = "menuReceiptRecipientNotFound",
     val menuReceiptRecipientSetMessage: String = "menuReceiptRecipientSetMessage",
     val menuReceiptRecipientUnattach: String = "menuReceiptRecipientUnattach",
     val menuReceiptsList: String = "menuReceiptsList",

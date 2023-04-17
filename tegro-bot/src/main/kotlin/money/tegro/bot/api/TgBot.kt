@@ -12,6 +12,7 @@ import money.tegro.bot.testnet
 import money.tegro.bot.ton.TonBlockchainManager
 import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.wallet.CryptoCurrency
+import money.tegro.bot.wallet.PostgresAccountsPersistent
 import money.tegro.bot.wallet.PostgresDepositsPersistent
 import money.tegro.bot.wallet.WalletObserver
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
@@ -174,6 +175,9 @@ class TgBot(
     }
 
     override fun onUpdateReceived(update: Update) {
+        if (!update.hasMessage() || !update.hasInlineQuery()) {
+            println("unknown update type: $update")
+        }
         val userTgId = update.message?.from?.id ?: update.callbackQuery.from.id
         launch {
             val randomUUID = UUID.nameUUIDFromBytes("tg_$userTgId".toByteArray())
@@ -241,10 +245,12 @@ class TgBot(
                 }
             }
             if (message.text != null && message.text.startsWith("/")) {
+                println("Got command from ${user.id}: ${message.text}")
                 Commands.execute(user, botMessage, this@TgBot, menu)
                 return@launch
             }
             try {
+                println("Open menu $menu for user ${user.id}")
                 if (menu?.handleMessage(this@TgBot, botMessage) == true) {
                     return@launch
                 }
@@ -252,6 +258,7 @@ class TgBot(
                 user.setMenu(this@TgBot, MainMenu(user), botMessage.lastMenuMessageId)
                 throw RuntimeException("Failed handle message for user $user in menu: $menu", e)
             }
+            println("Open main menu for user ${user.id}")
             user.setMenu(this@TgBot, MainMenu(user), botMessage.lastMenuMessageId)
         }
     }
@@ -265,10 +272,20 @@ class TgBot(
         if (split.size != 6) {
             return null
         }
-        if (split[0] == "RF") return UUID.fromString(ref.drop(3))
-        if (split[0] == "RC") {
-            val receipt = PostgresReceiptPersistent.loadReceipt(UUID.fromString(ref.drop(3)))
-            return receipt?.issuer?.id
+        when (split[0]) {
+            "RF" -> {
+                return UUID.fromString(ref.drop(3))
+            }
+
+            "RC" -> {
+                val receipt = PostgresReceiptPersistent.loadReceipt(UUID.fromString(ref.drop(3)))
+                return receipt?.issuer?.id
+            }
+
+            "AC" -> {
+                val account = PostgresAccountsPersistent.loadAccount(UUID.fromString(ref.drop(3)))
+                return account?.issuer?.id
+            }
         }
         return null
     }
