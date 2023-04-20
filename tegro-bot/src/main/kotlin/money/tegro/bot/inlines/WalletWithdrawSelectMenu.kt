@@ -54,16 +54,11 @@ class WalletWithdrawSelectMenu(
             is ButtonPayload.Currency -> {
                 val currency = payload.value
                 if (!currency.isEnabled) return false
-                val nativeBlockchain = currency.nativeBlockchainType
-                if (nativeBlockchain != null) {
-                    user.setMenu(
-                        bot,
-                        WalletWithdrawSelectAmountMenu(user, payload.value, nativeBlockchain, this),
-                        message.lastMenuMessageId
-                    )
-                } else {
-                    TODO()
-                }
+                user.setMenu(
+                    bot,
+                    WalletWithdrawSelectNetworkMenu(user, currency, parentMenu),
+                    message.lastMenuMessageId
+                )
             }
 
             ButtonPayload.Back -> {
@@ -71,18 +66,6 @@ class WalletWithdrawSelectMenu(
             }
         }
         return true
-    }
-
-    private fun getBackKeyboard(): BotKeyboard = BotKeyboard {
-        BotKeyboard {
-            row {
-                button(
-                    Messages[user.settings.lang].menuButtonBack,
-                    ButtonPayload.serializer(),
-                    ButtonPayload.Back
-                )
-            }
-        }
     }
 
     @Serializable

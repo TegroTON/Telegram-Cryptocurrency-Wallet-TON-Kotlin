@@ -114,6 +114,7 @@ class WalletWithdrawSelectAmountMenu(
         } else {
             if (isStringLong(message.body)) {
                 val count = (message.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
+                println(count)
                 val coins = Coins(currency, count)
                 if (count < min.amount || count > available.amount) {
                     bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)

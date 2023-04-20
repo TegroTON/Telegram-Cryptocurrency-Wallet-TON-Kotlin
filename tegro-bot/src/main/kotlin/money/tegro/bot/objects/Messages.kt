@@ -13,6 +13,7 @@ data class Messages(
      *************************/
     val mainMenuMessage: String = "mainMenuMessage",
     val mainMenuMessageTg: String = "mainMenuMessageTg",
+    val mainMenuTestnetWarning: String = "mainMenuTestnetWarning",
     val mainMenuButtonWallet: String = "mainMenuButtonWallet",
     val mainMenuButtonReceipts: String = "mainMenuButtonReceipts",
     val mainMenuButtonAccounts: String = "mainMenuButtonAccounts",
@@ -35,7 +36,9 @@ data class Messages(
     val menuWalletButtonHistory: String = "menuWalletButtonHistory",
     val menuWalletFrozenTitle: String = "menuWalletFrozenTitle",
     val menuWalletDepositSelectMessage: String = "menuWalletDepositSelectMessage",
+    val menuWalletDepositSelectNetworkMessage: String = "menuWalletDepositSelectNetworkMessage",
     val menuWalletWithdrawSelectMessage: String = "menuWalletWithdrawSelectMessage",
+    val menuWalletWithdrawSelectNetworkMessage: String = "menuWalletWithdrawSelectNetworkMessage",
     val menuWalletWithdrawMessage: String = "menuWalletWithdrawMessage",
     val menuWalletWithdrawTON: String = "menuWalletWithdrawTON",
     val menuWalletWithdrawTGR: String = "menuWalletWithdrawTGR",

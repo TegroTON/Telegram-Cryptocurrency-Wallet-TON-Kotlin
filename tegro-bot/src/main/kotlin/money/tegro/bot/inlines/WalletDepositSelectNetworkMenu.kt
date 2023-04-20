@@ -14,7 +14,7 @@ import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.CryptoCurrency
 
 @Serializable
-class WalletWithdrawSelectNetworkMenu(
+class WalletDepositSelectNetworkMenu(
     val user: User,
     val currency: CryptoCurrency,
     val parentMenu: Menu
@@ -24,7 +24,7 @@ class WalletWithdrawSelectNetworkMenu(
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
-            message = Messages[user.settings.lang].menuWalletWithdrawSelectNetworkMessage.format(currency.ticker),
+            message = Messages[user.settings.lang].menuWalletDepositSelectNetworkMessage.format(currency.ticker),
             keyboard = BotKeyboard {
                 if (currency.nativeBlockchainType != null) {
                     val networkName = currency.nativeBlockchainType.displayName
@@ -59,7 +59,7 @@ class WalletWithdrawSelectNetworkMenu(
             ButtonPayload.Back -> user.setMenu(bot, parentMenu, message.lastMenuMessageId)
             is ButtonPayload.Network -> user.setMenu(
                 bot,
-                WalletWithdrawSelectAmountMenu(user, currency, payloadValue.blockchainType, this),
+                WalletDepositMenu(user, currency, payloadValue.blockchainType, this),
                 message.lastMenuMessageId
             )
         }

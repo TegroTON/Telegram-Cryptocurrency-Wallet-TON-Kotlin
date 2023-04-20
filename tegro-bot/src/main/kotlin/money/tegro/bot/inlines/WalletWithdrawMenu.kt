@@ -34,6 +34,8 @@ class WalletWithdrawMenu(
                 String.format(
                     Messages[user].menuWalletWithdrawMessage,
                     currency.ticker,
+                    amount,
+                    Coins(currency, currency.botFee),
                     network.displayName
                 )
             )

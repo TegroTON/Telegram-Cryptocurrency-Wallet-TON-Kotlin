@@ -55,7 +55,7 @@ class WalletDepositSelectMenu(
                 if (!currency.isEnabled) return false
                 user.setMenu(
                     bot,
-                    WalletDepositMenu(user, payload.value, this),
+                    WalletDepositSelectNetworkMenu(user, payload.value, this),
                     message.lastMenuMessageId
                 )
             }

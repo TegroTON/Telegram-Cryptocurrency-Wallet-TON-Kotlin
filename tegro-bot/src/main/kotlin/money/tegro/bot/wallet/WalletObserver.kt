@@ -6,6 +6,7 @@ import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import money.tegro.bot.MASTER_KEY
 import money.tegro.bot.blockchain.BlockchainManager
+import money.tegro.bot.blockchain.EthBlockchainManager
 import money.tegro.bot.objects.PostgresUserPersistent
 import money.tegro.bot.objects.User
 import money.tegro.bot.ton.TonBlockchainManager
@@ -21,7 +22,7 @@ import kotlin.coroutines.suspendCoroutine
 
 object WalletObserver {
     @OptIn(DelicateCoroutinesApi::class)
-    private val nativeCache = Caffeine.newBuilder()
+    private val tonNativeCache = Caffeine.newBuilder()
         .expireAfterWrite(15000, TimeUnit.MILLISECONDS)
         .buildAsync<UUID, List<Coins>> { userId, e ->
             GlobalScope.async(e.asCoroutineDispatcher()) {
@@ -35,11 +36,35 @@ object WalletObserver {
             }.asCompletableFuture()
         }
 
+    @OptIn(DelicateCoroutinesApi::class)
+    private val bnbNativeCache = Caffeine.newBuilder()
+        .expireAfterWrite(15000, TimeUnit.MILLISECONDS)
+        .buildAsync<UUID, List<Coins>> { userId, e ->
+            GlobalScope.async(e.asCoroutineDispatcher()) {
+//                println("Start checking: $userId")
+                val user = PostgresUserPersistent.load(userId) ?: return@async emptyList()
+                listOf(
+                    async { checkForNewDeposits(user, EthBlockchainManager, CryptoCurrency.BNB) },
+                ).awaitAll().also {
+//                    println("User deposits $user:\n ${it.joinToString("\n ")}")
+                }
+            }.asCompletableFuture()
+        }
+
     private val tokenDepositFlowCache = ConcurrentHashMap<Pair<UUID, CryptoCurrency>, Job>()
 
     suspend fun checkDeposit(user: User): List<Coins> {
-        val coins = nativeCache.get(user.id).await().filter { it.amount > BigInteger.ZERO }
-        return if (nativeCache.asMap().remove(user.id) != null) {
+        val coins = tonNativeCache.get(user.id).await().filter { it.amount > BigInteger.ZERO }
+        return if (tonNativeCache.asMap().remove(user.id) != null) {
+            coins
+        } else {
+            emptyList()
+        }
+    }
+
+    suspend fun checkDepositBnb(user: User): List<Coins> {
+        val coins = bnbNativeCache.get(user.id).await().filter { it.amount > BigInteger.ZERO }
+        return if (bnbNativeCache.asMap().remove(user.id) != null) {
             coins
         } else {
             emptyList()
@@ -90,9 +115,11 @@ object WalletObserver {
         cryptoCurrency: CryptoCurrency
     ): Coins {
         val userWalletPk = UserPrivateKey(user.id, MASTER_KEY).key.toByteArray()
-        val userWalletAddress = TonBlockchainManager.getAddress(userWalletPk)
+        val userWalletAddress = blockchainManager.getAddress(userWalletPk)
         val balance = blockchainManager.getTokenBalance(cryptoCurrency, userWalletAddress)
+        println("balance $balance : ${balance.amount}")
         val reserve = cryptoCurrency.networkFeeReserve
+        println("reserve ${Coins(cryptoCurrency, reserve)} : $reserve")
         if (balance.amount > reserve) {
             println("Нашли у $user ($userWalletAddress) денег на контракте: $balance")
             val depositCoins = balance - reserve

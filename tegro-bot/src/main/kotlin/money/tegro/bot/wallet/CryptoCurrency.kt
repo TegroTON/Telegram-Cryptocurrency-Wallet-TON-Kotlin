@@ -32,7 +32,7 @@ enum class CryptoCurrency(
         botFee = 1_000_000_000.toBigInteger(),
         tokenContracts = listOf(
             BlockchainType.TON to "0:2f0df5851b4a185f5f63c0d0cd0412f5aca353f577da18ff47c936f99dbd849a",
-//            BlockchainType.BSC to ""
+            BlockchainType.BSC to "0xd9780513292477C4039dFdA1cfCD89Ff111e9DA5"
         ),
         isEnabled = false
     ),
@@ -41,9 +41,10 @@ enum class CryptoCurrency(
         ticker = "USDT",
         decimals = 6,
         minAmount = 1_000_000.toBigInteger(),
-//        botFee = 100_000.toBigInteger(),
+        botFee = 100_000.toBigInteger(),
         tokenContracts = listOf(
-            BlockchainType.TON to "0:bfd58a0cf11062c4df79973ee875c17756b91cfcdf0d7bb8108bb01bb657adfc"
+            BlockchainType.TON to "0:bfd58a0cf11062c4df79973ee875c17756b91cfcdf0d7bb8108bb01bb657adfc",
+            BlockchainType.BSC to "0x55d398326f99059ff775485246999027b3197955"
         ),
         isEnabled = false
     ),
@@ -51,8 +52,9 @@ enum class CryptoCurrency(
         displayName = "Binance BNB",
         ticker = "BNB",
         decimals = 18,
-        minAmount = 1_000_000.toBigInteger(),
-//        botFee = 100_000.toBigInteger(),
+        minAmount = 10_000_000_000_000_000.toBigInteger(),
+        networkFeeReserve = 1_100_000_000_000_000.toBigInteger(),
+        botFee = 1_000_000_000_000_000.toBigInteger(),
         nativeBlockchainType = BlockchainType.BSC,
         isEnabled = false
     );

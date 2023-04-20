@@ -265,13 +265,13 @@ fun main(): Unit = runBlocking {
         println("gas*price+value=$b")
         check(balance - b >= 0.toBigInteger())
         // check(balance - (toSend + gas) == 0.toBigInteger())
-//        client.sendTransaction(
-//            privateKey = key,
-//            gasPrice = gasPrice,
-//            gasLimit = BigInteger.valueOf(50000),
-//            destination = dest,
-//            value = value
-//        )
+        client.sendTransaction(
+            privateKey = key,
+            gasPrice = gasPrice,
+            gasLimit = BigInteger.valueOf(50000),
+            destination = dest,
+            value = value
+        )
     }
 
     if (balance1 > balance2) {

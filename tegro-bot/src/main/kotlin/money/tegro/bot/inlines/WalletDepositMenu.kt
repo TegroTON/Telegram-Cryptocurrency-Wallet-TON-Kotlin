@@ -6,28 +6,31 @@ import kotlinx.serialization.json.Json
 import money.tegro.bot.MASTER_KEY
 import money.tegro.bot.api.Bot
 import money.tegro.bot.api.TgBot
+import money.tegro.bot.blockchain.BlockchainManager
 import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
-import money.tegro.bot.ton.TonBlockchainManager
 import money.tegro.bot.utils.UserPrivateKey
 import money.tegro.bot.utils.button
 import money.tegro.bot.utils.linkButton
+import money.tegro.bot.wallet.BlockchainType
+import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.CryptoCurrency
 
 @Serializable
 class WalletDepositMenu(
     val user: User,
     val currency: CryptoCurrency,
+    val network: BlockchainType,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         val privateKey = UserPrivateKey(user.id, MASTER_KEY)
-        val userTonAddress = TonBlockchainManager.getAddress(privateKey)
+        val userAddress = BlockchainManager[network].getAddress(privateKey.key.toByteArray())
         val displayAddress = buildString {
             if (bot is TgBot) append("<code>")
-            append(userTonAddress)
+            append(userAddress)
             if (bot is TgBot) append("</code>")
         }
         bot.updateKeyboard(
@@ -36,14 +39,16 @@ class WalletDepositMenu(
             message = String.format(
                 Messages[user.settings.lang].menuWalletDepositMessage,
                 currency.ticker,
-                displayAddress
+                network.displayName,
+                displayAddress,
+                Coins(currency, currency.networkFeeReserve)
             ),
             keyboard = BotKeyboard {
                 if (currency == CryptoCurrency.TON && bot is TgBot) {
                     row {
                         linkButton(
                             Messages[user.settings.lang].menuWalletDepositLink,
-                            "ton://transfer/${userTonAddress}",
+                            "ton://transfer/${userAddress}",
                             ButtonPayload.serializer(),
                             ButtonPayload.LINK
                         )

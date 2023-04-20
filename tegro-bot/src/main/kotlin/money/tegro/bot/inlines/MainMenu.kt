@@ -9,6 +9,7 @@ import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.testnet
 import money.tegro.bot.utils.button
 import money.tegro.bot.utils.linkButton
 
@@ -101,10 +102,13 @@ data class MainMenu(
 
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         val keyboard = createKeyboard()
+        var message =
+            if (bot is TgBot) Messages[user.settings.lang].mainMenuMessageTg else Messages[user.settings.lang].mainMenuMessage
+        message = message.format(if (testnet) Messages[user.settings.lang].mainMenuTestnetWarning else "")
         bot.updateKeyboard(
             user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId,
-            if (bot is TgBot) Messages[user.settings.lang].mainMenuMessageTg else Messages[user.settings.lang].mainMenuMessage,
+            message,
             keyboard
         )
     }

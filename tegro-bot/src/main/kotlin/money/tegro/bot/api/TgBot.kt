@@ -8,10 +8,11 @@ import money.tegro.bot.menuPersistent
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
-import money.tegro.bot.testnet
-import money.tegro.bot.ton.TonBlockchainManager
 import money.tegro.bot.utils.LogsUtil
-import money.tegro.bot.wallet.*
+import money.tegro.bot.wallet.Coins
+import money.tegro.bot.wallet.PostgresAccountsPersistent
+import money.tegro.bot.wallet.PostgresDepositsPersistent
+import money.tegro.bot.wallet.WalletObserver
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.TelegramBotsApi
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
@@ -25,7 +26,6 @@ import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
 import java.io.File
 import java.io.InputStream
-import java.math.BigInteger
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.hours
@@ -119,6 +119,7 @@ class TgBot(
             enableHtml(html)
             text = message
             replyMarkup = keyboard.toTg()
+            disableWebPagePreview = true
         }
         executeAsync(sendMessage).await()
     }
@@ -141,6 +142,7 @@ class TgBot(
                 enableHtml(html)
                 text = message
                 replyMarkup = keyboard.toTg()
+                disableWebPagePreview = true
             }
             executeAsync(updated).await()
         } else {
@@ -230,26 +232,36 @@ class TgBot(
                         )
                         LogsUtil.log(user, "$coins", LogType.DEPOSIT)
                     }
-                    if (!testnet) {
-                        listOf(
-                            async {
-                                WalletObserver.checkForNewDeposits(
-                                    user,
-                                    TonBlockchainManager,
-                                    CryptoCurrency.TGR
-                                )
-                            },
-                        ).awaitAll().filter { it.amount > BigInteger.ZERO }.forEach { coins ->
-                            sendMessage(
-                                botMessage.peerId,
-                                Messages[user].walletMenuDepositMessage.format(
-                                    coins,
-                                    Coins(coins.currency, coins.currency.networkFeeReserve)
-                                )
-                            )
-                            LogsUtil.log(user, "$coins", LogType.DEPOSIT)
-                        }
-                    }
+//                    WalletObserver.checkDepositBnb(user).forEach { coins ->
+//                        sendMessage(
+//                            botMessage.peerId,
+//                            Messages[user].walletMenuDepositMessage.format(
+//                                coins,
+//                                Coins(coins.currency, coins.currency.networkFeeReserve)
+//                            )
+//                        )
+//                        LogsUtil.log(user, "$coins", LogType.DEPOSIT)
+//                    }
+//                    if (!testnet) {
+//                        listOf(
+//                            async {
+//                                WalletObserver.checkForNewDeposits(
+//                                    user,
+//                                    TonBlockchainManager,
+//                                    CryptoCurrency.TGR
+//                                )
+//                            },
+//                        ).awaitAll().filter { it.amount > BigInteger.ZERO }.forEach { coins ->
+//                            sendMessage(
+//                                botMessage.peerId,
+//                                Messages[user].walletMenuDepositMessage.format(
+//                                    coins,
+//                                    Coins(coins.currency, coins.currency.networkFeeReserve)
+//                                )
+//                            )
+//                            LogsUtil.log(user, "$coins", LogType.DEPOSIT)
+//                        }
+//                    }
                     delay(15_000)
                 }
             }
