@@ -236,72 +236,47 @@ class EthClient(
 
 fun main(): Unit = runBlocking {
     val client = EthClient(endpoint = "https://data-seed-prebsc-1-s1.binance.org:8545")
-    val gasPrice = (client.gasPrice().toBigDecimal() * 1.1.toBigDecimal()).toBigInteger()
+    val gasFactor = 1.0.toBigDecimal()
+
+    val gasPrice = (client.gasPrice().toBigDecimal() * gasFactor).toBigInteger()
     val key1 = Random(123123).nextBytes(32)
     val key2 = Random(321321).nextBytes(32)
     val address = client.getAddress(key1)
     val address2 = client.getAddress(key2)
+    val balance1 = client.getBalance(address)
+    val balance2 = client.getBalance(address2)
 
-    println("gas=${gasPrice * 2001212.toBigInteger()}")
-    println("bal=" + client.getBalance(address))
+    val gas = 21000.toBigInteger()
+    val fee = gas * gasPrice
 
-    println(gasPrice)
-    println(address)
-    println(address2)
-
-    val balance1 = client.getTokenBalance(
-        tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
-        ownerAddress = address
-    )
-    println("bal1 = $balance1")
-    val balance2 = client.getTokenBalance(
-        tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
-        ownerAddress = address2
-    )
-    println("bal2 = $balance2")
+    suspend fun send(key: ByteArray, dest: String, balance: BigInteger) {
+//        val value = balance - fee - 1_000_000_000.toBigInteger()
+        val value = balance - fee - (1_000_000_000_000_000.toBigInteger() - 0.toBigInteger())
+        //206933999999999980
+        //206723999999999979
+        // 206933999999999980-206723999999999979
+        println("transfer: ${client.getAddress(key)} -> $dest")
+        println("balance:        $balance")
+        println("price:          $gasPrice")
+        println("gas:            $gas")
+        println("fee:            $fee")
+        println("value:          $value")
+        val b = gas * gasPrice + value
+        println("gas*price+value=$b")
+        check(balance - b >= 0.toBigInteger())
+        // check(balance - (toSend + gas) == 0.toBigInteger())
+//        client.sendTransaction(
+//            privateKey = key,
+//            gasPrice = gasPrice,
+//            gasLimit = BigInteger.valueOf(50000),
+//            destination = dest,
+//            value = value
+//        )
+    }
 
     if (balance1 > balance2) {
-        val estimateGas = client.estimateGas(
-            from = address,
-            to = address2,
-            gasPrice = gasPrice,
-            value = BigInteger.valueOf(1)
-        )
-        val r = estimateGas * gasPrice + BigInteger.valueOf(1)
-        println("estimate gas = $estimateGas")
-        println("res=$r")
-
-        val result = client.transfer(
-            privateKey = key1,
-            tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
-            toAddress = address2,
-            amount = balance1
-        )
-        println(result)
+        send(key1, address2, balance1)
     } else {
-        val estimateGas = client.estimateGas(
-            from = address2,
-            to = address,
-            gasPrice = gasPrice,
-            value = BigInteger.valueOf(1)
-        )
-        val r = estimateGas * gasPrice + BigInteger.valueOf(1)
-        println("estimate gas = $estimateGas")
-        println("res=$r")
-
-        val result = client.transfer(
-            privateKey = key2,
-            tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
-            toAddress = address,
-            amount = balance2
-        )
-        println(result)
+        send(key2, address, balance2)
     }
-    //        client.sendTransaction(
-    //            privateKey = key1,
-    //            gasPrice = gasPrice,
-    //            gasLimit = BigInteger.valueOf(50000),
-    //            destination = address2,
-    //            value = balance1
-    //        )
 }

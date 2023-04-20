@@ -95,7 +95,7 @@ class Commands {
                         }
 
                         "RF" -> {
-                            //ref
+                            user.setMenu(bot, MainMenu(user), null)
                         }
                     }
                 }

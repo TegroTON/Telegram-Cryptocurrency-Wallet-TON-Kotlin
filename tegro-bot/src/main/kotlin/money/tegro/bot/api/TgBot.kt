@@ -175,7 +175,7 @@ class TgBot(
     }
 
     override fun onUpdateReceived(update: Update) {
-        if (!update.hasMessage() || !update.hasInlineQuery()) {
+        if (!update.hasMessage() || !update.hasCallbackQuery()) {
             println("unknown update type: $update")
         }
         val userTgId = update.message?.from?.id ?: update.callbackQuery.from.id

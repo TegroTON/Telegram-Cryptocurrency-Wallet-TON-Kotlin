@@ -12,6 +12,7 @@ data class Messages(
      *   Main menu section   *
      *************************/
     val mainMenuMessage: String = "mainMenuMessage",
+    val mainMenuMessageTg: String = "mainMenuMessageTg",
     val mainMenuButtonWallet: String = "mainMenuButtonWallet",
     val mainMenuButtonReceipts: String = "mainMenuButtonReceipts",
     val mainMenuButtonAccounts: String = "mainMenuButtonAccounts",

@@ -2,6 +2,7 @@ package money.tegro.bot.objects
 
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
@@ -13,6 +14,8 @@ interface UserPersistent {
     suspend fun loadByVk(long: Long): User?
 
     suspend fun loadByTg(long: Long): User?
+
+    suspend fun getRefsByUser(user: User): List<User>
 }
 
 object PostgresUserPersistent : UserPersistent {
@@ -167,6 +170,18 @@ object PostgresUserPersistent : UserPersistent {
             }
 
         }
+    }
+
+    override suspend fun getRefsByUser(user: User): List<User> {
+        val referralUsers = suspendedTransactionAsync {
+            UsersSettings.select {
+                UsersSettings.referralId.eq(user.id)
+            }.mapNotNull {
+                val referralId = it[UsersSettings.referralId] ?: return@mapNotNull null
+                load(referralId) ?: return@mapNotNull null
+            }
+        }
+        return referralUsers.await()
     }
 
 }

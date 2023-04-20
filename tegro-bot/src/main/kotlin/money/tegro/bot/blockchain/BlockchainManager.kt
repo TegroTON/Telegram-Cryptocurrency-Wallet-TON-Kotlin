@@ -32,7 +32,7 @@ interface BlockchainManager {
     companion object {
         operator fun get(type: BlockchainType): BlockchainManager = when (type) {
             BlockchainType.TON -> TonBlockchainManager
-            BlockchainType.BSC -> TODO(type.displayName)
+            BlockchainType.BSC -> EthBlockchainManager
             BlockchainType.ETH -> TODO(type.displayName)
         }
     }

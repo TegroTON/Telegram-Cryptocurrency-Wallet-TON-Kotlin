@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
+import money.tegro.bot.api.TgBot
 import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
@@ -103,7 +104,7 @@ data class MainMenu(
         bot.updateKeyboard(
             user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId,
-            Messages[user.settings.lang].mainMenuMessage,
+            if (bot is TgBot) Messages[user.settings.lang].mainMenuMessageTg else Messages[user.settings.lang].mainMenuMessage,
             keyboard
         )
     }

@@ -46,6 +46,15 @@ enum class CryptoCurrency(
             BlockchainType.TON to "0:bfd58a0cf11062c4df79973ee875c17756b91cfcdf0d7bb8108bb01bb657adfc"
         ),
         isEnabled = false
+    ),
+    BNB(
+        displayName = "Binance BNB",
+        ticker = "BNB",
+        decimals = 18,
+        minAmount = 1_000_000.toBigInteger(),
+//        botFee = 100_000.toBigInteger(),
+        nativeBlockchainType = BlockchainType.BSC,
+        isEnabled = false
     );
 
     private val factor = BigDecimal.TEN.pow(decimals)
