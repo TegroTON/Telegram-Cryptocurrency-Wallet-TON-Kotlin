@@ -11,10 +11,7 @@ import money.tegro.bot.receipts.PostgresReceiptPersistent
 import money.tegro.bot.testnet
 import money.tegro.bot.ton.TonBlockchainManager
 import money.tegro.bot.utils.LogsUtil
-import money.tegro.bot.wallet.CryptoCurrency
-import money.tegro.bot.wallet.PostgresAccountsPersistent
-import money.tegro.bot.wallet.PostgresDepositsPersistent
-import money.tegro.bot.wallet.WalletObserver
+import money.tegro.bot.wallet.*
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.TelegramBotsApi
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
@@ -175,9 +172,9 @@ class TgBot(
     }
 
     override fun onUpdateReceived(update: Update) {
-        if (!update.hasMessage() || !update.hasCallbackQuery()) {
-            println("unknown update type: $update")
-        }
+//        if (!update.hasMessage() || !update.hasCallbackQuery()) {
+//            println("unknown update type: $update")
+//        }
         val userTgId = update.message?.from?.id ?: update.callbackQuery.from.id
         launch {
             val randomUUID = UUID.nameUUIDFromBytes("tg_$userTgId".toByteArray())
@@ -224,7 +221,13 @@ class TgBot(
             GlobalScope.launch {
                 repeat(6) {
                     WalletObserver.checkDeposit(user).forEach { coins ->
-                        sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
+                        sendMessage(
+                            botMessage.peerId,
+                            Messages[user].walletMenuDepositMessage.format(
+                                coins,
+                                Coins(coins.currency, coins.currency.networkFeeReserve)
+                            )
+                        )
                         LogsUtil.log(user, "$coins", LogType.DEPOSIT)
                     }
                     if (!testnet) {
@@ -237,7 +240,13 @@ class TgBot(
                                 )
                             },
                         ).awaitAll().filter { it.amount > BigInteger.ZERO }.forEach { coins ->
-                            sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
+                            sendMessage(
+                                botMessage.peerId,
+                                Messages[user].walletMenuDepositMessage.format(
+                                    coins,
+                                    Coins(coins.currency, coins.currency.networkFeeReserve)
+                                )
+                            )
                             LogsUtil.log(user, "$coins", LogType.DEPOSIT)
                         }
                     }

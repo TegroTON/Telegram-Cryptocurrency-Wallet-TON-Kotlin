@@ -54,7 +54,9 @@ class WalletWithdrawSelectAmountMenu(
             message = String.format(
                 Messages[user.settings.lang].menuWalletWithdrawSelectAmountMessage,
                 currency.ticker,
-                balance
+                fee,
+                balance,
+                available
             ),
             keyboard = BotKeyboard {
                 row {
