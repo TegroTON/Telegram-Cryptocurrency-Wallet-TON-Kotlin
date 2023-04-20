@@ -111,6 +111,15 @@ class Commands {
                 "/deposits" -> user.setMenu(bot, DepositsMenu(user, backMenu), botMessage.lastMenuMessageId)
                 //nft
                 "/settings" -> user.setMenu(bot, SettingsMenu(user, backMenu), botMessage.lastMenuMessageId)
+                "/whoami" -> {
+                    val userDisplay = buildString {
+                        if (bot is TgBot) append("<code>")
+                        append(user.id)
+                        if (bot is TgBot) append("</code>")
+                    }
+                    bot.sendMessage(botMessage.peerId, "By admin request forward this message\n$userDisplay")
+                }
+
                 "/logsbytype" -> {
                     if (user.tgId == null) {
                         user.setMenu(bot, MainMenu(user), null)
