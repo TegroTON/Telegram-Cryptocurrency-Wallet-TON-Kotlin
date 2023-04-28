@@ -13,6 +13,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import money.tegro.bot.eth.EthRequest
 import money.tegro.bot.eth.EthResponse
 import money.tegro.bot.eth.EthTransaction
+import money.tegro.bot.testnet
 import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.CryptoCurrency
@@ -24,12 +25,15 @@ import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.RawTransaction
 import org.web3j.crypto.TransactionEncoder
+import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName
+import org.web3j.protocol.http.HttpService
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 
 object EthBlockchainManager : BlockchainManager {
-    val endpoint = "https://data-seed-prebsc-1-s1.binance.org:8545"
+    val endpoint = if (testnet) "https://data-seed-prebsc-1-s1.binance.org:8545" else "https://bsc-dataseed.binance.org"
+    val web3j = Web3j.build(HttpService("https://bsc-dataseed.binance.org/"))
 
     val httpClient: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
@@ -50,24 +54,15 @@ object EthBlockchainManager : BlockchainManager {
     }
 
     override suspend fun getBalance(address: String): Coins {
-        val response = httpClient.post(endpoint) {
-            contentType(ContentType.Application.Json)
-            setBody(
-                EthRequest(
-                    method = "eth_getBalance",
-                    params = listOf(
-                        address,
-                        DefaultBlockParameterName.LATEST.value
-                    )
-                )
-            )
-        }.body<EthResponse<String>>()
-        val result = response.result ?: throw RuntimeException(response.error?.message)
-        println("coins found manager: ${Numeric.decodeQuantity(result)}")
-        return Coins(CryptoCurrency.BNB, Numeric.decodeQuantity(result))
+        println("get native balance for $address")
+        return Coins(
+            CryptoCurrency.BNB,
+            web3j.ethGetBalance(address, DefaultBlockParameterName.LATEST).sendAsync().get().balance
+        )
     }
 
     override suspend fun getTokenBalance(cryptoCurrency: CryptoCurrency, ownerAddress: String): Coins {
+        println("get token balance ${cryptoCurrency.ticker} for $ownerAddress")
         if (cryptoCurrency.nativeBlockchainType == type) return getBalance(ownerAddress)
         val tokenAddress = requireNotNull(cryptoCurrency.getTokenContractAddress(type)) {
             "$cryptoCurrency not support $type"
@@ -99,6 +94,7 @@ object EthBlockchainManager : BlockchainManager {
             )
         }.body<EthResponse<String>>()
         val result = response.result ?: throw RuntimeException(response.error?.message)
+        println("result is $result")
         println("coins found manager: ${Numeric.decodeQuantity(result)}")
         return Coins(cryptoCurrency, Numeric.decodeQuantity(result))
     }
@@ -117,13 +113,13 @@ object EthBlockchainManager : BlockchainManager {
         val gasPrice = (gasPrice().toBigDecimal() * gasFactor).toBigInteger()
         val gas = 21000.toBigInteger()
         val fee = gas * gasPrice
-        val toSend = value.amount - fee - (1_000_000_000_000_000.toBigInteger() - 0.toBigInteger())
+        val toSend = value.amount - fee - 1_000_000_000_000_000.toBigInteger()
         sendTransaction(
             privateKey = privateKey,
             gasPrice = gasPrice,
             gasLimit = BigInteger.valueOf(50000),
             destination = destinationAddress,
-            value = toSend
+            value = value.amount
         )
     }
 
@@ -162,6 +158,7 @@ object EthBlockchainManager : BlockchainManager {
             )
         }.body<EthResponse<String>>()
         if (response.result == null) throw RuntimeException(response.error?.message)
+        println("transfer token ${response.result}")
     }
 
     override fun isValidAddress(address: String?): Boolean {

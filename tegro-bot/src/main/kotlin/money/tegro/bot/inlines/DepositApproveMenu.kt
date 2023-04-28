@@ -70,7 +70,7 @@ class DepositApproveMenu(
                         )
                     } else {
                         button(
-                            Messages[user.settings.lang].menuDepositApproveButton,
+                            Messages[user.settings.lang].menuButtonApprove,
                             ButtonPayload.serializer(),
                             ButtonPayload.APPROVE
                         )

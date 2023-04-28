@@ -21,9 +21,10 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 object WalletObserver {
+    val hashMap = emptyMap<User, TokenDepositFlow>().toMutableMap()
+
     @OptIn(DelicateCoroutinesApi::class)
-    private val tonNativeCache = Caffeine.newBuilder()
-        .expireAfterWrite(15000, TimeUnit.MILLISECONDS)
+    private val tonNativeCache = Caffeine.newBuilder().expireAfterWrite(15000, TimeUnit.MILLISECONDS)
         .buildAsync<UUID, List<Coins>> { userId, e ->
             GlobalScope.async(e.asCoroutineDispatcher()) {
 //                println("Start checking: $userId")
@@ -37,8 +38,7 @@ object WalletObserver {
         }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private val bnbNativeCache = Caffeine.newBuilder()
-        .expireAfterWrite(15000, TimeUnit.MILLISECONDS)
+    private val bnbNativeCache = Caffeine.newBuilder().expireAfterWrite(30000, TimeUnit.MILLISECONDS)
         .buildAsync<UUID, List<Coins>> { userId, e ->
             GlobalScope.async(e.asCoroutineDispatcher()) {
 //                println("Start checking: $userId")
@@ -92,7 +92,7 @@ object WalletObserver {
                             }
 
                             is TokenDepositFlow.Event.NotEnoughCoinsOnMasterContract -> {
-                                continuation.resumeWithException(RuntimeException("Not enough $currency on master contract"))
+                                continuation.resumeWithException(RuntimeException("Not enough $currency on master contract, current ${it.currentBalance}, requested ${it.requested}"))
                             }
 
                             else -> {
@@ -117,20 +117,19 @@ object WalletObserver {
         val userWalletPk = UserPrivateKey(user.id, MASTER_KEY).key.toByteArray()
         val userWalletAddress = blockchainManager.getAddress(userWalletPk)
         val balance = blockchainManager.getTokenBalance(cryptoCurrency, userWalletAddress)
-        println("balance $balance : ${balance.amount}")
+        //println("balance $balance : ${balance.amount}")
         val reserve = cryptoCurrency.networkFeeReserve
-        println("reserve ${Coins(cryptoCurrency, reserve)} : $reserve")
+        //println("reserve ${Coins(cryptoCurrency, reserve)} : $reserve")
         if (balance.amount > reserve) {
             println("Нашли у $user ($userWalletAddress) денег на контракте: $balance")
             val depositCoins = balance - reserve
+            //println("balance - reserve $depositCoins : ${depositCoins.amount}")
             val masterWalletPk = UserPrivateKey(UUID(0, 0), MASTER_KEY).key.toByteArray()
             val masterWalletAddress = blockchainManager.getAddress(masterWalletPk)
             if (cryptoCurrency.isNative) {
-                println("transfer $depositCoins | $userWalletAddress -> $masterWalletAddress")
+                println("transfer native $depositCoins | $userWalletAddress -> $masterWalletAddress")
                 blockchainManager.transfer(
-                    privateKey = userWalletPk,
-                    destinationAddress = masterWalletAddress,
-                    value = depositCoins
+                    privateKey = userWalletPk, destinationAddress = masterWalletAddress, value = depositCoins
                 )
                 walletPersistent.updateActive(user, depositCoins.currency) { oldCoins ->
                     (oldCoins + depositCoins).also { newCoins ->
@@ -142,32 +141,41 @@ object WalletObserver {
                         )
                     }
                 }
+                return depositCoins
             } else {
                 val a = TokenDepositFlow(blockchainManager, cryptoCurrency, userWalletPk)
-                val hashMap = emptyMap<User, TokenDepositFlow>().toMutableMap()
-                if (!hashMap.containsKey(user)) {
+                if (!hashMap.contains(user)) {
                     hashMap[user] = a
                     a.collect {
                         when (it) {
                             is TokenDepositFlow.Event.Complete -> {
                                 hashMap.remove(user)
+                                println("Deposit flow ${it.amount} : ${it.amount.amount}")
                                 it.amount
                             }
 
+                            is TokenDepositFlow.Event.NotEnoughCoinsOnMasterContract -> {
+                                println("Not enough coins on master contract, current ${it.currentBalance}, requested ${it.requested}")
+                            }
+
                             else -> {
-                                println("Token deposit error: $it")
+
                             }
                         }
                     }
                     val nativeBalance = blockchainManager.getBalance(
                         blockchainManager.getAddress(userWalletPk)
                     )
+                    println("native bal $nativeBalance : ${nativeBalance.amount}")
+                    println("reserve ${Coins(cryptoCurrency, reserve)} : $reserve")
                     if (nativeBalance.amount < nativeBalance.currency.networkFeeReserve) {
-                        val additionalDeposit = nativeBalance.currency.networkFeeReserve - nativeBalance.amount
+                        val additionalDeposit = Coins(
+                            nativeBalance.currency,
+                            nativeBalance.currency.networkFeeReserve - nativeBalance.amount
+                        )
+                        println("additional deposit $additionalDeposit : ${additionalDeposit.amount}")
                         blockchainManager.transfer(
-                            masterWalletPk,
-                            userWalletAddress,
-                            Coins(nativeBalance.currency, additionalDeposit)
+                            masterWalletPk, userWalletAddress, additionalDeposit
                         )
                     }
                     println("transfer $depositCoins | $userWalletAddress -> $masterWalletAddress")
@@ -187,10 +195,10 @@ object WalletObserver {
                             )
                         }
                     }
+                    return depositCoins
                 }
-
             }
-            return depositCoins
+            return Coins(cryptoCurrency, 0.toBigInteger())
         } else {
             return Coins(cryptoCurrency, 0.toBigInteger())
         }

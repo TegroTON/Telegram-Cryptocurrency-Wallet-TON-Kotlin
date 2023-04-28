@@ -88,7 +88,7 @@ class WalletWithdrawSelectAmountMenu(
         val payload = message.payload
         val fee = Coins(currency, currency.botFee)
         val available = try {
-            PostgresWalletPersistent.loadWalletState(user).active[currency] - fee // TODO: Calc bot fee
+            PostgresWalletPersistent.loadWalletState(user).active[currency] - fee
         } catch (e: NegativeCoinsException) {
             return false
         }
@@ -96,13 +96,17 @@ class WalletWithdrawSelectAmountMenu(
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.MIN -> {
-                    user.setMenu(bot, WalletWithdrawMenu(user, currency, network, min, this), message.lastMenuMessageId)
+                    user.setMenu(
+                        bot,
+                        WalletWithdrawSelectAddressMenu(user, network, min, this),
+                        message.lastMenuMessageId
+                    )
                 }
 
                 ButtonPayload.MAX -> {
                     user.setMenu(
                         bot,
-                        WalletWithdrawMenu(user, currency, network, available, this),
+                        WalletWithdrawSelectAddressMenu(user, network, available, this),
                         message.lastMenuMessageId
                     )
                 }
@@ -120,7 +124,11 @@ class WalletWithdrawSelectAmountMenu(
                     bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                     return false
                 }
-                user.setMenu(bot, WalletWithdrawMenu(user, currency, network, coins, this), message.lastMenuMessageId)
+                user.setMenu(
+                    bot,
+                    WalletWithdrawSelectAddressMenu(user, network, coins, this),
+                    message.lastMenuMessageId
+                )
                 return true
             } else {
                 bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)

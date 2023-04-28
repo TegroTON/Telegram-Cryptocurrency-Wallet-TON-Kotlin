@@ -8,6 +8,7 @@ import money.tegro.bot.menuPersistent
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
+import money.tegro.bot.testnet
 import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.PostgresAccountsPersistent
@@ -16,6 +17,8 @@ import money.tegro.bot.wallet.WalletObserver
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.TelegramBotsApi
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
+import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChat
+import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
@@ -159,6 +162,10 @@ class TgBot(
     }
 
     override suspend fun sendPopup(botMessage: BotMessage, message: String): Boolean {
+        if (botMessage.otherData["callbackQueryId"] == null) {
+            sendMessage(botMessage.peerId, "sendPopup callbackQueryId null, inform admin")
+            return false
+        }
         val id = botMessage.otherData["callbackQueryId"] as String
         val popup = AnswerCallbackQuery().apply {
             showAlert = true
@@ -169,11 +176,33 @@ class TgBot(
         return true
     }
 
+    override suspend fun getChat(chatId: Long): Chat {
+        val request = GetChat().apply {
+            this.chatId = chatId.toString()
+        }
+        val result = executeAsync(request).await()
+        return Chat(
+            result.id,
+            result.title,
+            result.userName
+        )
+    }
+
+    override suspend fun isUserInChat(chatId: Long, userId: Long): Boolean {
+        val request = GetChatMember().apply {
+            this.chatId = chatId.toString()
+            this.userId = userId
+        }
+        val result = executeAsync(request).await()
+        return result.status.equals("member")
+    }
+
     override fun getBotUsername(): String {
         return System.getenv("TG_USER_NAME")
     }
 
     override fun onUpdateReceived(update: Update) {
+//        println("$update")
 //        if (!update.hasMessage() || !update.hasCallbackQuery()) {
 //            println("unknown update type: $update")
 //        }
@@ -199,6 +228,20 @@ class TgBot(
                 val fwdBotMessage = BotMessage(
                     message.messageId.toLong(),
                     message.forwardFrom.id,
+                    userTgId,
+                    false,
+                    message.text,
+                    null,
+                    null,
+                    fwdMessages,
+                    emptyMap()
+                )
+                fwdMessages.add(fwdBotMessage)
+            }
+            if (message.forwardFromChat != null) {
+                val fwdBotMessage = BotMessage(
+                    message.messageId.toLong(),
+                    message.forwardFromChat.id,
                     userTgId,
                     false,
                     message.text,
@@ -242,7 +285,7 @@ class TgBot(
 //                        )
 //                        LogsUtil.log(user, "$coins", LogType.DEPOSIT)
 //                    }
-//                    if (!testnet) {
+                    if (!testnet) {
 //                        listOf(
 //                            async {
 //                                WalletObserver.checkForNewDeposits(
@@ -261,7 +304,25 @@ class TgBot(
 //                            )
 //                            LogsUtil.log(user, "$coins", LogType.DEPOSIT)
 //                        }
-//                    }
+//                        listOf(
+//                            async {
+//                                WalletObserver.checkForNewDeposits(
+//                                    user,
+//                                    EthBlockchainManager,
+//                                    CryptoCurrency.TGR
+//                                )
+//                            },
+//                        ).awaitAll().filter { it.amount > BigInteger.ZERO }.forEach { coins ->
+//                            sendMessage(
+//                                botMessage.peerId,
+//                                Messages[user].walletMenuDepositMessage.format(
+//                                    coins,
+//                                    Coins(coins.currency, coins.currency.networkFeeReserve)
+//                                )
+//                            )
+//                            LogsUtil.log(user, "$coins", LogType.DEPOSIT)
+//                        }
+                    }
                     delay(15_000)
                 }
             }

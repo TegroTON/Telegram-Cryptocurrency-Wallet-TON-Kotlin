@@ -35,17 +35,32 @@ data class ReceiptReadyMenu(
         )
     }
 
-    private fun getBody(bot: Bot): String {
+    private suspend fun getBody(bot: Bot): String {
         val code = receipt.id.toString()
         val tgLink = String.format("t.me/%s?start=RC-%s", System.getenv("TG_USER_NAME"), code)
         val vkLink = String.format("https://vk.com/write-%s?ref=RC-%s", System.getenv("VK_GROUP_ID"), code)
         val date = Date.from(receipt.issueTime.toJavaInstant())
         val time =
             SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(date)
+        val chatIds = PostgresReceiptPersistent.getChatsByReceipt(receipt)
+        println(chatIds)
+        val recipient = receipt.recipient
+        val limitation: String = if (chatIds.isNotEmpty() || recipient != null) {
+            if (chatIds.isNotEmpty() && recipient != null) {
+                Messages[user.settings.lang].menuReceiptReadySubscriberRecipient
+            } else if (chatIds.isNotEmpty()) {
+                Messages[user.settings.lang].menuReceiptReadySubscriber
+            } else {
+                Messages[user.settings.lang].menuReceiptReadyRecipient
+            }
+        } else {
+            Messages[user.settings.lang].menuReceiptReadyAnyone
+        }
         return Messages[user.settings.lang].menuReceiptReadyMessage.format(
             receipt.coins,
             receipt.activations,
             time,
+            limitation,
             if (bot is TgBot) tgLink else vkLink
         )
     }
@@ -138,6 +153,9 @@ data class ReceiptReadyMenu(
             )
 
             ButtonPayload.DELETE -> {
+                for (chatId: Long in PostgresReceiptPersistent.getChatsByReceipt(receipt)) {
+                    PostgresReceiptPersistent.deleteChatFromReceipt(receipt, chatId)
+                }
                 PostgresReceiptPersistent.deleteReceipt(receipt)
                 bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptDeleted)
                 val list = PostgresReceiptPersistent.loadReceipts(user).filter { it.isActive }

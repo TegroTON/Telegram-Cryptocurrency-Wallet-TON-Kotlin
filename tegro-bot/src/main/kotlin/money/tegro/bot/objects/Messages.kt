@@ -39,6 +39,8 @@ data class Messages(
     val menuWalletDepositSelectNetworkMessage: String = "menuWalletDepositSelectNetworkMessage",
     val menuWalletWithdrawSelectMessage: String = "menuWalletWithdrawSelectMessage",
     val menuWalletWithdrawSelectNetworkMessage: String = "menuWalletWithdrawSelectNetworkMessage",
+    val menuWalletWithdrawSelectAddressMessage: String = "menuWalletWithdrawSelectAddressMessage",
+    val menuWalletWithdrawApproveMessage: String = "menuWalletWithdrawApproveMessage",
     val menuWalletWithdrawMessage: String = "menuWalletWithdrawMessage",
     val menuWalletWithdrawTON: String = "menuWalletWithdrawTON",
     val menuWalletWithdrawTGR: String = "menuWalletWithdrawTGR",
@@ -48,7 +50,6 @@ data class Messages(
     val menuWalletDepositQR: String = "menuWalletDepositQR",
     val walletMenuDepositMessage: String = "walletMenuDepositMessage",
     val menuWalletWithdrawSelectAmountMessage: String = "menuWalletWithdrawSelectAmountMessage",
-    val walletMenuWithdrawMessage: String = "walletMenuWithdrawMessage",
     val walletMenuWithdrawInvalidAddress: String = "walletMenuWithdrawInvalidAddress",
 
 
@@ -68,6 +69,10 @@ data class Messages(
     val menuReceiptNotFound: String = "menuReceiptNotFound",
     val menuReceiptDeleted: String = "menuReceiptDeleted",
     val menuReceiptReadyMessage: String = "menuReceiptReadyMessage",
+    val menuReceiptReadyAnyone: String = "menuReceiptReadyAnyone",
+    val menuReceiptReadyRecipient: String = "menuReceiptReadyRecipient",
+    val menuReceiptReadySubscriber: String = "menuReceiptReadySubscriber",
+    val menuReceiptReadySubscriberRecipient: String = "menuReceiptReadySubscriberRecipient",
     val menuReceiptReadyShare: String = "menuReceiptReadyShare",
     val menuReceiptReadyQr: String = "menuReceiptReadyQr",
     val menuReceiptReadyLimitations: String = "menuReceiptReadyLimitations",
@@ -76,11 +81,19 @@ data class Messages(
     val menuReceiptLimitationsRef: String = "menuReceiptLimitationsRef",
     val menuReceiptLimitationsSub: String = "menuReceiptLimitationsSub",
     val menuReceiptLimitationsUser: String = "menuReceiptLimitationsUser",
+    val menuReceiptLimitationsUserUnattach: String = "menuReceiptLimitationsUserUnattach",
     val menuReceiptLimitationsCaptcha: String = "menuReceiptLimitationsCaptcha",
     val menuReceiptRecipientMessage: String = "menuReceiptRecipientMessage",
+    val menuReceiptRecipientNotRegistered: String = "menuReceiptRecipientNotRegistered",
     val menuReceiptRecipientNotFound: String = "menuReceiptRecipientNotFound",
     val menuReceiptRecipientSetMessage: String = "menuReceiptRecipientSetMessage",
     val menuReceiptRecipientUnattach: String = "menuReceiptRecipientUnattach",
+    val menuReceiptSubscriberMessage: String = "menuReceiptSubscriberMessage",
+    val menuReceiptSubscriberEntry: String = "menuReceiptSubscriberEntry",
+    val menuReceiptSubscriberRemoveChatMessage: String = "menuReceiptSubscriberRemoveChatMessage",
+    val menuReceiptSubscriberAdd: String = "menuReceiptSubscriberAdd",
+    val menuReceiptSubscriberAddChatMessage: String = "menuReceiptSubscriberAddChatMessage",
+    val menuReceiptSubscriberAddChatError: String = "menuReceiptSubscriberAddChatError",
     val menuReceiptsList: String = "menuReceiptsList",
     val menuReceiptsListMessage: String = "menuReceiptsListMessage",
     val menuReceiptsListEmpty: String = "menuReceiptsListEmpty",
@@ -95,6 +108,7 @@ data class Messages(
     val receiptIssuerActivationException: String = "receiptIssuerActivationException",
     val receiptNotActiveException: String = "receiptNotActiveException",
     val illegalRecipientException: String = "illegalRecipientException",
+    val recipientNotSubscriberException: String = "recipientNotSubscriberException",
 
     /*****************************
      *   Deposits menu section   *
@@ -110,7 +124,6 @@ data class Messages(
     val menuDepositSelectPeriod: String = "menuDepositSelectPeriod",
     val menuDepositApproveMessage: String = "menuDepositApproveMessage",
     val menuDepositApproveMessageCalc: String = "menuDepositApproveMessageCalc",
-    val menuDepositApproveButton: String = "menuDepositApproveButton",
     val menuDepositReadyMessage: String = "menuDepositReadyMessage",
     val menuDepositsListMessage: String = "menuDepositsListMessage",
     val menuDepositsListEmpty: String = "menuDepositsListEmpty",
@@ -183,6 +196,8 @@ data class Messages(
      *   Others   *
      **************/
     val menuSelectInvalidAmount: String = "menuSelectInvalidAmount",
+    val menuButtonApprove: String = "menuButtonApprove",
+    val menuButtonMenu: String = "menuButtonMenu",
     val menuButtonBack: String = "menuButtonBack",
     val monthOne: String = "monthOne",
     val monthTwo: String = "monthTwo",

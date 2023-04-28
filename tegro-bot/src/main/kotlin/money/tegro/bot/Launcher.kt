@@ -90,7 +90,7 @@ private fun printMasterContracts() {
     logger.info(buildString {
         appendLine(masterContractsString)
         BlockchainType.values().forEach { blockchainType ->
-            if (blockchainType != BlockchainType.TON) return@forEach // TODO: other blockchains
+            if (blockchainType == BlockchainType.ETH) return@forEach // TODO: other blockchains
 
             val blockchainManager = BlockchainManager[blockchainType]
             val masterAddress = blockchainManager.getAddress(UserPrivateKey(UUID(0, 0), MASTER_KEY).key.toByteArray())

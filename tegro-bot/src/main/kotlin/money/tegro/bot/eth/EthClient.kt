@@ -12,14 +12,19 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
 import org.web3j.abi.FunctionEncoder
+import org.web3j.abi.FunctionReturnDecoder
 import org.web3j.abi.TypeReference
 import org.web3j.abi.datatypes.Address
 import org.web3j.abi.datatypes.Function
+import org.web3j.abi.datatypes.Type
 import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.RawTransaction
 import org.web3j.crypto.TransactionEncoder
+import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName
+import org.web3j.protocol.http.HttpService
+import org.web3j.tx.RawTransactionManager
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 import kotlin.random.Random
@@ -37,13 +42,10 @@ class EthClient(
         }
     }
 
-    suspend fun gasPrice(): BigInteger {
-        val response = httpClient.post(endpoint) {
-            contentType(ContentType.Application.Json)
-            setBody(EthRequest(method = "eth_gasPrice", params = emptyList<String>()))
-        }.body<EthResponse<String>>()
-        val result = response.result ?: throw RuntimeException(response.error?.message)
-        return Numeric.decodeQuantity(result)
+    val web3j = Web3j.build(HttpService("https://bsc-dataseed.binance.org/"))
+
+    fun gasPrice(): BigInteger {
+        return web3j.ethGasPrice().sendAsync().get().gasPrice
     }
 
     fun getAddress(privateKey: ByteArray): String {
@@ -79,94 +81,50 @@ class EthClient(
         return Numeric.decodeQuantity(result)
     }
 
-    suspend fun getBalance(
+    fun getBalance(
         address: String,
-        blockParameter: DefaultBlockParameterName = DefaultBlockParameterName.LATEST
+        block: DefaultBlockParameterName = DefaultBlockParameterName.LATEST
     ): BigInteger {
-        val response = httpClient.post(endpoint) {
-            contentType(ContentType.Application.Json)
-            setBody(
-                EthRequest(
-                    method = "eth_getBalance",
-                    params = listOf(
-                        address,
-                        blockParameter.value
-                    )
-                )
-            )
-        }.body<EthResponse<String>>()
-        val result = response.result ?: throw RuntimeException(response.error?.message)
-        return Numeric.decodeQuantity(result)
+        return web3j.ethGetBalance(address, block).sendAsync().get().balance
     }
 
-    suspend fun getTokenBalance(
+    fun getTokenBalance(
         tokenAddress: String,
         ownerAddress: String,
         block: DefaultBlockParameterName = DefaultBlockParameterName.LATEST
     ): BigInteger {
-        val address = Address(ownerAddress)
         val function = Function(
             "balanceOf",
-            listOf(address),
+            listOf<Type<*>>(Address(ownerAddress)),
             listOf<TypeReference<*>>(object : TypeReference<Uint256>() {})
         )
+
         val encodedFunction = FunctionEncoder.encode(function)
+        val response = RawTransactionManager(
+            web3j,
+            Credentials.create(Numeric.toHexString(Random(123123).nextBytes(32)))
+        ).sendCall(tokenAddress, encodedFunction, block)
+        println("resp : $response")
 
-        val transaction = EthTransaction(
-            from = ownerAddress,
-            to = tokenAddress,
-            data = encodedFunction
-        )
+        val result = FunctionReturnDecoder.decode(
+            response, function.outputParameters
+        )[0] as Uint256
 
-        val response = httpClient.post(endpoint) {
-            contentType(ContentType.Application.Json)
-            setBody(
-                EthRequest(
-                    method = "eth_call",
-                    params = listOf(
-                        Json.encodeToJsonElement(transaction),
-                        JsonPrimitive(block.value)
-                    )
-                )
-            )
-        }.body<EthResponse<String>>()
-        val result = response.result ?: throw RuntimeException(response.error?.message)
-        return Numeric.decodeQuantity(result)
+        return result.value
     }
 
-    suspend fun transfer(
+    fun transfer(
         privateKey: ByteArray,
         tokenAddress: String,
         toAddress: String,
         amount: BigInteger,
         block: DefaultBlockParameterName = DefaultBlockParameterName.LATEST
     ): String {
-        val function = Function(
-            "transfer",
-            listOf(Address(toAddress), Uint256(amount)),
-            emptyList()
-        )
-        val encodedFunction = FunctionEncoder.encode(function)
-
-        val transaction = EthTransaction(
-            from = getAddress(privateKey),
-            to = tokenAddress,
-            data = encodedFunction
-        )
-
-        val response = httpClient.post(endpoint) {
-            contentType(ContentType.Application.Json)
-            setBody(
-                EthRequest(
-                    method = "eth_call",
-                    params = listOf(
-                        Json.encodeToJsonElement(transaction),
-                        JsonPrimitive(block.value)
-                    )
-                )
-            )
-        }.body<EthResponse<String>>()
-        return response.result ?: throw RuntimeException(response.error?.message)
+        val credentials = Credentials.create(Numeric.toHexString(privateKey))
+        val contract = Bep20Contract(tokenAddress, web3j, credentials)
+        val receipt = contract.transfer(Address(toAddress), Uint256(amount))
+        println(receipt.toString())
+        return receipt.status
     }
 
     suspend fun getTransactionCount(
@@ -241,10 +199,19 @@ fun main(): Unit = runBlocking {
     val gasPrice = (client.gasPrice().toBigDecimal() * gasFactor).toBigInteger()
     val key1 = Random(123123).nextBytes(32)
     val key2 = Random(321321).nextBytes(32)
-    val address = client.getAddress(key1)
+    val address1 = client.getAddress(key1)
     val address2 = client.getAddress(key2)
-    val balance1 = client.getBalance(address)
+    val balance1 = client.getBalance(address1)
     val balance2 = client.getBalance(address2)
+    val tokenAddress = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd"
+    val tokenBalance1 = client.getTokenBalance(tokenAddress, address1)
+    val tokenBalance2 = client.getTokenBalance(tokenAddress, address2)
+    println(address1)
+    println(address2)
+    println(balance1)
+    println(balance2)
+    println(tokenBalance1)
+    println(tokenBalance2)
 
     val gas = 21000.toBigInteger()
     val fee = gas * gasPrice
@@ -265,18 +232,24 @@ fun main(): Unit = runBlocking {
         println("gas*price+value=$b")
         check(balance - b >= 0.toBigInteger())
         // check(balance - (toSend + gas) == 0.toBigInteger())
-        client.sendTransaction(
+        val result = client.transfer(
             privateKey = key,
-            gasPrice = gasPrice,
-            gasLimit = BigInteger.valueOf(50000),
-            destination = dest,
-            value = value
+            tokenAddress = tokenAddress,
+            toAddress = dest,
+            amount = balance / 2.toBigInteger()
         )
+        println(result)
     }
 
-    if (balance1 > balance2) {
-        send(key1, address2, balance1)
+    if (tokenBalance1 > tokenBalance2) {
+        send(key1, address2, tokenBalance1)
     } else {
-        send(key2, address, balance2)
+        send(key2, address1, tokenBalance2)
     }
+
+//    if (balance1 > balance2) {
+//        send(key1, address2, balance1)
+//    } else {
+//        send(key2, address1, balance2)
+//    }
 }

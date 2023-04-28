@@ -219,6 +219,14 @@ class VkBot : Bot, CoroutineScope {
         return false
     }
 
+    override suspend fun getChat(chatId: Long): Chat {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun isUserInChat(chatId: Long, userId: Long): Boolean {
+        TODO("Not yet implemented")
+    }
+
     private suspend fun getRefId(ref: String?): UUID? {
         if (ref == null) return null
         val split = ref.split("-")

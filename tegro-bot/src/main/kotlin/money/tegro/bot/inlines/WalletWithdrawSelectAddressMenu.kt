@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
-import money.tegro.bot.api.TgBot
+import money.tegro.bot.blockchain.BlockchainManager
 import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
@@ -14,27 +14,21 @@ import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.Coins
 
 @Serializable
-class WalletWithdrawMenu(
+class WalletWithdrawSelectAddressMenu(
     val user: User,
-    val withdrawAddress: String,
     val network: BlockchainType,
     val coins: Coins,
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
-        val displayAddress = buildString {
-            if (bot is TgBot) append("<code>")
-            append(withdrawAddress)
-            if (bot is TgBot) append("</code>")
-        }
         val message = buildString {
             appendLine(
                 String.format(
-                    Messages[user].menuWalletWithdrawMessage,
+                    Messages[user].menuWalletWithdrawSelectAddressMessage,
+                    coins.currency.ticker,
                     network.displayName,
                     coins,
                     Coins(coins.currency, coins.currency.botFee),
-                    displayAddress
                 )
             )
         }
@@ -45,7 +39,7 @@ class WalletWithdrawMenu(
             keyboard = BotKeyboard {
                 row {
                     button(
-                        Messages[user].menuButtonMenu,
+                        Messages[user].menuButtonBack,
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
                     )
@@ -55,11 +49,29 @@ class WalletWithdrawMenu(
     }
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
-        when (Json.decodeFromString<ButtonPayload>(payload)) {
-            ButtonPayload.BACK -> {
-                user.setMenu(bot, MainMenu(user), message.lastMenuMessageId)
+        val messageBody = message.body
+        if (message.payload != null) {
+            val payload = message.payload
+            when (Json.decodeFromString<ButtonPayload>(payload)) {
+                ButtonPayload.BACK -> {
+                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                }
             }
+        } else if (messageBody != null) {
+            val blockchainManager = BlockchainManager[network]
+            val withdrawAddress: String = messageBody
+            if (!blockchainManager.isValidAddress(messageBody)) {
+                bot.sendMessage(
+                    message.peerId,
+                    Messages[user].walletMenuWithdrawInvalidAddress
+                )
+                return true
+            }
+            user.setMenu(
+                bot,
+                WalletWithdrawApproveMenu(user, withdrawAddress, network, coins, this),
+                message.lastMenuMessageId
+            )
         }
         return true
     }

@@ -53,7 +53,15 @@ data class ReceiptRecipientMenu(
                 ButtonPayload.UNATTACH -> {
                     val newReceipt = receipt.copy(recipient = null)
                     PostgresReceiptPersistent.saveReceipt(newReceipt)
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(
+                        bot,
+                        ReceiptLimitationsMenu(
+                            user,
+                            newReceipt,
+                            ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user)))
+                        ),
+                        message.lastMenuMessageId
+                    )
                 }
 
                 ButtonPayload.BACK -> {
@@ -68,7 +76,7 @@ data class ReceiptRecipientMenu(
 
             }
             if (newRecipient == null) {
-                bot.sendPopup(message, Messages[user.settings.lang].menuReceiptRecipientNotFound)
+                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptRecipientNotRegistered)
                 user.setMenu(bot, parentMenu, message.lastMenuMessageId)
                 return true
             }
@@ -76,12 +84,16 @@ data class ReceiptRecipientMenu(
             PostgresReceiptPersistent.saveReceipt(newReceipt)
             user.setMenu(
                 bot,
-                ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
+                ReceiptLimitationsMenu(
+                    user,
+                    newReceipt,
+                    ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user)))
+                ),
                 message.lastMenuMessageId
             )
         } else {
             //TODO get id from mention
-            bot.sendPopup(message, Messages[user.settings.lang].menuReceiptRecipientNotFound)
+            bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptRecipientNotFound)
             user.setMenu(bot, parentMenu, message.lastMenuMessageId)
             return true
         }

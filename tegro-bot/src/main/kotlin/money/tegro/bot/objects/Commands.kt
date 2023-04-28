@@ -2,9 +2,10 @@ package money.tegro.bot.objects
 
 import money.tegro.bot.api.Bot
 import money.tegro.bot.api.TgBot
-import money.tegro.bot.exceptions.IllegalRecipientException
+import money.tegro.bot.exceptions.InvalidRecipientException
 import money.tegro.bot.exceptions.ReceiptIssuerActivationException
 import money.tegro.bot.exceptions.ReceiptNotActiveException
+import money.tegro.bot.exceptions.RecipientNotSubscriberException
 import money.tegro.bot.inlines.*
 import money.tegro.bot.receipts.PostgresReceiptPersistent
 import money.tegro.bot.utils.LogsUtil
@@ -48,6 +49,22 @@ class Commands {
                                 }
                                 val result = buildString {
                                     try {
+                                        val chatIds = PostgresReceiptPersistent.getChatsByReceipt(receipt)
+                                        if (chatIds.isNotEmpty()) {
+                                            for (chatId: Long in chatIds) {
+                                                val isUserInChat = bot.isUserInChat(
+                                                    chatId,
+                                                    (if (bot is TgBot) user.tgId else user.vkId) ?: 0
+                                                )
+                                                if (!isUserInChat) {
+                                                    val chat = bot.getChat(chatId)
+                                                    throw RecipientNotSubscriberException(
+                                                        receipt,
+                                                        "${chat.title} (@${chat.username})"
+                                                    )
+                                                }
+                                            }
+                                        }
                                         PostgresReceiptPersistent.activateReceipt(receipt, user)
                                         append(lang.receiptMoneyReceived.format(receipt.coins))
                                         val issuer = receipt.issuer
@@ -69,10 +86,12 @@ class Commands {
                                         }
                                     } catch (ex: ReceiptIssuerActivationException) {
                                         append(lang.receiptIssuerActivationException)
-                                    } catch (ex: IllegalRecipientException) {
+                                    } catch (ex: InvalidRecipientException) {
                                         append(lang.illegalRecipientException.format(id))
                                     } catch (ex: ReceiptNotActiveException) {
                                         append(lang.receiptNotActiveException.format(id))
+                                    } catch (ex: RecipientNotSubscriberException) {
+                                        append(lang.recipientNotSubscriberException.format(ex.chatName))
                                     }
                                 }
                                 bot.sendMessage(botMessage.peerId, result)

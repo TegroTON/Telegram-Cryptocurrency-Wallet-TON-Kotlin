@@ -32,7 +32,6 @@ data class ReceiptLimitationsMenu(
                     )
                 }
                 row {
-                    //TODO: sub
                     button(
                         Messages[user.settings.lang].menuReceiptLimitationsSub,
                         ButtonPayload.serializer(),
@@ -41,7 +40,10 @@ data class ReceiptLimitationsMenu(
                 }
                 row {
                     button(
-                        Messages[user.settings.lang].menuReceiptLimitationsUser,
+                        if (receipt.recipient == null)
+                            Messages[user.settings.lang].menuReceiptLimitationsUser
+                        else
+                            Messages[user.settings.lang].menuReceiptLimitationsUserUnattach,
                         ButtonPayload.serializer(),
                         ButtonPayload.USER
                     )
@@ -68,7 +70,12 @@ data class ReceiptLimitationsMenu(
         val payload = message.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.REF -> TODO()
-            ButtonPayload.SUB -> TODO()
+            ButtonPayload.SUB -> user.setMenu(
+                bot,
+                ReceiptSubscriberMenu(user, receipt, this),
+                message.lastMenuMessageId
+            )
+
             ButtonPayload.USER -> user.setMenu(
                 bot,
                 ReceiptRecipientMenu(user, receipt, this),

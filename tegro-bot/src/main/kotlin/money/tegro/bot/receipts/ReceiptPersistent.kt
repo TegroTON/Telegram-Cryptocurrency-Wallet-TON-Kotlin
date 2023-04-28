@@ -5,7 +5,7 @@ import kotlinx.atomicfu.locks.withLock
 import kotlinx.datetime.Clock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import money.tegro.bot.exceptions.IllegalRecipientException
+import money.tegro.bot.exceptions.InvalidRecipientException
 import money.tegro.bot.exceptions.ReceiptIssuerActivationException
 import money.tegro.bot.exceptions.ReceiptNotActiveException
 import money.tegro.bot.exceptions.UnknownReceiptException
@@ -18,17 +18,17 @@ import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.isActive
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.issueTime
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.issuerId
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.recipientId
+import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceiptsChats.receiptId
 import money.tegro.bot.utils.JSON
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.walletPersistent
 import org.jetbrains.exposed.dao.id.UUIDTable
-import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 import java.io.File
 import java.util.*
 
@@ -48,6 +48,12 @@ interface ReceiptPersistent {
     suspend fun loadReceipts(user: User): ReceiptCollection
 
     suspend fun inactivateReceipt(receipt: Receipt)
+
+    suspend fun addChatToReceipt(receipt: Receipt, chatId: Long)
+
+    suspend fun deleteChatFromReceipt(receipt: Receipt, chatId: Long)
+
+    suspend fun getChatsByReceipt(receipt: Receipt): List<Long>
 }
 
 object PostgresReceiptPersistent : ReceiptPersistent {
@@ -63,6 +69,15 @@ object PostgresReceiptPersistent : ReceiptPersistent {
 
         init {
             transaction { SchemaUtils.create(this@UsersReceipts) }
+        }
+    }
+
+    object UsersReceiptsChats : Table("users_receipts_chats") {
+        val receiptId = uuid("receipt_id").references(UsersReceipts.id)
+        val chatId = long("chat_id")
+
+        init {
+            transaction { SchemaUtils.create(this@UsersReceiptsChats) }
         }
     }
 
@@ -130,12 +145,38 @@ object PostgresReceiptPersistent : ReceiptPersistent {
         }
     }
 
+    override suspend fun addChatToReceipt(receipt: Receipt, chatId: Long) {
+        transaction {
+            UsersReceiptsChats.insert {
+                it[receiptId] = receipt.id
+                it[UsersReceiptsChats.chatId] = chatId
+            }
+        }
+    }
+
+    override suspend fun deleteChatFromReceipt(receipt: Receipt, chatId: Long) {
+        transaction {
+            UsersReceiptsChats.deleteWhere { receiptId.eq(receipt.id) and UsersReceiptsChats.chatId.eq(chatId) }
+        }
+    }
+
+    override suspend fun getChatsByReceipt(receipt: Receipt): List<Long> {
+        val chats = suspendedTransactionAsync {
+            UsersReceiptsChats.select {
+                receiptId.eq(receipt.id)
+            }.mapNotNull {
+                it[UsersReceiptsChats.chatId]
+            }
+        }
+        return chats.await()
+    }
+
     override suspend fun activateReceipt(receipt: Receipt, recipient: User) {
         val receipts = loadReceipts(receipt.issuer).toMutableList()
         val currentReceipt = receipts.find { it.id == receipt.id } ?: throw UnknownReceiptException(receipt)
 
         if (currentReceipt.recipient != null && currentReceipt.recipient != recipient) {
-            throw IllegalRecipientException(receipt, recipient)
+            throw InvalidRecipientException(receipt, recipient)
         }
         if (currentReceipt.issuer == recipient) {
             throw ReceiptIssuerActivationException(receipt)
@@ -247,7 +288,7 @@ class JsonReceiptPersistent(
             val currentReceipt = receipts.find { it.id == receipt.id } ?: throw UnknownReceiptException(receipt)
 
             if (currentReceipt.recipient != null && currentReceipt.recipient != recipient) {
-                throw IllegalRecipientException(receipt, recipient)
+                throw InvalidRecipientException(receipt, recipient)
             }
             if (currentReceipt.issuer == recipient) {
                 throw ReceiptIssuerActivationException(receipt)
@@ -268,6 +309,18 @@ class JsonReceiptPersistent(
         val receipts = loadReceipts(receipt.issuer).toMutableList()
         receipts.remove(receipt)
         saveReceiptsUnsafe(receipt.issuer, ReceiptCollection(receipts))
+    }
+
+    override suspend fun addChatToReceipt(receipt: Receipt, chatId: Long) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deleteChatFromReceipt(receipt: Receipt, chatId: Long) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getChatsByReceipt(receipt: Receipt): List<Long> {
+        TODO("Not yet implemented")
     }
 
     private fun loadReceiptsUnsafe(user: User): ReceiptCollection {
