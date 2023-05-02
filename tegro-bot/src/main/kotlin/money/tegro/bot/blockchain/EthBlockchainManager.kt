@@ -10,6 +10,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
+import money.tegro.bot.eth.Bep20Contract
 import money.tegro.bot.eth.EthRequest
 import money.tegro.bot.eth.EthResponse
 import money.tegro.bot.eth.EthTransaction
@@ -95,8 +96,11 @@ object EthBlockchainManager : BlockchainManager {
         }.body<EthResponse<String>>()
         val result = response.result ?: throw RuntimeException(response.error?.message)
         println("result is $result")
-        println("coins found manager: ${Numeric.decodeQuantity(result)}")
-        return Coins(cryptoCurrency, Numeric.decodeQuantity(result))
+        val decode = Numeric.decodeQuantity(result)
+        var value = decode
+        if (cryptoCurrency == CryptoCurrency.TGR) value /= powerOfTen(9).toBigInteger()
+        println("coins found manager: $value")
+        return Coins(cryptoCurrency, value)
     }
 
     suspend fun gasPrice(): BigInteger {
@@ -132,33 +136,11 @@ object EthBlockchainManager : BlockchainManager {
         val tokenAddress = requireNotNull(cryptoCurrency.getTokenContractAddress(type)) {
             "$cryptoCurrency not support $type"
         }
-        val function = Function(
-            "transfer",
-            listOf(Address(destinationAddress), Uint256(value.amount)),
-            emptyList()
-        )
-        val encodedFunction = FunctionEncoder.encode(function)
-
-        val transaction = EthTransaction(
-            from = getAddress(privateKey),
-            to = tokenAddress,
-            data = encodedFunction
-        )
-
-        val response = httpClient.post(endpoint) {
-            contentType(ContentType.Application.Json)
-            setBody(
-                EthRequest(
-                    method = "eth_call",
-                    params = listOf(
-                        Json.encodeToJsonElement(transaction),
-                        JsonPrimitive(DefaultBlockParameterName.LATEST.value)
-                    )
-                )
-            )
-        }.body<EthResponse<String>>()
-        if (response.result == null) throw RuntimeException(response.error?.message)
-        println("transfer token ${response.result}")
+        val credentials = Credentials.create(Numeric.toHexString(privateKey))
+        val contract = Bep20Contract(tokenAddress, web3j, credentials)
+        val receipt = contract.transfer(Address(destinationAddress), Uint256(value.amount))
+        println(receipt.toString())
+        println("transfer token ${receipt.status}")
     }
 
     override fun isValidAddress(address: String?): Boolean {
@@ -228,5 +210,11 @@ object EthBlockchainManager : BlockchainManager {
         }.body<EthResponse<String>>()
         val result = response.result ?: throw RuntimeException(response.error?.message)
         return Numeric.hexStringToByteArray(result)
+    }
+
+    fun powerOfTen(n: Int): Long {
+        var result: Long = 1
+        for (i in 0 until n) result *= 10
+        return result
     }
 }

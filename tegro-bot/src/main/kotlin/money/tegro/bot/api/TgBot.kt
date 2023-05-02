@@ -189,12 +189,17 @@ class TgBot(
     }
 
     override suspend fun isUserInChat(chatId: Long, userId: Long): Boolean {
-        val request = GetChatMember().apply {
-            this.chatId = chatId.toString()
-            this.userId = userId
+        return try {
+            val request = GetChatMember().apply {
+                this.chatId = chatId.toString()
+                this.userId = userId
+            }
+            val result = executeAsync(request).await()
+            println("$chatId: $result")
+            return !result.status.equals("kicked") && !result.status.equals("left")
+        } catch (ignored: Exception) {
+            false
         }
-        val result = executeAsync(request).await()
-        return result.status.equals("member")
     }
 
     override fun getBotUsername(): String {

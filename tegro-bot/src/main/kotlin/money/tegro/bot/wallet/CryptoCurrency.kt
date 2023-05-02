@@ -31,8 +31,8 @@ enum class CryptoCurrency(
         minAmount = 5_000_000_000.toBigInteger(),
         botFee = 1_000_000_000.toBigInteger(),
         tokenContracts = listOf(
-            BlockchainType.TON to "0:2f0df5851b4a185f5f63c0d0cd0412f5aca353f577da18ff47c936f99dbd849a"//,
-//            BlockchainType.BSC to "0xd9780513292477C4039dFdA1cfCD89Ff111e9DA5"
+            BlockchainType.TON to "0:2f0df5851b4a185f5f63c0d0cd0412f5aca353f577da18ff47c936f99dbd849a",
+            BlockchainType.BSC to "0xd9780513292477C4039dFdA1cfCD89Ff111e9DA5"
         ),
         isEnabled = false
     ),
@@ -53,7 +53,7 @@ enum class CryptoCurrency(
         ticker = "BNB",
         decimals = 18,
         minAmount = 10_000_000_000_000_000.toBigInteger(),
-        networkFeeReserve = 1_100_000_000_000_000.toBigInteger(),
+        networkFeeReserve = 20_000_000_000_000_000.toBigInteger(),
         botFee = 1_000_000_000_000_000.toBigInteger(),
         nativeBlockchainType = BlockchainType.BSC,
         isEnabled = false

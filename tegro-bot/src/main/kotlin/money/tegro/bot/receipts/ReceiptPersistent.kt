@@ -47,6 +47,8 @@ interface ReceiptPersistent {
 
     suspend fun loadReceipts(user: User): ReceiptCollection
 
+    suspend fun loadActivations(receipt: Receipt): List<UUID>
+
     suspend fun inactivateReceipt(receipt: Receipt)
 
     suspend fun addChatToReceipt(receipt: Receipt, chatId: Long)
@@ -78,6 +80,15 @@ object PostgresReceiptPersistent : ReceiptPersistent {
 
         init {
             transaction { SchemaUtils.create(this@UsersReceiptsChats) }
+        }
+    }
+
+    object UsersReceiptsActivations : Table("users_receipts_activations") {
+        val receiptId = uuid("receipt_id").references(UsersReceipts.id)
+        val userId = uuid("user_id").references(PostgresUserPersistent.Users.id)
+
+        init {
+            transaction { SchemaUtils.create(this@UsersReceiptsActivations) }
         }
     }
 
@@ -174,12 +185,16 @@ object PostgresReceiptPersistent : ReceiptPersistent {
     override suspend fun activateReceipt(receipt: Receipt, recipient: User) {
         val receipts = loadReceipts(receipt.issuer).toMutableList()
         val currentReceipt = receipts.find { it.id == receipt.id } ?: throw UnknownReceiptException(receipt)
+        val activations = loadActivations(receipt)
 
         if (currentReceipt.recipient != null && currentReceipt.recipient != recipient) {
             throw InvalidRecipientException(receipt, recipient)
         }
         if (currentReceipt.issuer == recipient) {
             throw ReceiptIssuerActivationException(receipt)
+        }
+        if (activations.contains(recipient.id)) {
+            throw ReceiptNotActiveException(receipt)
         }
         if (!currentReceipt.isActive || currentReceipt.activations < 1) {
             throw ReceiptNotActiveException(receipt)
@@ -192,7 +207,11 @@ object PostgresReceiptPersistent : ReceiptPersistent {
         } else {
             transaction {
                 UsersReceipts.update({ UsersReceipts.id eq receipt.id }) {
-                    it[activations] = currentActivations
+                    it[UsersReceipts.activations] = currentActivations
+                }
+                UsersReceiptsActivations.insert {
+                    it[receiptId] = receipt.id
+                    it[userId] = recipient.id
                 }
             }
         }
@@ -243,6 +262,17 @@ object PostgresReceiptPersistent : ReceiptPersistent {
             }
         }
         return ReceiptCollection(receipts = receipts.await())
+    }
+
+    override suspend fun loadActivations(receipt: Receipt): List<UUID> {
+        val activations = suspendedTransactionAsync {
+            UsersReceiptsActivations.select {
+                UsersReceiptsActivations.receiptId.eq(receipt.id)
+            }.map {
+                it[UsersReceiptsActivations.userId]
+            }
+        }
+        return activations.await()
     }
 }
 
@@ -303,6 +333,10 @@ class JsonReceiptPersistent(
         fileLock.withLock {
             return loadReceiptsUnsafe(user)
         }
+    }
+
+    override suspend fun loadActivations(receipt: Receipt): List<UUID> {
+        TODO("Not yet implemented")
     }
 
     override suspend fun inactivateReceipt(receipt: Receipt) {

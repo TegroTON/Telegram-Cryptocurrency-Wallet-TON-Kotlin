@@ -57,11 +57,20 @@ class Commands {
                                                     (if (bot is TgBot) user.tgId else user.vkId) ?: 0
                                                 )
                                                 if (!isUserInChat) {
-                                                    val chat = bot.getChat(chatId)
-                                                    throw RecipientNotSubscriberException(
-                                                        receipt,
-                                                        "${chat.title} (@${chat.username})"
-                                                    )
+                                                    if (bot is TgBot) {
+                                                        user.setMenu(
+                                                            bot,
+                                                            ReceiptActivateSubscribeMenu(user, receipt, MainMenu(user)),
+                                                            null
+                                                        )
+                                                        return
+                                                    } else {
+                                                        val chat = bot.getChat(chatId)
+                                                        throw RecipientNotSubscriberException(
+                                                            receipt,
+                                                            "${chat.title} (@${chat.username})"
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -92,6 +101,8 @@ class Commands {
                                         append(lang.receiptNotActiveException.format(id))
                                     } catch (ex: RecipientNotSubscriberException) {
                                         append(lang.recipientNotSubscriberException.format(ex.chatName))
+                                    } catch (ex: Exception) {
+                                        ex.printStackTrace()
                                     }
                                 }
                                 bot.sendMessage(botMessage.peerId, result)

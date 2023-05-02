@@ -38,7 +38,7 @@ object WalletObserver {
         }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private val bnbNativeCache = Caffeine.newBuilder().expireAfterWrite(30000, TimeUnit.MILLISECONDS)
+    private val bnbNativeCache = Caffeine.newBuilder().expireAfterWrite(60, TimeUnit.SECONDS)
         .buildAsync<UUID, List<Coins>> { userId, e ->
             GlobalScope.async(e.asCoroutineDispatcher()) {
 //                println("Start checking: $userId")
@@ -121,7 +121,7 @@ object WalletObserver {
         val reserve = cryptoCurrency.networkFeeReserve
         //println("reserve ${Coins(cryptoCurrency, reserve)} : $reserve")
         if (balance.amount > reserve) {
-            println("Нашли у $user ($userWalletAddress) денег на контракте: $balance")
+            println("Нашли у ${user.id} ($userWalletAddress) денег на контракте: $balance")
             val depositCoins = balance - reserve
             //println("balance - reserve $depositCoins : ${depositCoins.amount}")
             val masterWalletPk = UserPrivateKey(UUID(0, 0), MASTER_KEY).key.toByteArray()

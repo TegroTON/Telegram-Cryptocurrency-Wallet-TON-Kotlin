@@ -109,6 +109,8 @@ data class Messages(
     val receiptNotActiveException: String = "receiptNotActiveException",
     val illegalRecipientException: String = "illegalRecipientException",
     val recipientNotSubscriberException: String = "recipientNotSubscriberException",
+    val menuReceiptActivateSubscribeMessage: String = "menuReceiptActivateSubscribeMessage",
+    val menuReceiptActivateSubscribeEntry: String = "menuReceiptActivateSubscribeEntry",
 
     /*****************************
      *   Deposits menu section   *
@@ -197,6 +199,7 @@ data class Messages(
      **************/
     val menuSelectInvalidAmount: String = "menuSelectInvalidAmount",
     val menuButtonApprove: String = "menuButtonApprove",
+    val menuButtonCheck: String = "menuButtonCheck",
     val menuButtonMenu: String = "menuButtonMenu",
     val menuButtonBack: String = "menuButtonBack",
     val monthOne: String = "monthOne",
