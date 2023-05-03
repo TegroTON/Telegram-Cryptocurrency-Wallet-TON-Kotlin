@@ -27,7 +27,11 @@ data class ReceiptSubscriberMenu(
         if (chatIds.isNotEmpty()) {
             for (chatId: Long in chatIds) {
                 val chat = bot.getChat(chatId)
-                chats.add(chat)
+                if (chat != null) {
+                    chats.add(chat)
+                } else {
+                    chats.add(Chat(chatId, "Chat not found: $chatId", "null"))
+                }
             }
         }
         bot.updateKeyboard(

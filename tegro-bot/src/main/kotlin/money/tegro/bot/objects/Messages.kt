@@ -105,6 +105,7 @@ data class Messages(
     val receiptActivated: String = "receiptActivated",
     val multireceiptActivated: String = "multireceiptActivated",
     val receiptMoneyReceived: String = "receiptMoneyReceived",
+    val receiptChatNotFoundException: String = "receiptChatNotFoundException",
     val receiptIssuerActivationException: String = "receiptIssuerActivationException",
     val receiptNotActiveException: String = "receiptNotActiveException",
     val illegalRecipientException: String = "illegalRecipientException",

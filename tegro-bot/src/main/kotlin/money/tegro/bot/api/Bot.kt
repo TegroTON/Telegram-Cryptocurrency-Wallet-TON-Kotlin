@@ -14,6 +14,6 @@ sealed interface Bot {
     suspend fun sendPhoto(to: Long, message: String, inputStream: InputStream, filename: String, keyboard: BotKeyboard?)
     suspend fun deleteMessage(peerId: Long, messageId: Long)
     suspend fun sendPopup(botMessage: BotMessage, message: String): Boolean
-    suspend fun getChat(chatId: Long): Chat
+    suspend fun getChat(chatId: Long): Chat?
     suspend fun isUserInChat(chatId: Long, userId: Long): Boolean
 }

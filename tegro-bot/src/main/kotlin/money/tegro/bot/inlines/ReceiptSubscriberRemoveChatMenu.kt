@@ -5,6 +5,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.BotMessage
+import money.tegro.bot.objects.Chat
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
@@ -20,7 +21,10 @@ data class ReceiptSubscriberRemoveChatMenu(
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
-        val chat = bot.getChat(chatId)
+        var chat = bot.getChat(chatId)
+        if (chat == null) {
+            chat = Chat(chatId, "Chat not found: $chatId", "null")
+        }
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,

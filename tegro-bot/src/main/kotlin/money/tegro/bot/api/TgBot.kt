@@ -176,16 +176,20 @@ class TgBot(
         return true
     }
 
-    override suspend fun getChat(chatId: Long): Chat {
-        val request = GetChat().apply {
-            this.chatId = chatId.toString()
+    override suspend fun getChat(chatId: Long): Chat? {
+        return try {
+            val request = GetChat().apply {
+                this.chatId = chatId.toString()
+            }
+            val result = executeAsync(request).await()
+            Chat(
+                result.id,
+                result.title,
+                result.userName
+            )
+        } catch (ignored: Exception) {
+            null
         }
-        val result = executeAsync(request).await()
-        return Chat(
-            result.id,
-            result.title,
-            result.userName
-        )
     }
 
     override suspend fun isUserInChat(chatId: Long, userId: Long): Boolean {
@@ -208,9 +212,10 @@ class TgBot(
 
     override fun onUpdateReceived(update: Update) {
 //        println("$update")
-//        if (!update.hasMessage() || !update.hasCallbackQuery()) {
-//            println("unknown update type: $update")
-//        }
+        if (!update.hasMessage() && !update.hasCallbackQuery()) {
+            println("unknown update type: $update")
+            return
+        }
         val userTgId = update.message?.from?.id ?: update.callbackQuery.from.id
         launch {
             val randomUUID = UUID.nameUUIDFromBytes("tg_$userTgId".toByteArray())

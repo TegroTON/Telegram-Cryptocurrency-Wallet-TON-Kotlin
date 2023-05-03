@@ -219,7 +219,7 @@ class VkBot : Bot, CoroutineScope {
         return false
     }
 
-    override suspend fun getChat(chatId: Long): Chat {
+    override suspend fun getChat(chatId: Long): Chat? {
         TODO("Not yet implemented")
     }
 

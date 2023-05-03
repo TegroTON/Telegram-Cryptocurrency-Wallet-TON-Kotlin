@@ -50,13 +50,14 @@ data class ReceiptSubscriberAddChatMenu(
                 user.setMenu(bot, parentMenu, message.lastMenuMessageId)
                 return true
             }
-            try {
-                bot.getChat(chatId)
-            } catch (ignored: Exception) {
+
+            val chat = bot.getChat(chatId)
+            if (chat == null) {
                 bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptSubscriberAddChatError)
                 user.setMenu(bot, parentMenu, message.lastMenuMessageId)
                 return true
             }
+
             val chatIds = PostgresReceiptPersistent.getChatsByReceipt(receipt)
             if (!chatIds.contains(chatId)) {
                 PostgresReceiptPersistent.addChatToReceipt(receipt, chatId)

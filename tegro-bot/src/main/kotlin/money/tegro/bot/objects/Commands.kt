@@ -66,10 +66,17 @@ class Commands {
                                                         return
                                                     } else {
                                                         val chat = bot.getChat(chatId)
-                                                        throw RecipientNotSubscriberException(
-                                                            receipt,
-                                                            "${chat.title} (@${chat.username})"
-                                                        )
+                                                        if (chat != null) {
+                                                            throw RecipientNotSubscriberException(
+                                                                receipt,
+                                                                "${chat.title} (@${chat.username})"
+                                                            )
+                                                        } else {
+                                                            throw RecipientNotSubscriberException(
+                                                                receipt,
+                                                                "Chat not found!"
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
