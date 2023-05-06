@@ -25,16 +25,16 @@ class WalletWithdrawSelectAmountMenu(
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         val fee = Coins(currency, currency.botFee)
         val balance = PostgresWalletPersistent.loadWalletState(user).active[currency]
-        val available = balance - fee
         val min = Coins(currency, currency.minAmount)
-        if (available < min) {
+        val minAvailable = Coins(currency, currency.minAmount) + fee
+        if (balance < minAvailable) {
             bot.updateKeyboard(
                 to = user.vkId ?: user.tgId ?: 0,
                 lastMenuMessageId = lastMenuMessageId,
                 message = String.format(
                     Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney,
-                    min,
-                    available
+                    minAvailable,
+                    balance
                 ),
                 keyboard = BotKeyboard {
                     row {
@@ -48,6 +48,7 @@ class WalletWithdrawSelectAmountMenu(
             )
             return
         }
+        val available = balance - fee
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,

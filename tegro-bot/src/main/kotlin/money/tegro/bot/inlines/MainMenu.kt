@@ -135,7 +135,7 @@ data class MainMenu(
     }
 
     @Serializable
-    enum class CommandPayload {
+    private enum class CommandPayload {
         WALLET, RECEIPTS, EXCHANGE, STOCK, MARKET, ACCOUNTS, DEALS, DEPOSITS, NFT, DEX, SETTINGS
     }
 }

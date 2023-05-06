@@ -182,6 +182,12 @@ data class Messages(
     val menuSettingsHelp: String = "menuSettingsHelp",
     val menuReferralsMessage: String = "menuReferralsMessage",
 
+    /************************
+     *   NFT menu section   *
+     ************************/
+    val menuNftMessage: String = "menuNftMessage",
+    val menuNftConnect: String = "menuNftConnect",
+
     /*****************************
      *   Exchange menu section   *
      *****************************/
