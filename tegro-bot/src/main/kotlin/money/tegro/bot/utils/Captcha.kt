@@ -104,7 +104,7 @@ class Captcha {
         }
 
         image = if (captcha.path == null) createTempDir(suffix = ".png")
-        else File(captcha.path + randCaptcha() + ".png")
+        else File(captcha.path + answer + ".png")
         ImageIO.write(buffer, "png", image)
 
         return this
