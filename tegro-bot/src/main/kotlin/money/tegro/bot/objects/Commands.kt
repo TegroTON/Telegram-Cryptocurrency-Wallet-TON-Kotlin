@@ -78,7 +78,7 @@ class Commands {
                                         val captcha = Captcha().builder(350, 100, "./", Color.white)
                                             .addLines(10, 10, 1, Color.black)
                                             .addNoise(false, Color.black)
-                                            .setFont("Arial", 50, Font.BOLD)
+                                            .setFont("Times New Roman", 50, Font.BOLD)
                                             .setText(6, Color.black)
                                             .build()
 
