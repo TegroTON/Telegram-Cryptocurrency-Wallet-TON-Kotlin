@@ -45,6 +45,7 @@ dependencies {
     implementation("fr.minuskube:jpastee:1.0.2")
     implementation("ch.qos.logback:logback-classic:1.4.6")
     implementation("org.web3j:core:5.0.0")
+    implementation("net.logicsquad:nanocaptcha:1.5")
 }
 
 tasks.withType<JavaCompile> {

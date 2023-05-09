@@ -5,13 +5,16 @@ import money.tegro.bot.api.TgBot
 import money.tegro.bot.exceptions.RecipientNotSubscriberException
 import money.tegro.bot.inlines.*
 import money.tegro.bot.receipts.PostgresReceiptPersistent
-import money.tegro.bot.utils.Captcha
 import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.utils.PostgresLogsPersistent
 import money.tegro.bot.wallet.PostgresAccountsPersistent
-import java.awt.Color
-import java.awt.Font
+import net.logicsquad.nanocaptcha.image.ImageCaptcha
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.util.*
+import javax.imageio.ImageIO
+
 
 class Commands {
 
@@ -75,32 +78,30 @@ class Commands {
                                                 }
                                             }
                                         }
-                                        val captcha = Captcha().builder(350, 100, "./", Color.white)
-                                            .addLines(10, 10, 1, Color.black)
-                                            .addNoise(false, Color.black)
-                                            .setFont("Default", 45, Font.BOLD)
-                                            .setText(6, Color.black)
-                                            .build()
+                                        val imageCaptcha = ImageCaptcha.Builder(350, 100).addContent().build()
 
-                                        if (captcha.image != null) {
-                                            bot.sendPhoto(
-                                                botMessage.peerId,
-                                                Messages[user].receiptSolveCaptcha,
-                                                captcha.image!!,
-                                                null
-                                            )
+                                        val baos = ByteArrayOutputStream()
+                                        ImageIO.write(imageCaptcha.image, "png", baos)
+                                        val stream = ByteArrayInputStream(baos.toByteArray()) as InputStream
 
-                                            user.setMenu(
-                                                bot,
-                                                ReceiptActivateCaptchaMenu(
-                                                    user,
-                                                    receipt,
-                                                    captcha.answer,
-                                                    MainMenu(user)
-                                                ),
-                                                botMessage.lastMenuMessageId
-                                            )
-                                        }
+                                        bot.sendPhoto(
+                                            botMessage.peerId,
+                                            Messages[user].receiptSolveCaptcha,
+                                            stream,
+                                            "captcha-${imageCaptcha.content}",
+                                            null
+                                        )
+
+                                        user.setMenu(
+                                            bot,
+                                            ReceiptActivateCaptchaMenu(
+                                                user,
+                                                receipt,
+                                                imageCaptcha.content,
+                                                MainMenu(user)
+                                            ),
+                                            botMessage.lastMenuMessageId
+                                        )
                                     } catch (ex: RecipientNotSubscriberException) {
                                         append(lang.recipientNotSubscriberException.format(ex.chatName))
                                     } catch (ex: Exception) {
