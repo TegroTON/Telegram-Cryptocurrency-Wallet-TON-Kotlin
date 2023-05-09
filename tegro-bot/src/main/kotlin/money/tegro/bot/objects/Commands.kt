@@ -107,7 +107,9 @@ class Commands {
                                         ex.printStackTrace()
                                     }
                                 }
-                                bot.sendMessage(botMessage.peerId, result)
+                                if (result.isNotEmpty()) {
+                                    bot.sendMessage(botMessage.peerId, result)
+                                }
                             } else user.setMenu(bot, MainMenu(user), null)
                         }
 
