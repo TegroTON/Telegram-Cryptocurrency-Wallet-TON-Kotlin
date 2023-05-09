@@ -93,7 +93,8 @@ object PostgresReceiptPersistent : ReceiptPersistent {
     }
 
     override suspend fun createReceipt(issuer: User, coins: Coins, activations: Int, recipient: User?): Receipt {
-        walletPersistent.freeze(issuer, coins)
+        val toFreeze = Coins(coins.currency, coins.amount * activations.toBigInteger())
+        walletPersistent.freeze(issuer, toFreeze)
         try {
             val receipt = Receipt(
                 id = UUID.randomUUID(),
@@ -145,7 +146,8 @@ object PostgresReceiptPersistent : ReceiptPersistent {
 
     suspend fun deleteReceipt(receipt: Receipt) {
         inactivateReceipt(receipt)
-        walletPersistent.unfreeze(receipt.issuer, receipt.coins)
+        val toUnfreeze = Coins(receipt.coins.currency, receipt.coins.amount * receipt.activations.toBigInteger())
+        walletPersistent.unfreeze(receipt.issuer, toUnfreeze)
     }
 
     override suspend fun inactivateReceipt(receipt: Receipt) {

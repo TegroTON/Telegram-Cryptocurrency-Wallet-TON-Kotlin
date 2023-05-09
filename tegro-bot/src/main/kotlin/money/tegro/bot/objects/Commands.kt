@@ -2,15 +2,15 @@ package money.tegro.bot.objects
 
 import money.tegro.bot.api.Bot
 import money.tegro.bot.api.TgBot
-import money.tegro.bot.exceptions.InvalidRecipientException
-import money.tegro.bot.exceptions.ReceiptIssuerActivationException
-import money.tegro.bot.exceptions.ReceiptNotActiveException
 import money.tegro.bot.exceptions.RecipientNotSubscriberException
 import money.tegro.bot.inlines.*
 import money.tegro.bot.receipts.PostgresReceiptPersistent
+import money.tegro.bot.utils.Captcha
 import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.utils.PostgresLogsPersistent
 import money.tegro.bot.wallet.PostgresAccountsPersistent
+import java.awt.Color
+import java.awt.Font
 import java.util.*
 
 class Commands {
@@ -41,12 +41,6 @@ class Commands {
                             val receipt = PostgresReceiptPersistent.loadReceipt(UUID.fromString(code))
                             if (receipt != null) {
                                 val lang = Messages[user.settings.lang]
-                                val id = buildString {
-                                    if (bot is TgBot) append("<code>")
-                                    append("#")
-                                    append(receipt.id.toString())
-                                    if (bot is TgBot) append("</code>")
-                                }
                                 val result = buildString {
                                     try {
                                         val chatIds = PostgresReceiptPersistent.getChatsByReceipt(receipt)
@@ -81,31 +75,32 @@ class Commands {
                                                 }
                                             }
                                         }
-                                        PostgresReceiptPersistent.activateReceipt(receipt, user)
-                                        append(lang.receiptMoneyReceived.format(receipt.coins))
-                                        val issuer = receipt.issuer
-                                        if (receipt.activations > 1) {
-                                            val updatedReceipt = PostgresReceiptPersistent.loadReceipt(receipt.id)
-                                            if (updatedReceipt != null)
-                                                bot.sendMessage(
-                                                    issuer.tgId ?: issuer.vkId ?: 0,
-                                                    Messages[issuer.settings.lang].multireceiptActivated.format(
-                                                        updatedReceipt.coins,
-                                                        updatedReceipt.activations
-                                                    )
-                                                )
-                                        } else {
-                                            bot.sendMessage(
-                                                issuer.tgId ?: issuer.vkId ?: 0,
-                                                Messages[issuer.settings.lang].receiptActivated.format(receipt.coins)
+                                        val captcha = Captcha().builder(350, 100, "./", Color.white)
+                                            .addLines(10, 10, 1, Color.black)
+                                            .addNoise(false, Color.black)
+                                            .setFont("Arial", 50, Font.BOLD)
+                                            .setText(6, Color.black)
+                                            .build()
+
+                                        if (captcha.image != null) {
+                                            bot.sendPhoto(
+                                                botMessage.peerId,
+                                                Messages[user].receiptSolveCaptcha,
+                                                captcha.image!!,
+                                                null
+                                            )
+
+                                            user.setMenu(
+                                                bot,
+                                                ReceiptActivateCaptchaMenu(
+                                                    user,
+                                                    receipt,
+                                                    captcha.answer,
+                                                    MainMenu(user)
+                                                ),
+                                                botMessage.lastMenuMessageId
                                             )
                                         }
-                                    } catch (ex: ReceiptIssuerActivationException) {
-                                        append(lang.receiptIssuerActivationException)
-                                    } catch (ex: InvalidRecipientException) {
-                                        append(lang.illegalRecipientException.format(id))
-                                    } catch (ex: ReceiptNotActiveException) {
-                                        append(lang.receiptNotActiveException.format(id))
                                     } catch (ex: RecipientNotSubscriberException) {
                                         append(lang.recipientNotSubscriberException.format(ex.chatName))
                                     } catch (ex: Exception) {
