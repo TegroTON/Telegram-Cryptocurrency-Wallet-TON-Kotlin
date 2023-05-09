@@ -1,5 +1,5 @@
-FROM openjdk:17-oracle
-RUN apt-get install wget
+FROM openjdk:17-alpine
+EXPOSE 10093
 RUN mkdir --parents ~/.postgresql && wget "https://storage.yandexcloud.net/cloud-certs/CA.pem" --output-document ~/.postgresql/root.crt && chmod 0600 ~/.postgresql/root.crt
 COPY tegro-bot/build/install/tegro-bot /opt/tegro-bot
 
