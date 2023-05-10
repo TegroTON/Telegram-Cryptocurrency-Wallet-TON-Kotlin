@@ -338,7 +338,7 @@ class TgBot(
             }
             if (message.text != null && message.text.startsWith("/")) {
                 println("Got command from ${user.id}: ${message.text}")
-                Commands.execute(user, botMessage, this@TgBot, menu)
+                Commands.execute(user, botMessage, this@TgBot, menu, message.from.isPremium)
                 return@launch
             }
             try {

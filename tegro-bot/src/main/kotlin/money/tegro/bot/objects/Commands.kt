@@ -2,6 +2,8 @@ package money.tegro.bot.objects
 
 import money.tegro.bot.api.Bot
 import money.tegro.bot.api.TgBot
+import money.tegro.bot.exceptions.ReceiptNotPremiumUserException
+import money.tegro.bot.exceptions.ReceiptOnlyTgException
 import money.tegro.bot.exceptions.RecipientNotSubscriberException
 import money.tegro.bot.inlines.*
 import money.tegro.bot.receipts.PostgresReceiptPersistent
@@ -9,20 +11,17 @@ import money.tegro.bot.utils.Captcha
 import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.utils.PostgresLogsPersistent
 import money.tegro.bot.wallet.PostgresAccountsPersistent
-import net.logicsquad.nanocaptcha.image.ImageCaptcha
 import java.awt.Color
 import java.awt.Font
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.*
-import javax.imageio.ImageIO
+import kotlin.random.Random
 
 
 class Commands {
 
     companion object {
-        suspend fun execute(user: User, botMessage: BotMessage, bot: Bot, menu: Menu?) {
+        suspend fun execute(user: User, botMessage: BotMessage, bot: Bot, menu: Menu?, isPremium: Boolean?) {
             if (botMessage.body == null) {
                 user.setMenu(bot, MainMenu(user), null)
                 return
@@ -47,6 +46,12 @@ class Commands {
                             val receipt = PostgresReceiptPersistent.loadReceipt(UUID.fromString(code))
                             if (receipt != null) {
                                 val lang = Messages[user.settings.lang]
+                                val id = buildString {
+                                    if (bot is TgBot) append("<code>")
+                                    append("#")
+                                    append(receipt.id.toString())
+                                    if (bot is TgBot) append("</code>")
+                                }
                                 val result = buildString {
                                     try {
                                         val chatIds = PostgresReceiptPersistent.getChatsByReceipt(receipt)
@@ -81,39 +86,44 @@ class Commands {
                                                 }
                                             }
                                         }
-                                        val imageCaptcha = ImageCaptcha.Builder(350, 100).addContent().build()
+                                        if (receipt.onlyPremium) {
+                                            if (isPremium != null) {
+                                                if (!isPremium) {
+                                                    throw ReceiptNotPremiumUserException(receipt)
+                                                }
+                                            } else {
+                                                throw ReceiptOnlyTgException(receipt)
+                                            }
+                                        }
+                                        val needCaptcha = receipt.captcha
+                                        val captcha = getCaptcha()
 
-                                        val baos = ByteArrayOutputStream()
-                                        ImageIO.write(imageCaptcha.image, "png", baos)
-                                        val stream = ByteArrayInputStream(baos.toByteArray()) as InputStream
-
-                                        val captcha = Captcha().builder(350, 100, "./", Color.white)
-                                            .addLines(10, 10, 1, Color.black)
-                                            .addNoise(false, Color.black)
-                                            .setFont("Arial", 45, Font.BOLD)
-                                            .setText(6, Color.black)
-                                            .build()
-
-                                        bot.sendPhoto(
-                                            botMessage.peerId,
-                                            Messages[user].receiptSolveCaptcha,
-                                            captcha.image!!,
-                                            "captcha-${captcha.answer}",
-                                            null
-                                        )
+                                        if (needCaptcha) {
+                                            bot.sendPhoto(
+                                                botMessage.peerId,
+                                                Messages[user].receiptSolveCaptcha,
+                                                captcha.first,
+                                                "captcha-${captcha.second}",
+                                                null
+                                            )
+                                        }
 
                                         user.setMenu(
                                             bot,
                                             ReceiptActivateCaptchaMenu(
                                                 user,
                                                 receipt,
-                                                captcha.answer,
+                                                if (needCaptcha) captcha.second else "",
                                                 MainMenu(user)
                                             ),
                                             botMessage.lastMenuMessageId
                                         )
                                     } catch (ex: RecipientNotSubscriberException) {
                                         append(lang.recipientNotSubscriberException.format(ex.chatName))
+                                    } catch (ex: ReceiptOnlyTgException) {
+                                        append(lang.onlyTgReceiptException.format(id))
+                                    } catch (ex: ReceiptNotPremiumUserException) {
+                                        append(lang.notPremiumRecipientException.format(id))
                                     } catch (ex: Exception) {
                                         ex.printStackTrace()
                                     }
@@ -222,6 +232,38 @@ class Commands {
 
                 else -> user.setMenu(bot, MainMenu(user), null)
             }
+        }
+
+        private fun getCaptcha(): Pair<InputStream, String> {
+//            if (false) {
+//                val imageCaptcha = ImageCaptcha.Builder(350, 100)
+//                    .addContent(
+//                        LatinContentProducer(Random.nextInt(5, 8)),
+//                        FastWordRenderer.Builder()
+//                            .setXOffset(Random.nextDouble(0.05, 0.55))
+//                            .setYOffset(Random.nextDouble(0.1, 0.4))
+//                            .build()
+//                    )
+//                    .addNoise(CurvedLineNoiseProducer())
+//                    .addNoise(CurvedLineNoiseProducer())
+//                    .addNoise(StraightLineNoiseProducer(Color.BLACK, Random.nextInt(1, 3)))
+//                    .addNoise(StraightLineNoiseProducer(Color.BLACK, Random.nextInt(1, 3)))
+//                    .addNoise(StraightLineNoiseProducer(Color.BLACK, Random.nextInt(1, 3)))
+//                    .build()
+//
+//                val baos = ByteArrayOutputStream()
+//                ImageIO.write(imageCaptcha.image, "png", baos)
+//                val stream = ByteArrayInputStream(baos.toByteArray()) as InputStream
+//                return Pair(stream, imageCaptcha.content)
+//            } else {
+            val captcha = Captcha().builder(350, 100, "./", Color.white)
+                .addLines(Random.nextInt(10, 20), Random.nextInt(10, 20), 1, Color.black)
+                .addNoise(Random.nextBoolean(), Color.black)
+                .setFont("Arial", Random.nextInt(40, 55), Font.BOLD)
+                .setText(Random.nextInt(5, 8), Color.black)
+                .build()
+            return Pair(captcha.image!!, captcha.answer)
+//            }
         }
     }
 }

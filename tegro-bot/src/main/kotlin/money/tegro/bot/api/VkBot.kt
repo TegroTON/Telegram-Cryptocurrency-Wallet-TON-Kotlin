@@ -113,7 +113,7 @@ class VkBot : Bot, CoroutineScope {
                     }
                 }
                 if (message.text.startsWith("/")) {
-                    Commands.execute(user, botMessage, this@VkBot, menu)
+                    Commands.execute(user, botMessage, this@VkBot, menu, null)
                     return@launch
                 }
                 try {

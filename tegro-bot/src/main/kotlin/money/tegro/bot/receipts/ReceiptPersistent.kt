@@ -1,25 +1,20 @@
 package money.tegro.bot.receipts
 
-import kotlinx.atomicfu.locks.reentrantLock
-import kotlinx.atomicfu.locks.withLock
 import kotlinx.datetime.Clock
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import money.tegro.bot.exceptions.InvalidRecipientException
-import money.tegro.bot.exceptions.ReceiptIssuerActivationException
-import money.tegro.bot.exceptions.ReceiptNotActiveException
-import money.tegro.bot.exceptions.UnknownReceiptException
+import money.tegro.bot.exceptions.*
 import money.tegro.bot.objects.PostgresUserPersistent
 import money.tegro.bot.objects.User
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.activations
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.amount
+import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.captcha
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.currency
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.isActive
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.issueTime
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.issuerId
+import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.onlyNew
+import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.onlyPremium
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.recipientId
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceiptsChats.receiptId
-import money.tegro.bot.utils.JSON
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.walletPersistent
@@ -29,7 +24,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.File
 import java.util.*
 
 interface ReceiptPersistent {
@@ -67,10 +61,15 @@ object PostgresReceiptPersistent : ReceiptPersistent {
         val amount = long("amount")
         val activations = integer("activations")
         val recipientId = uuid("recipient_id").references(PostgresUserPersistent.Users.id).nullable()
+        val captcha = bool("captcha").default(true)
+        val onlyNew = bool("only_new").default(false)
+        val onlyPremium = bool("only_premium").default(false)
         val isActive = bool("is_active")
 
         init {
-            transaction { SchemaUtils.create(this@UsersReceipts) }
+            transaction {
+                SchemaUtils.create(this@UsersReceipts)
+            }
         }
     }
 
@@ -118,10 +117,10 @@ object PostgresReceiptPersistent : ReceiptPersistent {
 
             exec(
                 """
-                    INSERT INTO users_receipts (id,issue_time,issuer_id, currency, amount, activations, recipient_id, is_active) 
-                    values (?,?,?,?,?,?,?,?)
+                    INSERT INTO users_receipts (id, issue_time, issuer_id, currency, amount, activations, recipient_id, captcha, only_new, only_premium, is_active) 
+                    values (?,?,?,?,?,?,?,?,?,?,?)
                     ON CONFLICT (id) DO UPDATE SET issue_time=?, issuer_id=?, currency=?, amount=?, activations=?,
-                    recipient_id=?, is_active=?
+                    recipient_id=?, captcha=?, only_new=?, only_premium=?, is_active=?
                     """, args = listOf(
                     UsersReceipts.id.columnType to receipt.id,
                     issueTime.columnType to receipt.issueTime,
@@ -130,6 +129,9 @@ object PostgresReceiptPersistent : ReceiptPersistent {
                     amount.columnType to receipt.coins.amount,
                     activations.columnType to receipt.activations,
                     recipientId.columnType to receipt.recipient?.id,
+                    captcha.columnType to receipt.captcha,
+                    onlyNew.columnType to receipt.onlyNew,
+                    onlyPremium.columnType to receipt.onlyPremium,
                     isActive.columnType to receipt.isActive,
 
                     issueTime.columnType to receipt.issueTime,
@@ -138,6 +140,9 @@ object PostgresReceiptPersistent : ReceiptPersistent {
                     amount.columnType to receipt.coins.amount,
                     activations.columnType to receipt.activations,
                     recipientId.columnType to receipt.recipient?.id,
+                    captcha.columnType to receipt.captcha,
+                    onlyNew.columnType to receipt.onlyNew,
+                    onlyPremium.columnType to receipt.onlyPremium,
                     isActive.columnType to receipt.isActive,
                 )
             )
@@ -198,6 +203,17 @@ object PostgresReceiptPersistent : ReceiptPersistent {
         if (activations.contains(recipient.id)) {
             throw ReceiptNotActiveException(receipt)
         }
+        if (receipt.onlyNew) {
+            if (recipient.settings.referralId != null) {
+                if (recipient.settings.referralId != receipt.issuer.id) {
+                    throw ReceiptNotNewUserException(receipt)
+                }
+            } else {
+                throw ReceiptNotNewUserException(receipt)
+            }
+        } else {
+            throw ReceiptNotNewUserException(receipt)
+        }
         if (!currentReceipt.isActive || currentReceipt.activations < 1) {
             throw ReceiptNotActiveException(receipt)
         }
@@ -236,6 +252,9 @@ object PostgresReceiptPersistent : ReceiptPersistent {
                 ),
                 activations = result[activations],
                 recipient = recipient,
+                captcha = result[captcha],
+                onlyNew = result[onlyNew],
+                onlyPremium = result[onlyPremium],
                 isActive = result[isActive]
             )
         }
@@ -243,6 +262,9 @@ object PostgresReceiptPersistent : ReceiptPersistent {
     }
 
     override suspend fun loadReceipts(user: User): ReceiptCollection {
+        transaction {
+            SchemaUtils.createMissingTablesAndColumns(UsersReceipts)
+        }
         val receipts = suspendedTransactionAsync {
             UsersReceipts.select {
                 issuerId.eq(user.id)
@@ -259,6 +281,9 @@ object PostgresReceiptPersistent : ReceiptPersistent {
                     ),
                     activations = it[activations],
                     recipient = recipient,
+                    captcha = it[captcha],
+                    onlyNew = it[onlyNew],
+                    onlyPremium = it[onlyPremium],
                     isActive = it[isActive]
                 )
             }
@@ -276,104 +301,4 @@ object PostgresReceiptPersistent : ReceiptPersistent {
         }
         return activations.await()
     }
-}
-
-class JsonReceiptPersistent(
-    val file: File
-) : ReceiptPersistent {
-    init {
-        if (file.parentFile != null && !file.parentFile.exists()) file.parentFile.mkdirs()
-        if (!file.exists()) {
-            file.createNewFile()
-            file.writeText("{}")
-        }
-    }
-
-    private val fileLock = reentrantLock()
-
-    override suspend fun createReceipt(issuer: User, coins: Coins, activations: Int, recipient: User?): Receipt {
-        fileLock.withLock {
-            walletPersistent.freeze(issuer, coins)
-            try {
-                val receipt = Receipt(
-                    id = UUID.randomUUID(),
-                    issueTime = Clock.System.now(),
-                    issuer = issuer,
-                    coins = coins,
-                    activations = activations,
-                    recipient = recipient
-                )
-                val receipts = loadReceiptsUnsafe(issuer).toMutableList()
-                receipts.add(receipt)
-                saveReceiptsUnsafe(issuer, ReceiptCollection(receipts))
-                return receipt
-            } catch (e: Throwable) {
-                walletPersistent.unfreeze(issuer, coins)
-                throw e
-            }
-        }
-    }
-
-    override suspend fun activateReceipt(receipt: Receipt, recipient: User) {
-        fileLock.withLock {
-            val receipts = loadReceiptsUnsafe(receipt.issuer).toMutableList()
-            val currentReceipt = receipts.find { it.id == receipt.id } ?: throw UnknownReceiptException(receipt)
-
-            if (currentReceipt.recipient != null && currentReceipt.recipient != recipient) {
-                throw InvalidRecipientException(receipt, recipient)
-            }
-            if (currentReceipt.issuer == recipient) {
-                throw ReceiptIssuerActivationException(receipt)
-            }
-            receipt.issuer.transfer(recipient, receipt.coins)
-            receipts.remove(receipt)
-            saveReceiptsUnsafe(receipt.issuer, ReceiptCollection(receipts))
-        }
-    }
-
-    override suspend fun loadReceipts(user: User): ReceiptCollection {
-        fileLock.withLock {
-            return loadReceiptsUnsafe(user)
-        }
-    }
-
-    override suspend fun loadActivations(receipt: Receipt): List<UUID> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun inactivateReceipt(receipt: Receipt) {
-        val receipts = loadReceipts(receipt.issuer).toMutableList()
-        receipts.remove(receipt)
-        saveReceiptsUnsafe(receipt.issuer, ReceiptCollection(receipts))
-    }
-
-    override suspend fun addChatToReceipt(receipt: Receipt, chatId: Long) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun deleteChatFromReceipt(receipt: Receipt, chatId: Long) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getChatsByReceipt(receipt: Receipt): List<Long> {
-        TODO("Not yet implemented")
-    }
-
-    private fun loadReceiptsUnsafe(user: User): ReceiptCollection {
-        val map = loadMap()
-        return map[user.id] ?: ReceiptCollection(emptyList())
-    }
-
-    private fun saveReceiptsUnsafe(user: User, receipts: ReceiptCollection) {
-        val map = loadMap().toMutableMap()
-        map[user.id] = receipts
-        saveMap(map)
-    }
-
-    private fun loadMap() =
-        JSON.decodeFromString<Map<UUID, ReceiptCollection>>(file.readText())
-
-    private fun saveMap(map: Map<UUID, ReceiptCollection>) = file.writeText(
-        JSON.encodeToString(map)
-    )
 }

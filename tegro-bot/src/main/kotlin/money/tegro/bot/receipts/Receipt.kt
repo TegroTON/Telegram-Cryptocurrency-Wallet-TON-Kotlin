@@ -16,5 +16,8 @@ data class Receipt(
     val coins: Coins,
     val activations: Int,
     val recipient: User? = null,
+    val captcha: Boolean = true,
+    val onlyNew: Boolean = false,
+    val onlyPremium: Boolean = false,
     val isActive: Boolean = true
 )

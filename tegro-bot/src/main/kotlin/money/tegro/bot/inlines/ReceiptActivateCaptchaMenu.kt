@@ -6,10 +6,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.api.TgBot
-import money.tegro.bot.exceptions.InvalidRecipientException
-import money.tegro.bot.exceptions.ReceiptIssuerActivationException
-import money.tegro.bot.exceptions.ReceiptNotActiveException
-import money.tegro.bot.exceptions.RecipientNotSubscriberException
+import money.tegro.bot.exceptions.*
 import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
@@ -63,7 +60,7 @@ data class ReceiptActivateCaptchaMenu(
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 is ButtonPayload.Activate -> {
                     activate(bot, user, message)
-                    return true
+                    return false
                 }
 
                 is ButtonPayload.Back -> {
@@ -73,7 +70,7 @@ data class ReceiptActivateCaptchaMenu(
         } else {
             if (message.body != null && message.body == answer) {
                 activate(bot, user, message)
-                return true
+                return false
             }
             bot.sendMessage(message.peerId, Messages[user].receiptCaptchaIncorrect)
         }
@@ -115,6 +112,8 @@ data class ReceiptActivateCaptchaMenu(
                 append(lang.illegalRecipientException.format(id))
             } catch (ex: ReceiptNotActiveException) {
                 append(lang.receiptNotActiveException.format(id))
+            } catch (ex: ReceiptNotNewUserException) {
+                append(lang.notNewRecipientException.format(id))
             } catch (ex: RecipientNotSubscriberException) {
                 append(lang.recipientNotSubscriberException.format(ex.chatName))
             } catch (ex: Exception) {
