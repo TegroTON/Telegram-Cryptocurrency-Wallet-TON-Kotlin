@@ -38,9 +38,9 @@ object TonBlockchainManager : BlockchainManager {
             )
         } else {
             LiteServerDesc(
-                id = PublicKeyEd25519(base64("3XO67K/qi+gu3T9v8G2hx1yNmWZhccL3O7SoosFo8G0=").asByteString()),
-                ip = 84478479,
-                port = 48014
+                id = PublicKeyEd25519(base64("wrQaeIFispPfHndEBc0s0fx7GSp8UFFvebnytQQfc6A=").asByteString()),
+                ip = 1091931625,
+                port = 30131
             )
         }
     )
