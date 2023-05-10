@@ -3,7 +3,9 @@ package money.tegro.bot.utils
 import java.awt.Color
 import java.awt.Font
 import java.awt.image.BufferedImage
-import java.io.File
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 import kotlin.random.Random.Default.nextBoolean
@@ -13,7 +15,7 @@ import kotlin.random.Random.Default.nextInt
 class Captcha {
 
     var answer = ""
-    var image: File? = null
+    var image: InputStream? = null
 
     private val captcha = object {
         var width = 250
@@ -103,9 +105,9 @@ class Captcha {
             graphic.drawString(c.toString(), x.roundToInt(), y.roundToInt())
         }
 
-        image = if (captcha.path == null) createTempDir(suffix = ".png")
-        else File(captcha.path + answer + ".png")
-        ImageIO.write(buffer, "png", image)
+        val baos = ByteArrayOutputStream()
+        ImageIO.write(buffer, "png", baos)
+        image = ByteArrayInputStream(baos.toByteArray())
 
         return this
     }

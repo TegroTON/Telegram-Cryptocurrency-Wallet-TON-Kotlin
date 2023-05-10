@@ -5,10 +5,13 @@ import money.tegro.bot.api.TgBot
 import money.tegro.bot.exceptions.RecipientNotSubscriberException
 import money.tegro.bot.inlines.*
 import money.tegro.bot.receipts.PostgresReceiptPersistent
+import money.tegro.bot.utils.Captcha
 import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.utils.PostgresLogsPersistent
 import money.tegro.bot.wallet.PostgresAccountsPersistent
 import net.logicsquad.nanocaptcha.image.ImageCaptcha
+import java.awt.Color
+import java.awt.Font
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -84,11 +87,18 @@ class Commands {
                                         ImageIO.write(imageCaptcha.image, "png", baos)
                                         val stream = ByteArrayInputStream(baos.toByteArray()) as InputStream
 
+                                        val captcha = Captcha().builder(350, 100, "./", Color.white)
+                                            .addLines(10, 10, 1, Color.black)
+                                            .addNoise(false, Color.black)
+                                            .setFont("Arial", 45, Font.BOLD)
+                                            .setText(6, Color.black)
+                                            .build()
+
                                         bot.sendPhoto(
                                             botMessage.peerId,
                                             Messages[user].receiptSolveCaptcha,
-                                            stream,
-                                            "captcha-${imageCaptcha.content}",
+                                            captcha.image!!,
+                                            "captcha-${captcha.answer}",
                                             null
                                         )
 
@@ -97,7 +107,7 @@ class Commands {
                                             ReceiptActivateCaptchaMenu(
                                                 user,
                                                 receipt,
-                                                imageCaptcha.content,
+                                                captcha.answer,
                                                 MainMenu(user)
                                             ),
                                             botMessage.lastMenuMessageId
