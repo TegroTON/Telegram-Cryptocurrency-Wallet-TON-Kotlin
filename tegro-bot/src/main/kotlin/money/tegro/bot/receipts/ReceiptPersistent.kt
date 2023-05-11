@@ -211,8 +211,6 @@ object PostgresReceiptPersistent : ReceiptPersistent {
             } else {
                 throw ReceiptNotNewUserException(receipt)
             }
-        } else {
-            throw ReceiptNotNewUserException(receipt)
         }
         if (!currentReceipt.isActive || currentReceipt.activations < 1) {
             throw ReceiptNotActiveException(receipt)
