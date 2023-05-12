@@ -31,16 +31,65 @@ object TonBlockchainManager : BlockchainManager {
         newSingleThreadContext("lite-client"),
 
         if (testnet) {
-            LiteServerDesc(
-                id = PublicKeyEd25519(base64("QpVqQiv1u3nCHuBR3cg3fT6NqaFLlnLGbEgtBRukDpU=").asByteString()),
-                ip = 1592601963,
-                port = 13833
+            arrayListOf(
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("QpVqQiv1u3nCHuBR3cg3fT6NqaFLlnLGbEgtBRukDpU=").asByteString()),
+                    ip = 1592601963,
+                    port = 13833
+                )
             )
         } else {
-            LiteServerDesc(
-                id = PublicKeyEd25519(base64("wrQaeIFispPfHndEBc0s0fx7GSp8UFFvebnytQQfc6A=").asByteString()),
-                ip = 1091931625,
-                port = 30131
+            arrayListOf(
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("n4VDnSCUuSpjnCyUk9e3QOOd6o0ItSWYbTnW3Wnn8wk=").asByteString()),
+                    ip = 84478511,
+                    port = 19949
+                ),
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("3XO67K/qi+gu3T9v8G2hx1yNmWZhccL3O7SoosFo8G0=").asByteString()),
+                    ip = 84478479,
+                    port = 48014
+                ),
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("wrQaeIFispPfHndEBc0s0fx7GSp8UFFvebnytQQfc6A=").asByteString()),
+                    ip = 1091931625,
+                    port = 30131
+                ),
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("vOe1Xqt/1AQ2Z56Pr+1Rnw+f0NmAA7rNCZFIHeChB7o=").asByteString()),
+                    ip = 1091931590,
+                    port = 47160
+                ),
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("BYSVpL7aPk0kU5CtlsIae/8mf2B/NrBi7DKmepcjX6Q=").asByteString()),
+                    ip = 1091931623,
+                    port = 17728
+                ),
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("iVQH71cymoNgnrhOT35tl/Y7k86X5iVuu5Vf68KmifQ=").asByteString()),
+                    ip = 1091931589,
+                    port = 13570
+                ),
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("J5CwYXuCZWVPgiFPW+NY2roBwDWpRRtANHSTYTRSVtI=").asByteString()),
+                    ip = 868465979,
+                    port = 19434
+                ),
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("vX8d0i31zB0prVuZK8fBkt37WnEpuEHrb7PElk4FJ1o=").asByteString()),
+                    ip = 868466060,
+                    port = 23067
+                ),
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("TDg+ILLlRugRB4Kpg3wXjPcoc+d+Eeb7kuVe16CS9z8=").asByteString()),
+                    ip = 908566172,
+                    port = 51565
+                ),
+                LiteServerDesc(
+                    id = PublicKeyEd25519(base64("wrQaeIFispPfHndEBc0s0fx7GSp8UFFvebnytQQfc6A=").asByteString()),
+                    ip = 1091931625,
+                    port = 30131
+                )
             )
         }
     )
@@ -53,6 +102,7 @@ object TonBlockchainManager : BlockchainManager {
             JettonMasterContract(liteClient, address)
         }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private val jettonWalletContractCache = Caffeine.newBuilder()
         .maximumSize(1_000)
         .expireAfterAccess(10, TimeUnit.MINUTES)
