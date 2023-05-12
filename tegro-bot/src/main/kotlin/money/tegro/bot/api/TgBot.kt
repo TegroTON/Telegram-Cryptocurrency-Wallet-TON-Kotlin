@@ -94,8 +94,20 @@ class TgBot(
         filename: String,
         keyboard: BotKeyboard?
     ) {
+        sendPhoto(to, message, true, inputStream, filename, keyboard)
+    }
+
+    suspend fun sendPhoto(
+        to: Long,
+        message: String,
+        html: Boolean,
+        inputStream: InputStream,
+        filename: String,
+        keyboard: BotKeyboard?
+    ) {
         val sendPhoto = SendPhoto().apply {
             chatId = to.toString()
+            if (html) parseMode = "HTML"
             caption = message
             photo = InputFile(inputStream, filename)
             if (keyboard != null) replyMarkup = keyboard.toTg()

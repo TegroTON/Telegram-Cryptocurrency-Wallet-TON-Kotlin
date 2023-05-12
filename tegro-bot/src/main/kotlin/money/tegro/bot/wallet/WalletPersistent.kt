@@ -147,22 +147,22 @@ object PostgresWalletPersistent : WalletPersistent {
     override suspend fun transfer(sender: User, receiver: User, coins: Coins) = coroutineScope {
         val senderState = async {
             loadWalletState(sender)
-        }
+        }.await()
         val receiverState = async {
             loadWalletState(receiver)
-        }
-        val senderCoins = senderState.await().frozen[coins.currency]
+        }.await()
+        val senderCoins = senderState.frozen[coins.currency]
         if (senderCoins < coins) {
             throw NotEnoughCoinsException(sender, coins)
         }
         val newSenderCoins = senderCoins - coins
-        val newReceiverCoins = receiverState.await().active[coins.currency] + coins
+        val newReceiverCoins = receiverState.active[coins.currency] + coins
 
-        val newSenderState = senderState.await().copy(
-            active = senderState.await().frozen.withCoins(newSenderCoins)
+        val newSenderState = senderState.copy(
+            frozen = senderState.frozen.withCoins(newSenderCoins)
         )
-        val newReceiverState = receiverState.await().copy(
-            active = receiverState.await().active.withCoins(newReceiverCoins)
+        val newReceiverState = receiverState.copy(
+            active = receiverState.active.withCoins(newReceiverCoins)
         )
 
         val senderSaveJob = async {
@@ -187,14 +187,6 @@ object PostgresWalletPersistent : WalletPersistent {
             active = newCoins,
             frozen = newFrozen
         )
-//        println(
-//            "freeze:\n" +
-//                    " old active: $currentCoins\n" +
-//                    " old freeze: $currentFrozen\n" +
-//                    " amount    : $coins\n" +
-//                    " new active: $newCoins\n" +
-//                    " new freeze: $newFrozen"
-//        )
         saveWalletState(user, newWalletState)
     }
 

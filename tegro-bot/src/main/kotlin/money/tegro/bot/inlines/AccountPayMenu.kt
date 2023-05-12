@@ -28,6 +28,8 @@ data class AccountPayMenu(
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         val available = PostgresWalletPersistent.loadWalletState(user).active[account.coins.currency]
+        println("avail: $available")
+        println("coins: $coins")
         val id = buildString {
             if (bot is TgBot) append("<code>")
             append("#")
@@ -86,6 +88,8 @@ data class AccountPayMenu(
                         append(lang.accountMinAmountException.format(account.minAmount))
                     } catch (ex: AccountOverdraftException) {
                         append(lang.accountOverdraftException.format(account.maxCoins - account.coins))
+                    } catch (ex: Exception) {
+                        ex.printStackTrace()
                     }
                 }
 

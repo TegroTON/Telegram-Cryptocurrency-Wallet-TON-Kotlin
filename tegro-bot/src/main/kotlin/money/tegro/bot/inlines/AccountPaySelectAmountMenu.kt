@@ -22,7 +22,7 @@ class AccountPaySelectAmountMenu(
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         val min = account.minAmount
-        val max = account.maxCoins - account.coins
+        val max = if (account.maxCoins.amount > 0.toBigInteger()) account.maxCoins - account.coins else account.maxCoins
         val available = PostgresWalletPersistent.loadWalletState(user).active[account.coins.currency]
         val id = buildString {
             if (bot is TgBot) append("<code>")
@@ -75,7 +75,7 @@ class AccountPaySelectAmountMenu(
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload
         val min = account.minAmount
-        val max = account.maxCoins - account.coins
+        val max = if (account.maxCoins.amount > 0.toBigInteger()) account.maxCoins - account.coins else account.maxCoins
         val available = PostgresWalletPersistent.loadWalletState(user).active[account.coins.currency]
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {

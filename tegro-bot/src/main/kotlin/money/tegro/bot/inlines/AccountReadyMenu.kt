@@ -84,8 +84,8 @@ data class AccountReadyMenu(
 
     private fun getBody(bot: Bot): String {
         val code = account.id.toString()
-        val tgLink = String.format("t.me/%s?start=RC-%s", System.getenv("TG_USER_NAME"), code)
-        val vkLink = String.format("https://vk.com/write-%s?ref=RC-%s", System.getenv("VK_GROUP_ID"), code)
+        val tgLink = String.format("t.me/%s?start=AC-%s", System.getenv("TG_USER_NAME"), code)
+        val vkLink = String.format("https://vk.com/write-%s?ref=AC-%s", System.getenv("VK_GROUP_ID"), code)
         val date = Date.from(account.issueTime.toJavaInstant())
         val time =
             SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(date)
