@@ -17,8 +17,8 @@ import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
 import money.tegro.bot.ton.TonBlockchainManager
 import money.tegro.bot.utils.LogsUtil
+import money.tegro.bot.utils.PostgresDepositsPersistent
 import money.tegro.bot.wallet.CryptoCurrency
-import money.tegro.bot.wallet.PostgresDepositsPersistent
 import money.tegro.bot.wallet.WalletObserver
 import java.io.File
 import java.io.InputStream

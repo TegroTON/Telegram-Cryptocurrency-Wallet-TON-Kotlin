@@ -7,9 +7,9 @@ import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.utils.PostgresDepositsPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.Coins
-import money.tegro.bot.wallet.PostgresDepositsPersistent
 import java.text.SimpleDateFormat
 import java.util.*
 

@@ -1,20 +1,22 @@
-package money.tegro.bot.wallet
+package money.tegro.bot.utils
 
 import kotlinx.datetime.Clock
 import money.tegro.bot.exceptions.*
 import money.tegro.bot.objects.Account
 import money.tegro.bot.objects.PostgresUserPersistent
 import money.tegro.bot.objects.User
-import money.tegro.bot.wallet.PostgresAccountsPersistent.UsersAccounts.activations
-import money.tegro.bot.wallet.PostgresAccountsPersistent.UsersAccounts.amount
-import money.tegro.bot.wallet.PostgresAccountsPersistent.UsersAccounts.currency
-import money.tegro.bot.wallet.PostgresAccountsPersistent.UsersAccounts.isActive
-import money.tegro.bot.wallet.PostgresAccountsPersistent.UsersAccounts.issueTime
-import money.tegro.bot.wallet.PostgresAccountsPersistent.UsersAccounts.issuerId
-import money.tegro.bot.wallet.PostgresAccountsPersistent.UsersAccounts.maxCoins
-import money.tegro.bot.wallet.PostgresAccountsPersistent.UsersAccounts.minAmount
-import money.tegro.bot.wallet.PostgresAccountsPersistent.UsersAccounts.oneTime
-import money.tegro.bot.walletPersistent
+import money.tegro.bot.utils.PostgresAccountsPersistent.UsersAccounts.activations
+import money.tegro.bot.utils.PostgresAccountsPersistent.UsersAccounts.amount
+import money.tegro.bot.utils.PostgresAccountsPersistent.UsersAccounts.currency
+import money.tegro.bot.utils.PostgresAccountsPersistent.UsersAccounts.isActive
+import money.tegro.bot.utils.PostgresAccountsPersistent.UsersAccounts.issueTime
+import money.tegro.bot.utils.PostgresAccountsPersistent.UsersAccounts.issuerId
+import money.tegro.bot.utils.PostgresAccountsPersistent.UsersAccounts.maxCoins
+import money.tegro.bot.utils.PostgresAccountsPersistent.UsersAccounts.minAmount
+import money.tegro.bot.utils.PostgresAccountsPersistent.UsersAccounts.oneTime
+import money.tegro.bot.wallet.Coins
+import money.tegro.bot.wallet.CryptoCurrency
+import money.tegro.bot.wallet.PostgresWalletPersistent
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
@@ -141,7 +143,7 @@ object PostgresAccountsPersistent : AccountsPersistent {
     override suspend fun payAccount(account: Account, payer: User, coins: Coins) {
         val accounts = loadAccounts(account.issuer).toMutableList()
         val currentReceipt = accounts.find { it.id == account.id } ?: throw UnknownAccountException(account)
-        val payerWallet = walletPersistent.loadWalletState(payer)
+        val payerWallet = PostgresWalletPersistent.loadWalletState(payer)
 
         if (currentReceipt.issuer == payer) {
             throw AccountIssuerActivationException(account)

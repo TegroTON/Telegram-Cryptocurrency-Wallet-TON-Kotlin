@@ -8,8 +8,8 @@ import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.utils.PostgresAccountsPersistent
 import money.tegro.bot.utils.button
-import money.tegro.bot.wallet.PostgresAccountsPersistent
 
 @Serializable
 class AccountsMenu(

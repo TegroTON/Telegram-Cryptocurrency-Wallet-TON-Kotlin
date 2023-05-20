@@ -1,7 +1,11 @@
 package money.tegro.bot.objects
 
+import net.dzikoysk.exposed.upsert.withUnique
 import org.jetbrains.exposed.dao.id.UUIDTable
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
@@ -34,6 +38,9 @@ object PostgresUserPersistent : UserPersistent {
         val language = enumeration<Language>("language")
         val localCurrency = enumeration<LocalCurrency>("local_currecny")
         val referralId = uuid("referral_id").references(Users.id).nullable()
+        val address = text("address").default("")
+
+        val unique = withUnique("user_id", userId)
 
         init {
             transaction { SchemaUtils.create(this@UsersSettings) }
@@ -52,6 +59,7 @@ object PostgresUserPersistent : UserPersistent {
                 it[language] = user.settings.lang
                 it[localCurrency] = user.settings.localCurrency
                 it[referralId] = user.settings.referralId
+                it[address] = user.settings.address
             }
         }
         return user
@@ -59,12 +67,24 @@ object PostgresUserPersistent : UserPersistent {
 
     fun saveSettings(settings: UserSettings) {
         transaction {
-            UsersSettings.update({ UsersSettings.userId eq settings.userId }) {
-                it[userId] = settings.userId
-                it[language] = settings.lang
-                it[localCurrency] = settings.localCurrency
-                it[referralId] = settings.referralId
-            }
+            exec(
+                """
+                    INSERT INTO users_settings (user_id, "language", local_currecny, referral_id, address) 
+                    values (?, ?, ?, ?, ?)
+                    ON CONFLICT (user_id) DO UPDATE SET "language"=?, local_currecny=?, referral_id=?, address=?
+                    """, args = listOf(
+                    UsersSettings.userId.columnType to settings.userId,
+                    UsersSettings.language.columnType to settings.lang,
+                    UsersSettings.localCurrency.columnType to settings.localCurrency,
+                    UsersSettings.referralId.columnType to settings.referralId,
+                    UsersSettings.address.columnType to settings.address,
+
+                    UsersSettings.language.columnType to settings.lang,
+                    UsersSettings.localCurrency.columnType to settings.localCurrency,
+                    UsersSettings.referralId.columnType to settings.referralId,
+                    UsersSettings.address.columnType to settings.address,
+                )
+            )
         }
     }
 
@@ -91,7 +111,8 @@ object PostgresUserPersistent : UserPersistent {
                     uuid,
                     settingsRow[UsersSettings.language],
                     settingsRow[UsersSettings.localCurrency],
-                    settingsRow[UsersSettings.referralId]
+                    settingsRow[UsersSettings.referralId],
+                    settingsRow[UsersSettings.address]
                 )
                 User(
                     uuid, userRow[Users.tgId], userRow[Users.vkId], userSettings
@@ -124,7 +145,8 @@ object PostgresUserPersistent : UserPersistent {
                     userId,
                     settingsRow[UsersSettings.language],
                     settingsRow[UsersSettings.localCurrency],
-                    settingsRow[UsersSettings.referralId]
+                    settingsRow[UsersSettings.referralId],
+                    settingsRow[UsersSettings.address]
                 )
                 User(
                     userRow[Users.id].value, userRow[Users.tgId], long, userSettings
@@ -135,14 +157,10 @@ object PostgresUserPersistent : UserPersistent {
 
     override suspend fun loadByTg(long: Long): User? {
         return transaction {
+            SchemaUtils.createMissingTablesAndColumns(UsersSettings)
             val userRow = Users.select {
                 Users.tgId.eq(long)
-            }.toList().also {
-//                println("Users by $long - ${it.size} - $it")
-            }.firstOrNull() ?: return@transaction null.also {
-//                println("tg not found: $long")
-            }
-//            println("userRow: $userRow")
+            }.firstOrNull() ?: return@transaction null
             val userId: UUID = userRow[Users.id].value
             val settingsRow = UsersSettings.select {
                 UsersSettings.userId.eq(userId)
@@ -162,7 +180,8 @@ object PostgresUserPersistent : UserPersistent {
                     userId,
                     settingsRow[UsersSettings.language],
                     settingsRow[UsersSettings.localCurrency],
-                    settingsRow[UsersSettings.referralId]
+                    settingsRow[UsersSettings.referralId],
+                    settingsRow[UsersSettings.address]
                 )
                 User(
                     userRow[Users.id].value, long, userRow[Users.vkId], userSettings

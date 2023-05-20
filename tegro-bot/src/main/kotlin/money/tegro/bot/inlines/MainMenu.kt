@@ -128,7 +128,14 @@ data class MainMenu(
             CommandPayload.DEALS -> TODO()
             CommandPayload.DEPOSITS -> user.setMenu(bot, DepositsMenu(user, this), message.lastMenuMessageId)
             CommandPayload.SETTINGS -> user.setMenu(bot, SettingsMenu(user, this), message.lastMenuMessageId)
-            CommandPayload.NFT -> TODO()
+            CommandPayload.NFT -> {
+                try {
+                    user.setMenu(bot, NftMenu(user, this), message.lastMenuMessageId)
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                }
+            }
+
             CommandPayload.DEX -> TODO()
         }
         return true

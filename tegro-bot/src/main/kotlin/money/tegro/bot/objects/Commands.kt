@@ -9,8 +9,8 @@ import money.tegro.bot.inlines.*
 import money.tegro.bot.receipts.PostgresReceiptPersistent
 import money.tegro.bot.utils.Captcha
 import money.tegro.bot.utils.LogsUtil
+import money.tegro.bot.utils.PostgresAccountsPersistent
 import money.tegro.bot.utils.PostgresLogsPersistent
-import money.tegro.bot.wallet.PostgresAccountsPersistent
 import java.awt.Color
 import java.awt.Font
 import java.io.InputStream
@@ -95,7 +95,7 @@ class Commands {
                                                 throw ReceiptOnlyTgException(receipt)
                                             }
                                         }
-                                        val needCaptcha = receipt.captcha
+                                        val needCaptcha = false//receipt.captcha
                                         val captcha = getCaptcha()
 
                                         if (needCaptcha) {
@@ -263,7 +263,7 @@ class Commands {
                 .setText(Random.nextInt(5, 8), Color.black)
                 .build()
             return Pair(captcha.image!!, captcha.answer)
-//            }
         }
-    }
+        }
+//    }
 }

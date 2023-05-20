@@ -1,4 +1,4 @@
-package money.tegro.bot.wallet
+package money.tegro.bot.utils
 
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
@@ -6,13 +6,14 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toJavaInstant
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.*
-import money.tegro.bot.utils.LogsUtil
-import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.amount
-import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.cryptoCurrency
-import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.depositPeriod
-import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.finishDate
-import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.isPaid
-import money.tegro.bot.wallet.PostgresDepositsPersistent.UsersDeposits.issuerId
+import money.tegro.bot.utils.PostgresDepositsPersistent.UsersDeposits.amount
+import money.tegro.bot.utils.PostgresDepositsPersistent.UsersDeposits.cryptoCurrency
+import money.tegro.bot.utils.PostgresDepositsPersistent.UsersDeposits.depositPeriod
+import money.tegro.bot.utils.PostgresDepositsPersistent.UsersDeposits.finishDate
+import money.tegro.bot.utils.PostgresDepositsPersistent.UsersDeposits.isPaid
+import money.tegro.bot.utils.PostgresDepositsPersistent.UsersDeposits.issuerId
+import money.tegro.bot.wallet.Coins
+import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.walletPersistent
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*

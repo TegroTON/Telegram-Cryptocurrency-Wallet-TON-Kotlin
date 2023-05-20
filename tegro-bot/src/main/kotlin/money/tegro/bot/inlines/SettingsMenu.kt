@@ -78,12 +78,7 @@ class SettingsMenu(
             ButtonPayload.REFS -> user.setMenu(bot, ReferralsMenu(user, this), message.lastMenuMessageId)
             ButtonPayload.LANG -> {
                 val changeTo = if (user.settings.lang == Language.RU) Language.EN else Language.RU
-                val userSettings = UserSettings(
-                    user.id,
-                    changeTo,
-                    user.settings.localCurrency,
-                    user.settings.referralId
-                )
+                val userSettings = user.settings.copy(lang = changeTo)
                 PostgresUserPersistent.saveSettings(userSettings)
                 val newUser = user.copy(
                     settings = userSettings
@@ -94,12 +89,7 @@ class SettingsMenu(
             ButtonPayload.CURRENCY -> {
                 val changeTo =
                     if (user.settings.localCurrency == LocalCurrency.RUB) LocalCurrency.USD else LocalCurrency.RUB
-                val userSettings = UserSettings(
-                    user.id,
-                    user.settings.lang,
-                    changeTo,
-                    user.settings.referralId
-                )
+                val userSettings = user.settings.copy(localCurrency = changeTo)
                 PostgresUserPersistent.saveSettings(userSettings)
                 val newUser = user.copy(
                     settings = userSettings

@@ -10,9 +10,9 @@ import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
 import money.tegro.bot.testnet
 import money.tegro.bot.utils.LogsUtil
+import money.tegro.bot.utils.PostgresAccountsPersistent
+import money.tegro.bot.utils.PostgresDepositsPersistent
 import money.tegro.bot.wallet.Coins
-import money.tegro.bot.wallet.PostgresAccountsPersistent
-import money.tegro.bot.wallet.PostgresDepositsPersistent
 import money.tegro.bot.wallet.WalletObserver
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.TelegramBotsApi

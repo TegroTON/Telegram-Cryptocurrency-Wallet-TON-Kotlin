@@ -32,7 +32,7 @@ class Captcha {
 
     private val font = object {
         var size = 24
-        var name = "Arial"
+        var name = "Serif"
         var style = Font.BOLD
     }
 
@@ -98,6 +98,8 @@ class Captcha {
         }
 
         graphic.font = Font(font.name, font.style, font.size)
+        //val stream = Thread.currentThread().contextClassLoader.getResourceAsStream("fonts/ArialRegular.ttf")
+        //graphic.font = Font.createFont(Font.TRUETYPE_FONT, javaClass.getResourceAsStream("fonts/ArialRegular.ttf")).deriveFont(font.size.toLong().toFloat())
         graphic.color = text.color ?: randColor()
         answer.forEachIndexed { i, c ->
             val x = positionX + (i * (font.size / 2))

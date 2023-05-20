@@ -17,6 +17,16 @@ class NftMenu(
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+        val address = user.settings.address
+        val displayAddress = buildString {
+            if (address == "") {
+                append("null")
+            } else {
+                append(address.substring(0, 4))
+                append("...")
+                append(address.substring(address.length - 5))
+            }
+        }
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
@@ -24,14 +34,23 @@ class NftMenu(
             keyboard = BotKeyboard {
                 row {
                     button(
-                        Messages[user.settings.lang].menuNftConnect,
+                        Messages[user.settings.lang].menuNftMy,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.MY_NFT
+                    )
+                }
+                row {
+                    button(
+                        if (address == "") Messages[user.settings.lang].menuNftConnect else Messages[user.settings.lang].menuNftDisconnect.format(
+                            displayAddress
+                        ),
                         ButtonPayload.serializer(),
                         ButtonPayload.CONNECT
                     )
                 }
                 row {
                     linkButton(
-                        Messages[user.settings.lang].mainMenuButtonNFT,
+                        Messages[user.settings.lang].menuNftLibermall,
                         "https://libermall.com/?utm_source=telegram&utm_medium=social&utm_campaign=bot&utm_content=telegrambot&utm_term=dex",
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
@@ -55,13 +74,31 @@ class NftMenu(
                 user.setMenu(bot, parentMenu, message.lastMenuMessageId)
             }
 
-            ButtonPayload.CONNECT -> TODO()
+            ButtonPayload.CONNECT -> {
+                val address = user.settings.address
+                if (address == "") {
+                    user.setMenu(
+                        bot,
+                        NftConnectSelectAddressMenu(user, this),
+                        message.lastMenuMessageId
+                    )
+                } else {
+                    user.setMenu(
+                        bot,
+                        NftDisconnectMenu(user, this),
+                        message.lastMenuMessageId
+                    )
+                }
+            }
+
+            ButtonPayload.MY_NFT -> TODO()
         }
         return true
     }
 
     @Serializable
     private enum class ButtonPayload {
+        MY_NFT,
         CONNECT,
         BACK
     }
