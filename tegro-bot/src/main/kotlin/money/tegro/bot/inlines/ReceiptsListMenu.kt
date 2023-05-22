@@ -28,7 +28,7 @@ class ReceiptsListMenu(
     private var start = if (page == 1) 0 else (page - 1) * 6
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         if (page > maxPages) {
-            user.setMenu(bot, ReceiptsListMenu(user, receipts, 1, this), lastMenuMessageId)
+            user.setMenu(bot, ReceiptsListMenu(user, receipts, 1, parentMenu), lastMenuMessageId)
             return
         }
         bot.updateKeyboard(

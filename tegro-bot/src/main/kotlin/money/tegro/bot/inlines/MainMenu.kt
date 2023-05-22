@@ -78,9 +78,14 @@ data class MainMenu(
         }
          */
         row {
-            linkButton(
+//            linkButton(
+//                Messages[user.settings.lang].mainMenuButtonNFT,
+//                "https://libermall.com/?utm_source=telegram&utm_medium=social&utm_campaign=bot&utm_content=telegrambot&utm_term=dex",
+//                CommandPayload.serializer(),
+//                CommandPayload.NFT
+//            )
+            button(
                 Messages[user.settings.lang].mainMenuButtonNFT,
-                "https://libermall.com/?utm_source=telegram&utm_medium=social&utm_campaign=bot&utm_content=telegrambot&utm_term=dex",
                 CommandPayload.serializer(),
                 CommandPayload.NFT
             )
@@ -116,10 +121,7 @@ data class MainMenu(
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload ?: return false
         when (Json.decodeFromString<CommandPayload>(payload)) {
-            CommandPayload.WALLET -> {
-                user.setMenu(bot, WalletMenu(user, this), message.lastMenuMessageId)
-            }
-
+            CommandPayload.WALLET -> user.setMenu(bot, WalletMenu(user, this), message.lastMenuMessageId)
             CommandPayload.RECEIPTS -> user.setMenu(bot, ReceiptsMenu(user, this), message.lastMenuMessageId)
             CommandPayload.EXCHANGE -> user.setMenu(bot, ExchangeMenu(user, this), message.lastMenuMessageId)
             CommandPayload.STOCK -> user.setMenu(bot, StockMenu(user, this), message.lastMenuMessageId)
@@ -128,14 +130,7 @@ data class MainMenu(
             CommandPayload.DEALS -> TODO()
             CommandPayload.DEPOSITS -> user.setMenu(bot, DepositsMenu(user, this), message.lastMenuMessageId)
             CommandPayload.SETTINGS -> user.setMenu(bot, SettingsMenu(user, this), message.lastMenuMessageId)
-            CommandPayload.NFT -> {
-                try {
-                    user.setMenu(bot, NftMenu(user, this), message.lastMenuMessageId)
-                } catch (ex: Exception) {
-                    ex.printStackTrace()
-                }
-            }
-
+            CommandPayload.NFT -> user.setMenu(bot, NftMenu(user, this), message.lastMenuMessageId)
             CommandPayload.DEX -> TODO()
         }
         return true

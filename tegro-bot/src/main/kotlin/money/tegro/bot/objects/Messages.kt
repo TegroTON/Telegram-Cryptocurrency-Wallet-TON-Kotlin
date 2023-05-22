@@ -204,6 +204,10 @@ data class Messages(
     val menuNftConnectWaitingCheck: String = "menuNftConnectWaitingCheck",
     val menuNftConnectWaitingCheckFailed: String = "menuNftConnectWaitingCheckFailed",
     val menuNftDisconnectMessage: String = "menuNftDisconnectMessage",
+    val menuNftListMessage: String = "menuNftListMessage",
+    val menuNftListEntry: String = "menuNftListEntry",
+    val menuNftListKeyboardEntry: String = "menuNftListKeyboardEntry",
+    val menuNftListEmpty: String = "menuNftListEmpty",
 
     /*****************************
      *   Exchange menu section   *

@@ -8,6 +8,7 @@ import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.utils.PostgresNftsPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.utils.linkButton
 
@@ -91,7 +92,10 @@ class NftMenu(
                 }
             }
 
-            ButtonPayload.MY_NFT -> TODO()
+            ButtonPayload.MY_NFT -> {
+                val list = PostgresNftsPersistent.getNftsByUser(user)
+                user.setMenu(bot, NftListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+            }
         }
         return true
     }

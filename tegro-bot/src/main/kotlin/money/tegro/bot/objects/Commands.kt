@@ -95,25 +95,36 @@ class Commands {
                                                 throw ReceiptOnlyTgException(receipt)
                                             }
                                         }
-                                        val needCaptcha = false//receipt.captcha
-                                        val captcha = getCaptcha()
-
-                                        if (needCaptcha) {
-                                            bot.sendPhoto(
-                                                botMessage.peerId,
-                                                Messages[user].receiptSolveCaptcha,
-                                                captcha.first,
-                                                "captcha-${captcha.second}",
-                                                null
-                                            )
-                                        }
+//                                        val needCaptcha = receipt.captcha
+//                                        val captcha = getCaptcha()
+//
+//                                        if (needCaptcha) {
+//                                            bot.sendPhoto(
+//                                                botMessage.peerId,
+//                                                Messages[user].receiptSolveCaptcha,
+//                                                captcha.first,
+//                                                "captcha-${captcha.second}",
+//                                                null
+//                                            )
+//                                        }
+//
+//                                        user.setMenu(
+//                                            bot,
+//                                            ReceiptActivateCaptchaMenu(
+//                                                user,
+//                                                receipt,
+//                                                if (needCaptcha) captcha.second else "",
+//                                                MainMenu(user)
+//                                            ),
+//                                            botMessage.lastMenuMessageId
+//                                        )
 
                                         user.setMenu(
                                             bot,
                                             ReceiptActivateCaptchaMenu(
                                                 user,
                                                 receipt,
-                                                if (needCaptcha) captcha.second else "",
+                                                "",
                                                 MainMenu(user)
                                             ),
                                             botMessage.lastMenuMessageId

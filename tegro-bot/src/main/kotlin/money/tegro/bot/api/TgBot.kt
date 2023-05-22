@@ -51,12 +51,10 @@ class TgBot(
         launch {
             while (true) {
                 val result = PostgresDepositsPersistent.check()
-                if (result.isNotEmpty()) {
-                    for (deposit: Deposit in result) {
-                        if (deposit.issuer.tgId == null) continue
-                        if (deposit.finishDate <= Clock.System.now()) {
-                            PostgresDepositsPersistent.payDeposit(deposit, this@TgBot)
-                        }
+                for (deposit in result) {
+                    if (deposit.issuer.tgId == null) continue
+                    if (deposit.finishDate <= Clock.System.now()) {
+                        PostgresDepositsPersistent.payDeposit(deposit, this@TgBot)
                     }
                 }
                 delay(1.hours)
@@ -174,11 +172,11 @@ class TgBot(
     }
 
     override suspend fun sendPopup(botMessage: BotMessage, message: String): Boolean {
-        if (botMessage.otherData["callbackQueryId"] == null) {
+        val id = botMessage.otherData["callbackQueryId"] as? String
+        if (id == null) {
             sendMessage(botMessage.peerId, "sendPopup callbackQueryId null, inform admin")
             return false
         }
-        val id = botMessage.otherData["callbackQueryId"] as String
         val popup = AnswerCallbackQuery().apply {
             showAlert = true
             text = message
