@@ -11,7 +11,6 @@ import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.PostgresUserPersistent
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
-import money.tegro.bot.utils.Captcha
 import money.tegro.bot.utils.PostgresNftsPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.Coins
@@ -24,7 +23,8 @@ class NftConnectWaitingMenu(
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
-        val verifyCode = Captcha().build().answer
+        val chars = ('a'..'z').toList() + ('0'..'9').toList()
+        val verifyCode = (0 until 6).map { chars.random() }.joinToString("")
         val displayMasterAddress = buildString {
             if (bot is TgBot) append("<code>")
             append("EQA1Mg34Zy5nLWfXHocsuuZo911Wi5faf-iGoM-_A8X-9z0e")
