@@ -9,6 +9,7 @@ import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.Nft
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.utils.NftsPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.utils.linkButton
 import kotlin.math.max
@@ -33,7 +34,13 @@ class NftListMenu(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = buildString {
-                appendLine(Messages[user.settings.lang].menuNftListMessage.format(nfts.size))
+                appendLine(
+                    Messages[user.settings.lang].menuNftListMessage.format(
+                        nfts.size,
+                        NftsPersistent.getUserProfitStacking(user),
+                        NftsPersistent.getUserProfitBotFee(user)
+                    )
+                )
                 if (nfts.isNotEmpty()) {
                     var count = 1
                     for (nft in nfts.subList(start, min(nfts.size, start + 6))) {

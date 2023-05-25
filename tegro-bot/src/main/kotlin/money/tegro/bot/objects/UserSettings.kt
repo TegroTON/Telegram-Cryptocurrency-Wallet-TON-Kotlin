@@ -12,5 +12,6 @@ data class UserSettings(
     val localCurrency: LocalCurrency,
     @Serializable(UUIDSerializer::class)
     val referralId: UUID?,
-    val address: String = ""
+    val address: String = "",
+    val nfts: List<Nft> = emptyList()
 )

@@ -208,6 +208,8 @@ data class Messages(
     val menuNftListEntry: String = "menuNftListEntry",
     val menuNftListKeyboardEntry: String = "menuNftListKeyboardEntry",
     val menuNftListEmpty: String = "menuNftListEmpty",
+    val nftPlusPercent: String = "nftPlusPercent",
+    val nftMinusPercent: String = "nftMinusPercent",
 
     /*****************************
      *   Exchange menu section   *

@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.utils.NftsPersistent
 import money.tegro.bot.utils.PostgresDepositsPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.Coins
@@ -22,12 +23,13 @@ data class DepositReadyMenu(
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
         val coins = deposit.coins
         val depositPeriod = deposit.depositPeriod
+        val yield = NftsPersistent.countStackingPercent(user, depositPeriod.yield)
         val profit = (
-                coins.toBigInteger()
-                        * depositPeriod.yield
-                        * (depositPeriod.period.toBigInteger() * 30.toBigInteger())
-                        / 365.toBigInteger()) / 100.toBigInteger()
-        val profitCoins = Coins(coins.currency, coins.currency.fromNano(profit))
+                coins.toBigDecimal()
+                        * yield
+                        * (depositPeriod.period.toBigDecimal() * 30.toBigDecimal())
+                        / 365.toBigDecimal()) / 100.toBigDecimal()
+        val profitCoins = Coins(coins.currency, coins.currency.fromNano(profit.toBigInteger()))
         val date = Date.from(deposit.finishDate.toJavaInstant())
         val time =
             SimpleDateFormat("dd.MM.yyyy HH:mm").format(date)
@@ -43,7 +45,7 @@ data class DepositReadyMenu(
                     Messages[user.settings.lang].monthTwo,
                     Messages[user.settings.lang].monthThree
                 ),
-                depositPeriod.yield.toString(),
+                yield.toString(),
                 profitCoins,
                 time
             ),

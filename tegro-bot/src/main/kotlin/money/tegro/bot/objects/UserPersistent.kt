@@ -1,5 +1,6 @@
 package money.tegro.bot.objects
 
+import money.tegro.bot.utils.PostgresNftsPersistent
 import net.dzikoysk.exposed.upsert.withUnique
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -127,6 +128,19 @@ object PostgresUserPersistent : UserPersistent {
                 Users.vkId.eq(long)
             }.firstOrNull() ?: return@transaction null
             val userId: UUID = userRow[Users.id].value
+            val nfts = PostgresNftsPersistent.UsersNfts.select {
+                PostgresNftsPersistent.UsersNfts.ownerId.eq(userId)
+            }.mapNotNull {
+                Nft(
+                    it[PostgresNftsPersistent.UsersNfts.id].value,
+                    it[PostgresNftsPersistent.UsersNfts.name],
+                    it[PostgresNftsPersistent.UsersNfts.address],
+                    it[PostgresNftsPersistent.UsersNfts.ownerId],
+                    it[PostgresNftsPersistent.UsersNfts.ownerAddress],
+                    it[PostgresNftsPersistent.UsersNfts.imageLink],
+                    it[PostgresNftsPersistent.UsersNfts.collection]
+                )
+            }
             val settingsRow = UsersSettings.select {
                 UsersSettings.userId.eq(userId)
             }.firstOrNull()
@@ -146,7 +160,8 @@ object PostgresUserPersistent : UserPersistent {
                     settingsRow[UsersSettings.language],
                     settingsRow[UsersSettings.localCurrency],
                     settingsRow[UsersSettings.referralId],
-                    settingsRow[UsersSettings.address]
+                    settingsRow[UsersSettings.address],
+                    nfts
                 )
                 User(
                     userRow[Users.id].value, userRow[Users.tgId], long, userSettings
@@ -162,6 +177,19 @@ object PostgresUserPersistent : UserPersistent {
                 Users.tgId.eq(long)
             }.firstOrNull() ?: return@transaction null
             val userId: UUID = userRow[Users.id].value
+            val nfts = PostgresNftsPersistent.UsersNfts.select {
+                PostgresNftsPersistent.UsersNfts.ownerId.eq(userId)
+            }.mapNotNull {
+                Nft(
+                    it[PostgresNftsPersistent.UsersNfts.id].value,
+                    it[PostgresNftsPersistent.UsersNfts.name],
+                    it[PostgresNftsPersistent.UsersNfts.address],
+                    it[PostgresNftsPersistent.UsersNfts.ownerId],
+                    it[PostgresNftsPersistent.UsersNfts.ownerAddress],
+                    it[PostgresNftsPersistent.UsersNfts.imageLink],
+                    it[PostgresNftsPersistent.UsersNfts.collection]
+                )
+            }
             val settingsRow = UsersSettings.select {
                 UsersSettings.userId.eq(userId)
             }.firstOrNull()
@@ -181,7 +209,8 @@ object PostgresUserPersistent : UserPersistent {
                     settingsRow[UsersSettings.language],
                     settingsRow[UsersSettings.localCurrency],
                     settingsRow[UsersSettings.referralId],
-                    settingsRow[UsersSettings.address]
+                    settingsRow[UsersSettings.address],
+                    nfts
                 )
                 User(
                     userRow[Users.id].value, long, userRow[Users.vkId], userSettings

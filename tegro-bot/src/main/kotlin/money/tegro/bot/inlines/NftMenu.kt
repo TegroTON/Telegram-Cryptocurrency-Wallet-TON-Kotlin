@@ -94,7 +94,21 @@ class NftMenu(
 
             ButtonPayload.MY_NFT -> {
                 val list = PostgresNftsPersistent.getNftsByUser(user)
-                user.setMenu(bot, NftListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+                if (list.isNotEmpty() && user.settings.nfts.isEmpty()) {
+                    val userSettings = user.settings.copy(nfts = list)
+
+                    val userCopy = user.copy(
+                        settings = userSettings
+                    )
+                    userCopy.setMenu(
+                        bot,
+                        NftListMenu(userCopy, list.toMutableList(), 1, this),
+                        message.lastMenuMessageId
+                    )
+                } else {
+                    user.setMenu(bot, NftListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+                }
+
             }
         }
         return true

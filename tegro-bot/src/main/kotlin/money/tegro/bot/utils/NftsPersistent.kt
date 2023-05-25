@@ -24,6 +24,9 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.ton.block.AddrStd
+import java.math.BigDecimal
+import java.math.BigInteger
+import java.util.*
 import kotlin.time.Duration.Companion.days
 
 interface NftsPersistent {
@@ -31,6 +34,32 @@ interface NftsPersistent {
     suspend fun getNftsByUserAddress(user: User, address: String): List<Nft>
 
     suspend fun getNftsByUser(user: User): List<Nft>
+
+    companion object {
+        fun getUserProfitStacking(user: User): BigDecimal {
+            val perNftPercent = 0.56
+            val nftCount = user.settings.nfts.size
+            if (nftCount > 10) return (10 * perNftPercent).toBigDecimal()
+            return (nftCount * perNftPercent).toBigDecimal()
+        }
+
+        fun countStackingPercent(user: User, basicPercent: BigDecimal): BigDecimal {
+            if (user.settings.nfts.isEmpty()) return basicPercent
+            return basicPercent + getUserProfitStacking(user)
+        }
+
+        fun getUserProfitBotFee(user: User): BigInteger {
+            val perNftPercent = 5
+            val nftCount = user.settings.nfts.size
+            if (nftCount > 10) return (10 * perNftPercent).toBigInteger()
+            return (nftCount * perNftPercent).toBigInteger()
+        }
+
+        fun countBotFee(user: User, currency: CryptoCurrency): BigInteger {
+            if (user.settings.nfts.isEmpty()) return currency.botFee
+            return currency.botFee - ((currency.botFee / 100.toBigInteger()) * getUserProfitBotFee(user))
+        }
+    }
 
 }
 
@@ -63,16 +92,20 @@ object PostgresNftsPersistent : NftsPersistent {
     }
 
     override suspend fun getNftsByUserAddress(user: User, address: String): List<Nft> {
+        return getNftsByUserId(user.id, address)
+    }
+
+    private suspend fun getNftsByUserId(userId: UUID, address: String): List<Nft> {
         val updateTime = suspendedTransactionAsync {
             val result = UsersNfts.select {
-                UsersNfts.ownerId.eq(user.id)
+                UsersNfts.ownerId.eq(userId)
             }.firstOrNull() ?: return@suspendedTransactionAsync null
             result[UsersNfts.updateTime]
         }.await()
         if (updateTime != null && updateTime.plus(7.days) > Clock.System.now()) {
             val nfts = suspendedTransactionAsync {
                 UsersNfts.select {
-                    UsersNfts.ownerId.eq(user.id)
+                    UsersNfts.ownerId.eq(userId)
                 }.mapNotNull {
                     Nft(
                         it[UsersNfts.id].value,
@@ -92,8 +125,8 @@ object PostgresNftsPersistent : NftsPersistent {
                 contentType(ContentType.Application.Json)
             }.body<String>()
 
-        val nfts = parseJson(response, user, address)
-        clearNfts(user)
+        val nfts = parseJson(response, userId, address)
+        clearNfts(userId)
         for (nft: Nft in nfts) {
             transaction {
                 UsersNfts.insert {
@@ -111,14 +144,15 @@ object PostgresNftsPersistent : NftsPersistent {
     }
 
     override suspend fun getNftsByUser(user: User): List<Nft> {
+        if (user.settings.nfts.isNotEmpty()) return user.settings.nfts
         if (user.settings.address == "") return emptyList()
         return getNftsByUserAddress(user, user.settings.address)
     }
 
-    private fun clearNfts(user: User) {
+    private fun clearNfts(userId: UUID) {
         transaction {
             UsersNfts.deleteWhere {
-                ownerId.eq(user.id)
+                ownerId.eq(userId)
             }
         }
     }
@@ -157,7 +191,7 @@ object PostgresNftsPersistent : NftsPersistent {
         return false
     }
 
-    private fun parseJson(rawJson: String, user: User, address: String): List<Nft> {
+    private fun parseJson(rawJson: String, userId: UUID, address: String): List<Nft> {
         val json = Json.parseToJsonElement(rawJson)
 
         val array = json.jsonObject["nft_items"]?.jsonArray ?: return emptyList()
@@ -174,10 +208,10 @@ object PostgresNftsPersistent : NftsPersistent {
             val collection = NftCollection.values().firstOrNull { it.address == collectionAddress } ?: continue
 
             val nft = Nft(
-                java.util.UUID.randomUUID(),
+                UUID.randomUUID(),
                 name,
                 itemAddress,
-                user.id,
+                userId,
                 address,
                 imageLink,
                 collection

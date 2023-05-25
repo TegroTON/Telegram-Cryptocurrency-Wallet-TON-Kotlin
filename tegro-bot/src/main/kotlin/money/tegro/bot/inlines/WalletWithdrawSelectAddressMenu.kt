@@ -9,6 +9,7 @@ import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.utils.NftsPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.Coins
@@ -28,15 +29,34 @@ class WalletWithdrawSelectAddressMenu(
                     coins.currency.ticker,
                     network.displayName,
                     coins,
-                    Coins(coins.currency, coins.currency.botFee),
+                    Coins(coins.currency, NftsPersistent.countBotFee(user, coins.currency)),
                 )
             )
+        }
+        val address = user.settings.address
+        val displayAddress = buildString {
+            if (address == "") {
+                append("null")
+            } else {
+                append(address.substring(0, 4))
+                append("...")
+                append(address.substring(address.length - 5))
+            }
         }
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
             message = message,
             keyboard = BotKeyboard {
+                if (address != "") {
+                    row {
+                        button(
+                            displayAddress,
+                            ButtonPayload.serializer(),
+                            ButtonPayload.MY
+                        )
+                    }
+                }
                 row {
                     button(
                         Messages[user].menuButtonBack,
@@ -55,6 +75,14 @@ class WalletWithdrawSelectAddressMenu(
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.BACK -> {
                     user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                }
+
+                ButtonPayload.MY -> {
+                    user.setMenu(
+                        bot,
+                        WalletWithdrawApproveMenu(user, user.settings.address, network, coins, this),
+                        message.lastMenuMessageId
+                    )
                 }
             }
         } else if (messageBody != null) {
@@ -78,6 +106,7 @@ class WalletWithdrawSelectAddressMenu(
 
     @Serializable
     private enum class ButtonPayload {
+        MY,
         BACK
     }
 }

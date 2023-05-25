@@ -1,27 +1,28 @@
 package money.tegro.bot.objects
 
-import java.math.BigInteger
+import money.tegro.bot.utils.NftsPersistent
+import java.math.BigDecimal
 
 enum class DepositPeriod(
     val period: Int,
-    val yield: BigInteger,
+    val yield: BigDecimal,
 ) {
-    SHORT(3, 8.toBigInteger()),
-    MEDIUM(6, 12.toBigInteger()),
-    LONG(12, 18.toBigInteger()),
-    INVESTOR(24, 28.toBigInteger());
+    SHORT(3, 8.toBigDecimal()),
+    MEDIUM(6, 12.toBigDecimal()),
+    LONG(12, 18.toBigDecimal()),
+    INVESTOR(24, 28.toBigDecimal());
 
     companion object {
-        fun getDisplayName(deposit: DepositPeriod, lang: Language): String {
-            return Messages[lang].menuDepositSelectPeriod.format(
+        fun getDisplayName(deposit: DepositPeriod, user: User): String {
+            return Messages[user].menuDepositSelectPeriod.format(
                 deposit.period,
                 getWord(
                     deposit.period,
-                    Messages[lang].monthOne,
-                    Messages[lang].monthTwo,
-                    Messages[lang].monthThree
+                    Messages[user].monthOne,
+                    Messages[user].monthTwo,
+                    Messages[user].monthThree
                 ),
-                deposit.yield.toString() + "%"
+                NftsPersistent.countStackingPercent(user, deposit.yield).toString() + "%"
             )
         }
 

@@ -9,6 +9,7 @@ import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.utils.NftsPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.Coins
@@ -33,7 +34,7 @@ class WalletWithdrawMenu(
                     Messages[user].menuWalletWithdrawMessage,
                     network.displayName,
                     coins,
-                    Coins(coins.currency, coins.currency.botFee),
+                    Coins(coins.currency, NftsPersistent.countBotFee(user, coins.currency)),
                     displayAddress
                 )
             )

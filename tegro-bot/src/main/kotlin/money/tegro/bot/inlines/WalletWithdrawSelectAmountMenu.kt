@@ -9,6 +9,7 @@ import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.utils.NftsPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.Coins
@@ -23,7 +24,7 @@ class WalletWithdrawSelectAmountMenu(
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
-        val fee = Coins(currency, currency.botFee)
+        val fee = Coins(currency, NftsPersistent.countBotFee(user, currency))
         val balance = PostgresWalletPersistent.loadWalletState(user).active[currency]
         val min = Coins(currency, currency.minAmount)
         val minAvailable = Coins(currency, currency.minAmount) + fee
@@ -87,7 +88,7 @@ class WalletWithdrawSelectAmountMenu(
 
     override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
         val payload = message.payload
-        val fee = Coins(currency, currency.botFee)
+        val fee = Coins(currency, NftsPersistent.countBotFee(user, currency))
         val available = try {
             PostgresWalletPersistent.loadWalletState(user).active[currency] - fee
         } catch (e: NegativeCoinsException) {

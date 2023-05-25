@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
+import money.tegro.bot.utils.NftsPersistent
 import money.tegro.bot.utils.PostgresDepositsPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.Coins
@@ -24,12 +25,13 @@ class DepositApproveMenu(
     val parentMenu: Menu
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+        val yield = NftsPersistent.countStackingPercent(user, depositPeriod.yield)
         val profit = (
-                coins.toBigInteger()
-                        * depositPeriod.yield
-                        * (depositPeriod.period.toBigInteger() * 30.toBigInteger())
-                        / 365.toBigInteger()) / 100.toBigInteger()
-        val profitCoins = Coins(coins.currency, coins.currency.fromNano(profit))
+                coins.toBigDecimal()
+                        * yield
+                        * (depositPeriod.period.toBigDecimal() * 30.toBigDecimal())
+                        / 365.toBigDecimal()) / 100.toBigDecimal()
+        val profitCoins = Coins(coins.currency, coins.currency.fromNano(profit.toBigInteger()))
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,
@@ -43,7 +45,7 @@ class DepositApproveMenu(
                         Messages[user.settings.lang].monthTwo,
                         Messages[user.settings.lang].monthThree
                     ),
-                    depositPeriod.yield.toString(),
+                    yield.toString(),
                     profitCoins
                 )
             } else {
@@ -56,7 +58,7 @@ class DepositApproveMenu(
                         Messages[user.settings.lang].monthTwo,
                         Messages[user.settings.lang].monthThree
                     ),
-                    depositPeriod.yield.toString(),
+                    yield.toString(),
                     profitCoins
                 )
             },

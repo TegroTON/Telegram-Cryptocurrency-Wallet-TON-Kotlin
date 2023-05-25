@@ -13,6 +13,7 @@ import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.LogsUtil
+import money.tegro.bot.utils.NftsPersistent
 import money.tegro.bot.utils.UserPrivateKey
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.BlockchainType
@@ -40,7 +41,7 @@ class WalletWithdrawApproveMenu(
                     Messages[user].menuWalletWithdrawApproveMessage,
                     network.displayName,
                     coins,
-                    Coins(coins.currency, coins.currency.botFee),
+                    Coins(coins.currency, NftsPersistent.countBotFee(user, coins.currency)),
                     displayAddress
                 )
             )
@@ -86,7 +87,7 @@ class WalletWithdrawApproveMenu(
 
                 val active = walletPersistent.loadWalletState(user).active[coins.currency]
                 if (active < coins) return false
-                val fee = Coins(coins.currency, coins.currency.botFee)
+                val fee = Coins(coins.currency, NftsPersistent.countBotFee(user, coins.currency))
                 val amountWithFee = coins + fee
 
                 walletPersistent.freeze(user, amountWithFee)
@@ -107,8 +108,8 @@ class WalletWithdrawApproveMenu(
                         )
                     }
                     val oldFreeze = walletPersistent.loadWalletState(user).frozen[coins.currency]
-                    walletPersistent.updateFreeze(user, coins.currency) {
-                        (it - amountWithFee).also {
+                    walletPersistent.updateFreeze(user, coins.currency) { updated ->
+                        (updated - amountWithFee).also {
                             println(
                                 "Remove from freeze:\n" +
                                         " old freeze: $oldFreeze\n" +
@@ -120,7 +121,7 @@ class WalletWithdrawApproveMenu(
                     LogsUtil.log(user, "$coins", LogType.WITHDRAW)
                     LogsUtil.log(
                         user,
-                        "$coins (fee: ${coins.currency.botFee}), balance ${active - amountWithFee}",
+                        "$coins (fee: $fee), balance ${active - amountWithFee}",
                         LogType.WITHDRAW_ADMIN
                     )
                 } catch (e: Throwable) {

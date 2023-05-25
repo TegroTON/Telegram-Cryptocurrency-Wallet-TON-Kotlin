@@ -47,7 +47,7 @@ object PostgresDepositsPersistent : DepositsPersistent {
 
     override suspend fun saveDeposit(deposit: Deposit) {
         deposit.issuer.freeze(deposit.coins)
-        suspendedTransactionAsync {
+        transaction {
             UsersDeposits.insert {
                 it[issuerId] = deposit.issuer.id
                 it[depositPeriod] = deposit.depositPeriod
@@ -107,7 +107,7 @@ object PostgresDepositsPersistent : DepositsPersistent {
     }
 
     suspend fun payDeposit(deposit: Deposit, bot: Bot) {
-        suspendedTransactionAsync {
+        transaction {
             UsersDeposits.update({ UsersDeposits.id eq deposit.id }) {
                 it[isPaid] = true
                 it[paidDate] = Clock.System.now()
@@ -115,12 +115,13 @@ object PostgresDepositsPersistent : DepositsPersistent {
         }
         val coins = deposit.coins
         val depositPeriod = deposit.depositPeriod
+        val yield = NftsPersistent.countStackingPercent(deposit.issuer, deposit.depositPeriod.yield)
         val profit = (
-                coins.toBigInteger()
-                        * depositPeriod.yield
-                        * (depositPeriod.period.toBigInteger() * 30.toBigInteger())
-                        / 365.toBigInteger()) / 100.toBigInteger()
-        val profitCoins = Coins(coins.currency, coins.currency.fromNano(profit))
+                coins.toBigDecimal()
+                        * yield
+                        * (depositPeriod.period.toBigDecimal() * 30.toBigDecimal())
+                        / 365.toBigDecimal()) / 100.toBigDecimal()
+        val profitCoins = Coins(coins.currency, coins.currency.fromNano(profit.toBigInteger()))
         walletPersistent.updateActive(deposit.issuer, deposit.coins.currency) { oldCoins ->
             (oldCoins + profitCoins).also { newCoins ->
                 println(
