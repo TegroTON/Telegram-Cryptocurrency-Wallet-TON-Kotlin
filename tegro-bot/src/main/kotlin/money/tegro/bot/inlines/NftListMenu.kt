@@ -254,7 +254,7 @@ class NftListMenu(
                         )
                     }
                 } else {
-                    bot.sendPopup(message, "Запросить следующее обновление вы можете не раньше $timeDisplay")
+                    bot.sendPopup(message, Messages[user].menNftListCooldown.format(timeDisplay))
                     return true
                 }
             }
