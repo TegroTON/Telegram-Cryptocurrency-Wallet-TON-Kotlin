@@ -108,7 +108,6 @@ class NftMenu(
                 } else {
                     user.setMenu(bot, NftListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
                 }
-
             }
         }
         return true

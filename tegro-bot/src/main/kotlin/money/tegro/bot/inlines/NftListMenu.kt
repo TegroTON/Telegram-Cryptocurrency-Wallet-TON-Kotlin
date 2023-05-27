@@ -237,11 +237,25 @@ class NftListMenu(
                 val date = Date.from(time.toJavaInstant())
                 val timeDisplay = SimpleDateFormat("dd.MM HH:mm").format(date)
                 if (PostgresUserPersistent.checkCooldown(user, CooldownType.NFT_UPDATE)) {
-                    PostgresNftsPersistent.getNftsByUser(user, true)
+                    val nfts = PostgresNftsPersistent.getNftsByUser(user, true)
                     PostgresUserPersistent.addCooldown(user, CooldownType.NFT_UPDATE, 1.hours)
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    val userSettings = user.settings.copy(nfts = nfts)
+
+                    val userCopy = user.copy(
+                        settings = userSettings
+                    )
+                    if (user.settings.nfts == nfts) {
+                        user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    } else {
+                        userCopy.setMenu(
+                            bot,
+                            NftListMenu(userCopy, nfts.toMutableList(), 1, parentMenu),
+                            message.lastMenuMessageId
+                        )
+                    }
                 } else {
                     bot.sendPopup(message, "Запросить следующее обновление вы можете не раньше $timeDisplay")
+                    return true
                 }
             }
         }

@@ -185,12 +185,6 @@ object PostgresNftsPersistent : NftsPersistent {
             val toAddressRaw = outMsg["destination"]?.jsonObject?.get("address")?.jsonPrimitive?.content ?: return false
             val toAddress = AddrStd(toAddressRaw).toString(userFriendly = true)
             val message = outMsg["decoded_body"]?.jsonObject?.get("text")?.jsonPrimitive?.content
-            println(
-                "isSuccess: $isSuccess\n" +
-                        "value: $value\n" +
-                        "toAddress: $toAddress\n" +
-                        "message: $message"
-            )
             val expectedMessage = "Connect to TegroWalletBot @$verifyCode"
             if (toAddress == masterAddress && value == CryptoCurrency.TON.botFee && message == expectedMessage) {
                 return isSuccess
@@ -207,13 +201,13 @@ object PostgresNftsPersistent : NftsPersistent {
         val nfts = emptyList<Nft>().toMutableList()
         for (element: JsonElement in array) {
             val item = element.jsonObject
-            val metadata = item["metadata"]?.jsonObject ?: return emptyList()
+            val metadata = item["metadata"]?.jsonObject ?: continue
 
-            val name = metadata["name"]?.jsonPrimitive?.content ?: return emptyList()
-            val itemAddress = item["address"]?.jsonPrimitive?.content ?: return emptyList()
-            val imageLink = metadata["image"]?.jsonPrimitive?.content ?: return emptyList()
+            val name = metadata["name"]?.jsonPrimitive?.content ?: continue
+            val itemAddress = item["address"]?.jsonPrimitive?.content ?: continue
+            val imageLink = metadata["image"]?.jsonPrimitive?.content ?: continue
             val collectionAddress =
-                item["collection"]?.jsonObject?.get("address")?.jsonPrimitive?.content ?: return emptyList()
+                item["collection"]?.jsonObject?.get("address")?.jsonPrimitive?.content ?: continue
             val collection = NftCollection.values().firstOrNull { it.address == collectionAddress } ?: continue
 
             val nft = Nft(

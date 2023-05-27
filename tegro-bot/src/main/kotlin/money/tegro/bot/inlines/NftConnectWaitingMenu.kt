@@ -79,14 +79,16 @@ class NftConnectWaitingMenu(
                 val verifyCode = payloadValue.verifyCode
                 val result = PostgresNftsPersistent.checkTransactions(address, verifyCode)
                 if (result) {
+                    val userSettings = user.settings.copy(address = address)
+                    PostgresUserPersistent.saveSettings(userSettings)
+                    val newUser = user.copy(
+                        settings = userSettings
+                    )
+                    newUser.setMenu(bot, NftMenu(newUser, MainMenu(newUser)), message.lastMenuMessageId)
+                } else {
                     bot.sendPopup(message, Messages[user].menuNftConnectWaitingCheckFailed)
+                    return true
                 }
-                val userSettings = user.settings.copy(address = address)
-                PostgresUserPersistent.saveSettings(userSettings)
-                val newUser = user.copy(
-                    settings = userSettings
-                )
-                newUser.setMenu(bot, NftMenu(newUser, MainMenu(newUser)), message.lastMenuMessageId)
             }
         }
         return true
