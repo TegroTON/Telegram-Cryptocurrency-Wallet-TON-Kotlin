@@ -91,39 +91,44 @@ object PostgresNftsPersistent : NftsPersistent {
         }
     }
 
-    override suspend fun getNftsByUserAddress(user: User, address: String): List<Nft> {
-        return getNftsByUserId(user.id, address)
+    private suspend fun makeRequestNft(address: String): String {
+        return httpClient.get("$endpoint/accounts/$address/nfts?limit=1000&offset=0&indirect_ownership=false") {
+            contentType(ContentType.Application.Json)
+        }.body<String>()
     }
 
-    private suspend fun getNftsByUserId(userId: UUID, address: String): List<Nft> {
-        val updateTime = suspendedTransactionAsync {
-            val result = UsersNfts.select {
-                UsersNfts.ownerId.eq(userId)
-            }.firstOrNull() ?: return@suspendedTransactionAsync null
-            result[UsersNfts.updateTime]
-        }.await()
-        if (updateTime != null && updateTime.plus(7.days) > Clock.System.now()) {
-            val nfts = suspendedTransactionAsync {
-                UsersNfts.select {
+    override suspend fun getNftsByUserAddress(user: User, address: String): List<Nft> {
+        return getNftsByUserId(user.id, address, false)
+    }
+
+    private suspend fun getNftsByUserId(userId: UUID, address: String, force: Boolean): List<Nft> {
+        if (!force) {
+            val updateTime = suspendedTransactionAsync {
+                val result = UsersNfts.select {
                     UsersNfts.ownerId.eq(userId)
-                }.mapNotNull {
-                    Nft(
-                        it[UsersNfts.id].value,
-                        it[UsersNfts.name],
-                        it[UsersNfts.address],
-                        it[UsersNfts.ownerId],
-                        it[UsersNfts.ownerAddress],
-                        it[UsersNfts.imageLink],
-                        it[UsersNfts.collection]
-                    )
+                }.firstOrNull() ?: return@suspendedTransactionAsync null
+                result[UsersNfts.updateTime]
+            }.await()
+            if (updateTime != null && updateTime.plus(7.days) > Clock.System.now()) {
+                val nfts = suspendedTransactionAsync {
+                    UsersNfts.select {
+                        UsersNfts.ownerId.eq(userId)
+                    }.mapNotNull {
+                        Nft(
+                            it[UsersNfts.id].value,
+                            it[UsersNfts.name],
+                            it[UsersNfts.address],
+                            it[UsersNfts.ownerId],
+                            it[UsersNfts.ownerAddress],
+                            it[UsersNfts.imageLink],
+                            it[UsersNfts.collection]
+                        )
+                    }
                 }
+                return nfts.await()
             }
-            return nfts.await()
         }
-        val response =
-            httpClient.get("$endpoint/accounts/$address/nfts?limit=1000&offset=0&indirect_ownership=false") {
-                contentType(ContentType.Application.Json)
-            }.body<String>()
+        val response = makeRequestNft(address)
 
         val nfts = parseJson(response, userId, address)
         clearNfts(userId)
@@ -144,9 +149,13 @@ object PostgresNftsPersistent : NftsPersistent {
     }
 
     override suspend fun getNftsByUser(user: User): List<Nft> {
-        if (user.settings.nfts.isNotEmpty()) return user.settings.nfts
+        return getNftsByUser(user, false)
+    }
+
+    suspend fun getNftsByUser(user: User, force: Boolean): List<Nft> {
+        if (!force && user.settings.nfts.isNotEmpty()) return user.settings.nfts
         if (user.settings.address == "") return emptyList()
-        return getNftsByUserAddress(user, user.settings.address)
+        return getNftsByUserId(user.id, user.settings.address, force)
     }
 
     private fun clearNfts(userId: UUID) {

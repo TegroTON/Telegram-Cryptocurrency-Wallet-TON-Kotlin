@@ -1,15 +1,17 @@
 package money.tegro.bot.objects
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import money.tegro.bot.utils.PostgresNftsPersistent
 import net.dzikoysk.exposed.upsert.withUnique
 import org.jetbrains.exposed.dao.id.UUIDTable
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
+import kotlin.time.Duration
 
 interface UserPersistent {
 
@@ -21,6 +23,12 @@ interface UserPersistent {
     suspend fun loadByTg(long: Long): User?
 
     suspend fun getRefsByUser(user: User): List<User>
+
+    suspend fun addCooldown(user: User, type: CooldownType, duration: Duration)
+
+    suspend fun checkCooldown(user: User, type: CooldownType): Boolean
+
+    suspend fun getCooldown(user: User, type: CooldownType): Instant
 }
 
 object PostgresUserPersistent : UserPersistent {
@@ -45,6 +53,16 @@ object PostgresUserPersistent : UserPersistent {
 
         init {
             transaction { SchemaUtils.create(this@UsersSettings) }
+        }
+    }
+
+    object UsersCooldowns : UUIDTable("users_cooldowns") {
+        val userId = uuid("user_id").references(Users.id)
+        val cooldownType = enumeration<CooldownType>("type")
+        val expireTime = timestamp("expire_time").default(Clock.System.now())
+
+        init {
+            transaction { SchemaUtils.create(this@UsersCooldowns) }
         }
     }
 
@@ -230,6 +248,41 @@ object PostgresUserPersistent : UserPersistent {
             }
         }
         return referralUsers.await()
+    }
+
+    override suspend fun addCooldown(user: User, type: CooldownType, duration: Duration) {
+        val time = Clock.System.now() + duration
+        transaction {
+            UsersCooldowns.insert {
+                it[userId] = user.id
+                it[cooldownType] = type
+                it[expireTime] = time
+            }
+        }
+    }
+
+    override suspend fun checkCooldown(user: User, type: CooldownType): Boolean {
+        val resultRow = suspendedTransactionAsync {
+            UsersCooldowns.select {
+                UsersCooldowns.userId.eq(user.id) and UsersCooldowns.cooldownType.eq(type)
+            }.firstOrNull()
+        }.await() ?: return true
+        val result = resultRow[UsersCooldowns.expireTime] < Clock.System.now()
+        if (result) {
+            UsersCooldowns.deleteWhere {
+                userId.eq(user.id) and cooldownType.eq(type)
+            }
+        }
+        return result
+    }
+
+    override suspend fun getCooldown(user: User, type: CooldownType): Instant {
+        val resultRow = suspendedTransactionAsync {
+            UsersCooldowns.select {
+                UsersCooldowns.userId.eq(user.id) and UsersCooldowns.cooldownType.eq(type)
+            }.firstOrNull()
+        }.await() ?: return Clock.System.now()
+        return resultRow[UsersCooldowns.expireTime]
     }
 
 }

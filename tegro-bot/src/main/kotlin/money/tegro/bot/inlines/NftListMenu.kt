@@ -1,19 +1,21 @@
 package money.tegro.bot.inlines
 
+import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import money.tegro.bot.api.Bot
-import money.tegro.bot.objects.BotMessage
-import money.tegro.bot.objects.Messages
-import money.tegro.bot.objects.Nft
-import money.tegro.bot.objects.User
+import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.NftsPersistent
+import money.tegro.bot.utils.PostgresNftsPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.utils.linkButton
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration.Companion.hours
 
 @Serializable
 class NftListMenu(
@@ -175,6 +177,14 @@ class NftListMenu(
                     }
                 }
 
+                row {
+                    button(
+                        Messages[user.settings.lang].menuNftListUpdate,
+                        ButtonPayload.serializer(),
+                        ButtonPayload.UPDATE
+                    )
+                }
+
                 if (nfts.size > 6) {
                     row {
                         if (page != 1) {
@@ -221,6 +231,19 @@ class NftListMenu(
                 NftListMenu(user, nfts, page + 1, parentMenu),
                 message.lastMenuMessageId
             )
+
+            ButtonPayload.UPDATE -> {
+                val time = PostgresUserPersistent.getCooldown(user, CooldownType.NFT_UPDATE)
+                val date = Date.from(time.toJavaInstant())
+                val timeDisplay = SimpleDateFormat("dd.MM HH:mm").format(date)
+                if (PostgresUserPersistent.checkCooldown(user, CooldownType.NFT_UPDATE)) {
+                    PostgresNftsPersistent.getNftsByUser(user, true)
+                    PostgresUserPersistent.addCooldown(user, CooldownType.NFT_UPDATE, 1.hours)
+                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                } else {
+                    bot.sendPopup(message, "Запросить следующее обновление вы можете не раньше $timeDisplay")
+                }
+            }
         }
         return true
     }
@@ -235,6 +258,7 @@ class NftListMenu(
     private enum class ButtonPayload {
         NEXT_PAGE,
         PREVIOUS_PAGE,
+        UPDATE,
         BACK
     }
 }
