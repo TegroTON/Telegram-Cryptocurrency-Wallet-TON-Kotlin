@@ -55,11 +55,7 @@ data class ReceiptRecipientMenu(
                     PostgresReceiptPersistent.saveReceipt(newReceipt)
                     user.setMenu(
                         bot,
-                        ReceiptLimitationsMenu(
-                            user,
-                            newReceipt,
-                            ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user)))
-                        ),
+                        ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
                         message.lastMenuMessageId
                     )
                 }
@@ -84,11 +80,7 @@ data class ReceiptRecipientMenu(
             PostgresReceiptPersistent.saveReceipt(newReceipt)
             user.setMenu(
                 bot,
-                ReceiptLimitationsMenu(
-                    user,
-                    newReceipt,
-                    ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user)))
-                ),
+                ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
                 message.lastMenuMessageId
             )
         } else {

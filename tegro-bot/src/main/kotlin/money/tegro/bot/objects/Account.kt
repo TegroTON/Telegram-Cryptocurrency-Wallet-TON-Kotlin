@@ -31,7 +31,7 @@ data class Account(
             return if (account.maxCoins.amount == 0.toBigInteger()) {
                 notSet(bot, lang)
             } else {
-                (account.maxCoins - account.coins).toString()
+                (account.maxCoins - account.coins).toStringWithRate(account.issuer.settings.localCurrency)
             }
         }
 
@@ -39,7 +39,7 @@ data class Account(
             return if (account.minAmount.amount == 0.toBigInteger()) {
                 notSet(bot, lang)
             } else {
-                account.minAmount.toString()
+                account.minAmount.toStringWithRate(account.issuer.settings.localCurrency)
             }
         }
 

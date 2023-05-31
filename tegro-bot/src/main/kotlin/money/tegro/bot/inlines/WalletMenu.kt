@@ -10,8 +10,10 @@ import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.testnet
 import money.tegro.bot.utils.button
+import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.walletPersistent
+import java.math.BigDecimal
 import java.math.BigInteger
 
 @Serializable
@@ -30,11 +32,18 @@ class WalletMenu(
                 appendLine()
                 val values = CryptoCurrency.values().toMutableList()
                 walletState.active.forEach {
-                    appendLine("· ${it.currency.displayName}: $it")
+                    appendLine("· ${it.currency.displayName}: ${it.toStringWithRate(user.settings.localCurrency)}")
                     values.remove(it.currency)
                 }
                 values.forEach {
-                    appendLine("· ${it.displayName}: 0 ${it.ticker}")
+                    appendLine(
+                        "· ${it.displayName}: ${
+                            Coins(
+                                it,
+                                BigDecimal.ZERO
+                            ).toStringWithRate(user.settings.localCurrency)
+                        }"
+                    )
                 }
                 val frozen = walletState.frozen.filter { it.amount > BigInteger.ZERO }
                 if (frozen.isNotEmpty()) {

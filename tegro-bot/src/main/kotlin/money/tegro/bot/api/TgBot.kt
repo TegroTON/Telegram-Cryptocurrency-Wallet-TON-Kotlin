@@ -12,6 +12,7 @@ import money.tegro.bot.testnet
 import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.utils.PostgresAccountsPersistent
 import money.tegro.bot.utils.PostgresDepositsPersistent
+import money.tegro.bot.utils.RatePersistent
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.WalletObserver
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
@@ -49,6 +50,7 @@ class TgBot(
         botUsername = username
 
         launch {
+            RatePersistent.start()
             while (true) {
                 val result = PostgresDepositsPersistent.check()
                 for (deposit in result) {
@@ -209,7 +211,6 @@ class TgBot(
                 this.userId = userId
             }
             val result = executeAsync(request).await()
-            println("$chatId: $result")
             return !result.status.equals("kicked") && !result.status.equals("left")
         } catch (ignored: Exception) {
             false
@@ -289,7 +290,7 @@ class TgBot(
                         sendMessage(
                             botMessage.peerId,
                             Messages[user].walletMenuDepositMessage.format(
-                                coins,
+                                coins.toStringWithRate(user.settings.localCurrency),
                                 Coins(coins.currency, coins.currency.networkFeeReserve)
                             )
                         )

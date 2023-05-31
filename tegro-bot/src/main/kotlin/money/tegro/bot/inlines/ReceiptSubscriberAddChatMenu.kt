@@ -67,11 +67,7 @@ data class ReceiptSubscriberAddChatMenu(
                 ReceiptSubscriberMenu(
                     user,
                     receipt,
-                    ReceiptLimitationsMenu(
-                        user,
-                        receipt,
-                        ReceiptReadyMenu(user, receipt, ReceiptsMenu(user, MainMenu(user)))
-                    )
+                    ReceiptReadyMenu(user, receipt, ReceiptsMenu(user, MainMenu(user)))
                 ),
                 message.lastMenuMessageId
             )

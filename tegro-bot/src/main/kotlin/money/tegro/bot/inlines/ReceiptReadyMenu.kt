@@ -43,7 +43,6 @@ data class ReceiptReadyMenu(
         val time =
             SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(date)
         val chatIds = PostgresReceiptPersistent.getChatsByReceipt(receipt)
-        println(chatIds)
         val recipient = receipt.recipient
         val limitation: String = if (chatIds.isNotEmpty() || recipient != null) {
             if (chatIds.isNotEmpty() && recipient != null) {
@@ -57,7 +56,7 @@ data class ReceiptReadyMenu(
             Messages[user.settings.lang].menuReceiptReadyAnyone
         }
         return Messages[user.settings.lang].menuReceiptReadyMessage.format(
-            receipt.coins,
+            receipt.coins.toStringWithRate(user.settings.localCurrency),
             receipt.activations,
             time,
             limitation,
@@ -69,6 +68,9 @@ data class ReceiptReadyMenu(
         val code = receipt.id.toString()
         val tgLink = String.format("t.me/%s?start=RC-%s", System.getenv("TG_USER_NAME"), code)
         val vkLink = String.format("https://vk.com/write-%s?ref=RC-%s", System.getenv("VK_GROUP_ID"), code)
+        val captchaActivation = if (receipt.captcha) Messages[user].enabled else Messages[user].disabled
+        val onlyNewActivation = if (receipt.onlyNew) Messages[user].enabled else Messages[user].disabled
+        val onlyPremiumActivation = if (receipt.onlyPremium) Messages[user].enabled else Messages[user].disabled
         return BotKeyboard {
             row {
                 linkButton(
@@ -77,9 +79,7 @@ data class ReceiptReadyMenu(
                     ButtonPayload.serializer(),
                     ButtonPayload.SHARE
                 )
-            }
-            if (qrButton) {
-                row {
+                if (qrButton) {
                     button(
                         Messages[user.settings.lang].menuReceiptReadyQr,
                         ButtonPayload.serializer(),
@@ -89,9 +89,36 @@ data class ReceiptReadyMenu(
             }
             row {
                 button(
-                    Messages[user.settings.lang].menuReceiptReadyLimitations,
+                    if (receipt.recipient == null)
+                        Messages[user].menuReceiptLimitationsUser
+                    else
+                        Messages[user].menuReceiptLimitationsUserUnattach,
                     ButtonPayload.serializer(),
-                    ButtonPayload.LIMITATIONS
+                    ButtonPayload.USER
+                )
+            }
+            row {
+                button(
+                    Messages[user].menuReceiptLimitationsRef,
+                    ButtonPayload.serializer(),
+                    ButtonPayload.REF
+                )
+                button(
+                    Messages[user].menuReceiptLimitationsSub,
+                    ButtonPayload.serializer(),
+                    ButtonPayload.SUB
+                )
+            }
+            row {
+                button(
+                    Messages[user].menuReceiptLimitationsOnlyNew.format(onlyNewActivation),
+                    ButtonPayload.serializer(),
+                    ButtonPayload.ONLY_NEW
+                )
+                button(
+                    Messages[user].menuReceiptLimitationsOnlyPremium.format(onlyPremiumActivation),
+                    ButtonPayload.serializer(),
+                    ButtonPayload.ONLY_PREMIUM
                 )
             }
             row {
@@ -146,9 +173,51 @@ data class ReceiptReadyMenu(
                 )
             }
 
-            ButtonPayload.LIMITATIONS -> user.setMenu(
+
+            ButtonPayload.CAPTCHA -> {
+                val newReceipt = receipt.copy(captcha = receipt.captcha.not())
+                PostgresReceiptPersistent.saveReceipt(newReceipt)
+                user.setMenu(
+                    bot,
+                    ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
+                    message.lastMenuMessageId
+                )
+            }
+
+            ButtonPayload.ONLY_NEW -> {
+                val newReceipt = receipt.copy(onlyNew = receipt.onlyNew.not())
+                PostgresReceiptPersistent.saveReceipt(newReceipt)
+                user.setMenu(
+                    bot,
+                    ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
+                    message.lastMenuMessageId
+                )
+            }
+
+            ButtonPayload.ONLY_PREMIUM -> {
+                val newReceipt = receipt.copy(onlyPremium = receipt.onlyPremium.not())
+                PostgresReceiptPersistent.saveReceipt(newReceipt)
+                user.setMenu(
+                    bot,
+                    ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
+                    message.lastMenuMessageId
+                )
+            }
+
+            ButtonPayload.USER -> user.setMenu(
                 bot,
-                ReceiptLimitationsMenu(user, receipt, this),
+                ReceiptRecipientMenu(user, receipt, this),
+                message.lastMenuMessageId
+            )
+
+            ButtonPayload.REF -> {
+                bot.sendPopup(message, Messages[user].soon)
+                return true
+            }
+
+            ButtonPayload.SUB -> user.setMenu(
+                bot,
+                ReceiptSubscriberMenu(user, receipt, this),
                 message.lastMenuMessageId
             )
 
@@ -182,7 +251,12 @@ data class ReceiptReadyMenu(
     private enum class ButtonPayload {
         SHARE,
         QR,
-        LIMITATIONS,
+        CAPTCHA,
+        ONLY_NEW,
+        ONLY_PREMIUM,
+        USER,
+        REF,
+        SUB,
         DELETE,
         BACK
     }

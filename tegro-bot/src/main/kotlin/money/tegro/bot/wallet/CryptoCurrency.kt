@@ -5,6 +5,7 @@ import java.math.BigInteger
 
 enum class CryptoCurrency(
     val displayName: String,
+    val coingecoId: String,
     val ticker: String,
     val decimals: Int,
     val minAmount: BigInteger,
@@ -16,6 +17,7 @@ enum class CryptoCurrency(
 ) {
     TON(
         displayName = "Toncoin",
+        coingecoId = "the-open-network",
         ticker = "TON",
         decimals = 9,
         minAmount = 10_000_000.toBigInteger(),
@@ -26,6 +28,7 @@ enum class CryptoCurrency(
     ),
     TGR(
         displayName = "Tegro",
+        coingecoId = "tegro",
         ticker = "TGR",
         decimals = 9,
         minAmount = 5_000_000_000.toBigInteger(),
@@ -38,6 +41,7 @@ enum class CryptoCurrency(
     ),
     USDT(
         displayName = "Tether USD",
+        coingecoId = "tether",
         ticker = "USDT",
         decimals = 6,
         minAmount = 1_000_000.toBigInteger(),
@@ -50,6 +54,7 @@ enum class CryptoCurrency(
     ),
     BNB(
         displayName = "Binance BNB",
+        coingecoId = "binancecoin",
         ticker = "BNB",
         decimals = 18,
         minAmount = 10_000_000_000_000_000.toBigInteger(),

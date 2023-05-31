@@ -93,7 +93,7 @@ data class AccountReadyMenu(
         return Messages[lang].menuAccountReadyMessage.format(
             time,
             Account.getTypeDisplay(account, lang),
-            account.coins,
+            account.coins.toStringWithRate(user.settings.localCurrency),
             Account.getProgress(bot, account, lang),
             Account.getActivations(bot, account, lang),
             Account.getMinAmount(bot, account, lang),

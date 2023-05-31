@@ -50,7 +50,6 @@ class LogsUtil {
                     appendLine("[$time] ${log.userId} >> ${log.logType.displayName}: ${log.info}")
                 }
             }
-            println("Creating request to paste $name")
             val paste = Paste.builder()
                 .description(name)
                 .addSection(
