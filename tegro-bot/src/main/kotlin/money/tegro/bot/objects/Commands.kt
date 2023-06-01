@@ -216,10 +216,10 @@ class Commands {
                         return
                     }
                     val userInfo = buildString {
-                        appendLine("User TG id: ${user.tgId}")
-                        appendLine("User VK id: ${user.vkId}")
-                        appendLine("User address: ${user.settings.address}")
-                        appendLine("User referral id: ${user.settings.referralId}")
+                        appendLine("User TG id: ${targetUser.tgId}")
+                        appendLine("User VK id: ${targetUser.vkId}")
+                        appendLine("User address: ${targetUser.settings.address}")
+                        appendLine("User referral id: ${targetUser.settings.referralId}")
                     }
                     val link =
                         LogsUtil.getLogsLink(
