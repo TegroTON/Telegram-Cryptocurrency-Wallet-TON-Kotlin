@@ -40,6 +40,43 @@ class LogsUtil {
             logs.add(log)
         }
 
+        fun getLogsLink(logs: List<Log>, userInfo: String, name: String): String {
+            val pastee = JPastee("uvTVeu2XRFssXJJCqqZxc7qOwup2Q037oB3CVWX23")
+            val text = buildString {
+                for (log: Log in logs) {
+                    val date = Date.from(log.time.toJavaInstant())
+                    val time =
+                        SimpleDateFormat("dd.MM.yyyy HH:mm").format(date)
+                    appendLine("[$time] ${log.userId} >> ${log.logType.displayName}: ${log.info}")
+                }
+            }
+            val paste = Paste.builder()
+                .description(name)
+                .addSection(
+                    Section.builder()
+                        .name("User info")
+                        .contents(userInfo)
+                        .syntax(pastee.getSyntaxFromName("text").get())
+                        .build()
+                )
+                .addSection(
+                    Section.builder()
+                        .name(name)
+                        .contents(text)
+                        .syntax(pastee.getSyntaxFromName("text").get())
+                        .build()
+                )
+                .build()
+
+            val resp: SubmitResponse = pastee.submit(paste)
+
+            if (!resp.isSuccess) {
+                println("Pasting err: \n\nname=$name\ntext=\n$text\n\nERROR: \n${resp.errorString}")
+                return "Pasting error, contact administrator"
+            }
+            return resp.link
+        }
+
         fun getLogsLink(logs: List<Log>, name: String): String {
             val pastee = JPastee("uvTVeu2XRFssXJJCqqZxc7qOwup2Q037oB3CVWX23")
             val text = buildString {

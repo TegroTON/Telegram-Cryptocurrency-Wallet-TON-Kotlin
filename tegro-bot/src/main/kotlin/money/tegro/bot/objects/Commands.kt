@@ -215,8 +215,18 @@ class Commands {
                         bot.sendMessage(botMessage.peerId, "User not found")
                         return
                     }
+                    val userInfo = buildString {
+                        appendLine("User TG id: ${user.tgId}")
+                        appendLine("User VK id: ${user.vkId}")
+                        appendLine("User address: ${user.settings.address}")
+                        appendLine("User referral id: ${user.settings.referralId}")
+                    }
                     val link =
-                        LogsUtil.getLogsLink(PostgresLogsPersistent.getLogsByUser(targetUser), "Logs by ${user.id}")
+                        LogsUtil.getLogsLink(
+                            PostgresLogsPersistent.getLogsByUser(targetUser),
+                            userInfo,
+                            "Logs by ${user.id}"
+                        )
 
                     bot.sendMessage(botMessage.peerId, link)
                 }
