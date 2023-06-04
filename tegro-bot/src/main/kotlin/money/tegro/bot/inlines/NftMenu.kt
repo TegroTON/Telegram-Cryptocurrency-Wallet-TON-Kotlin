@@ -52,7 +52,7 @@ class NftMenu(
                 row {
                     linkButton(
                         Messages[user.settings.lang].menuNftLibermall,
-                        "https://libermall.com/?utm_source=telegram&utm_medium=social&utm_campaign=bot&utm_content=telegrambot&utm_term=dex",
+                        "https://libermall.com/",
                         ButtonPayload.serializer(),
                         ButtonPayload.BACK
                     )

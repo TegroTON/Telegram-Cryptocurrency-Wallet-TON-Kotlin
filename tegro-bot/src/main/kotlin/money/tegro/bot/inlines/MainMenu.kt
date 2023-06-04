@@ -80,7 +80,7 @@ data class MainMenu(
         row {
 //            linkButton(
 //                Messages[user.settings.lang].mainMenuButtonNFT,
-//                "https://libermall.com/?utm_source=telegram&utm_medium=social&utm_campaign=bot&utm_content=telegrambot&utm_term=dex",
+//                "https://libermall.com/",
 //                CommandPayload.serializer(),
 //                CommandPayload.NFT
 //            )
@@ -91,7 +91,7 @@ data class MainMenu(
             )
             linkButton(
                 Messages[user.settings.lang].mainMenuButtonDex,
-                "https://tegro.finance/?utm_source=telegram&utm_medium=social&utm_campaign=bot&utm_content=telegrambot&utm_term=dex",
+                "https://tegro.finance/",
                 CommandPayload.serializer(),
                 CommandPayload.DEX
             )
