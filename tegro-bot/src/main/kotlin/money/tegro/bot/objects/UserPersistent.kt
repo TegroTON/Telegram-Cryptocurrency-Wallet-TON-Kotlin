@@ -269,8 +269,10 @@ object PostgresUserPersistent : UserPersistent {
         }.await() ?: return true
         val result = resultRow[UsersCooldowns.expireTime] < Clock.System.now()
         if (result) {
-            UsersCooldowns.deleteWhere {
-                userId.eq(user.id) and cooldownType.eq(type)
+            transaction {
+                UsersCooldowns.deleteWhere {
+                    userId.eq(user.id) and cooldownType.eq(type)
+                }
             }
         }
         return result

@@ -32,12 +32,12 @@ enum class CryptoCurrency(
         ticker = "TGR",
         decimals = 9,
         minAmount = 5_000_000_000.toBigInteger(),
-        botFee = 1_000_000_000.toBigInteger(),
+        botFee = 500_000_000_000.toBigInteger(),
         tokenContracts = listOf(
-            BlockchainType.TON to "0:2f0df5851b4a185f5f63c0d0cd0412f5aca353f577da18ff47c936f99dbd849a",
-            BlockchainType.BSC to "0xd9780513292477C4039dFdA1cfCD89Ff111e9DA5"
+            BlockchainType.TON to "0:2f0df5851b4a185f5f63c0d0cd0412f5aca353f577da18ff47c936f99dbd849a"//,
+//            BlockchainType.BSC to "0xd9780513292477C4039dFdA1cfCD89Ff111e9DA5"
         ),
-        isEnabled = false
+        //isEnabled = false
     ),
     USDT(
         displayName = "Tether USD",
@@ -79,6 +79,9 @@ enum class CryptoCurrency(
 
     fun fromNano(value: BigInteger): BigDecimal =
         value.toBigDecimal().divide(factor)
+
+    fun fromNano(value: BigDecimal): BigDecimal =
+        value.divide(factor)
 
     fun toNano(string: String): BigInteger =
         toNano(string.toBigDecimal())

@@ -48,7 +48,7 @@ class WalletWithdrawSelectAddressMenu(
             lastMenuMessageId = lastMenuMessageId,
             message = message,
             keyboard = BotKeyboard {
-                if (address != "") {
+                if (address != "" && network == BlockchainType.TON) {
                     row {
                         button(
                             displayAddress,

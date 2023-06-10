@@ -31,7 +31,8 @@ class DepositApproveMenu(
                         * yield
                         * (depositPeriod.period.toBigDecimal() * 30.toBigDecimal())
                         / 365.toBigDecimal()) / 100.toBigDecimal()
-        val profitCoins = Coins(coins.currency, coins.currency.fromNano(profit.toBigInteger()))
+        println(profit)
+        val profitCoins = Coins(coins.currency, profit)
         bot.updateKeyboard(
             to = user.vkId ?: user.tgId ?: 0,
             lastMenuMessageId = lastMenuMessageId,

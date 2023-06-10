@@ -149,7 +149,6 @@ object WalletObserver {
                     a.collect {
                         when (it) {
                             is TokenDepositFlow.Event.Complete -> {
-                                hashMap.remove(user)
                                 println("Deposit flow ${it.amount} : ${it.amount.amount}")
                                 it.amount
                             }
@@ -195,10 +194,12 @@ object WalletObserver {
                             )
                         }
                     }
+                    hashMap.remove(user)
                     return depositCoins
+                } else {
+                    return Coins(cryptoCurrency, 0.toBigInteger())
                 }
             }
-            return Coins(cryptoCurrency, 0.toBigInteger())
         } else {
             return Coins(cryptoCurrency, 0.toBigInteger())
         }
