@@ -41,7 +41,7 @@ class LogsUtil {
         }
 
         fun getLogsLink(logs: List<Log>, userInfo: String, name: String): String {
-            val pastee = JPastee("uvTVeu2XRFssXJJCqqZxc7qOwup2Q037oB3CVWX23")
+            val pastee = JPastee("uVXw8WfhrRzWlb0zii4lJufhUgN2uUjBchdyjhjcw")
             val text = buildString {
                 for (log: Log in logs) {
                     val date = Date.from(log.time.toJavaInstant())
