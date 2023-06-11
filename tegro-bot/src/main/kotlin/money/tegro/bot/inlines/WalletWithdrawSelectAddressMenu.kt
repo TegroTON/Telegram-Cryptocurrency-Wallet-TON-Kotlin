@@ -21,7 +21,7 @@ class WalletWithdrawSelectAddressMenu(
     val coins: Coins,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val message = buildString {
             appendLine(
                 String.format(
@@ -44,8 +44,8 @@ class WalletWithdrawSelectAddressMenu(
             }
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = message,
             keyboard = BotKeyboard {
                 if (address != "" && network == BlockchainType.TON) {
@@ -68,20 +68,20 @@ class WalletWithdrawSelectAddressMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val messageBody = message.body
-        if (message.payload != null) {
-            val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val messageBody = botMessage.body
+        if (botMessage.payload != null) {
+            val payload = botMessage.payload
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
 
                 ButtonPayload.MY -> {
                     user.setMenu(
                         bot,
                         WalletWithdrawApproveMenu(user, user.settings.address, network, coins, this),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
             }
@@ -90,7 +90,7 @@ class WalletWithdrawSelectAddressMenu(
             val withdrawAddress: String = messageBody
             if (!blockchainManager.isValidAddress(messageBody)) {
                 bot.sendMessage(
-                    message.peerId,
+                    botMessage.peerId,
                     Messages[user].walletMenuWithdrawInvalidAddress
                 )
                 return true
@@ -98,7 +98,7 @@ class WalletWithdrawSelectAddressMenu(
             user.setMenu(
                 bot,
                 WalletWithdrawApproveMenu(user, withdrawAddress, network, coins, this),
-                message.lastMenuMessageId
+                botMessage
             )
         }
         return true

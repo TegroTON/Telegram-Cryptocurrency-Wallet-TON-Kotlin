@@ -26,13 +26,13 @@ data class AccountReadyMenu(
     val account: Account,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val code = account.id.toString()
         val tgLink = String.format("t.me/%s?start=AC-%s", System.getenv("TG_USER_NAME"), code)
         val vkLink = String.format("https://vk.com/write-%s?ref=AC-%s", System.getenv("VK_GROUP_ID"), code)
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = getBody(bot),
             keyboard = BotKeyboard {
                 row {
@@ -102,8 +102,8 @@ data class AccountReadyMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         val code = account.id.toString()
         val tgLink = String.format("t.me/%s?start=AC-%s", System.getenv("TG_USER_NAME"), code)
         val vkLink = String.format("https://vk.com/write-%s?ref=AC-%s", System.getenv("VK_GROUP_ID"), code)
@@ -113,7 +113,7 @@ data class AccountReadyMenu(
                 user.setMenu(
                     bot,
                     AccountsListMenu(user, list.toMutableList(), 1, AccountsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
 
@@ -130,7 +130,7 @@ data class AccountReadyMenu(
                 val imageBytes = qrCodeCanvas.getBytes()
 
                 bot.sendPhoto(
-                    message.peerId,
+                    botMessage.peerId,
                     getBody(bot),
                     ByteArrayInputStream(imageBytes),
                     filename,
@@ -141,18 +141,18 @@ data class AccountReadyMenu(
                 user.setMenu(
                     bot,
                     AccountsListMenu(user, list.toMutableList(), 1, AccountsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
 
             ButtonPayload.MINAMOUNT -> {
                 if (account.oneTime) {
-                    return bot.sendPopup(message, Messages[user.settings.lang].menuAccountReadyOneTimePopup)
+                    return bot.sendPopup(botMessage, Messages[user.settings.lang].menuAccountReadyOneTimePopup)
                 } else {
                     user.setMenu(
                         bot,
                         AccountChangeMinAmountMenu(user, account, this),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
             }
@@ -160,7 +160,7 @@ data class AccountReadyMenu(
             ButtonPayload.ACTIVATIONS -> user.setMenu(
                 bot,
                 AccountChangeActivationsMenu(user, account, this),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.DELETE -> {
@@ -169,7 +169,7 @@ data class AccountReadyMenu(
                 user.setMenu(
                     bot,
                     AccountsListMenu(user, list.toMutableList(), 1, AccountsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
         }

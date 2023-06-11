@@ -21,7 +21,7 @@ class DepositSelectPeriodMenu(
     val calc: Boolean,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val nft = buildString {
             if (user.settings.nfts.isNotEmpty()) {
                 append("\n\n")
@@ -31,8 +31,8 @@ class DepositSelectPeriodMenu(
             }
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuDepositSelectPeriodMessage.format(nft, coins),
             keyboard = BotKeyboard {
                 DepositPeriod.values().forEach { period ->
@@ -55,16 +55,16 @@ class DepositSelectPeriodMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (val payloadValue = Json.decodeFromString<ButtonPayload>(payload)) {
-            ButtonPayload.Back -> user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+            ButtonPayload.Back -> user.setMenu(bot, parentMenu, botMessage)
 
             is ButtonPayload.Period -> {
                 user.setMenu(
                     bot,
                     DepositApproveMenu(user, coins, payloadValue.value, calc, this),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
         }

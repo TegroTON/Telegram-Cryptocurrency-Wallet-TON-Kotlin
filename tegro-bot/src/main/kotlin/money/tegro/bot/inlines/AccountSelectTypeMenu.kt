@@ -15,10 +15,10 @@ class AccountSelectTypeMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuAccountSelectTypeMessage,
             keyboard = BotKeyboard {
                 row {
@@ -51,23 +51,23 @@ class AccountSelectTypeMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
 
             ButtonPayload.ONETIME -> {
-                user.setMenu(bot, AccountSelectCurrencyMenu(user, 1, this), message.lastMenuMessageId)
+                user.setMenu(bot, AccountSelectCurrencyMenu(user, 1, this), botMessage)
             }
 
             ButtonPayload.NOTONETIME -> {
-                user.setMenu(bot, AccountSelectActivationsMenu(user, this), message.lastMenuMessageId)
+                user.setMenu(bot, AccountSelectActivationsMenu(user, this), botMessage)
             }
 
             ButtonPayload.OPEN -> {
-                user.setMenu(bot, OpenAccountSelectCurrencyMenu(user, this), message.lastMenuMessageId)
+                user.setMenu(bot, OpenAccountSelectCurrencyMenu(user, this), botMessage)
             }
         }
         return true

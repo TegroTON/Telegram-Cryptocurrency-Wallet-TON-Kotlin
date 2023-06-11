@@ -22,7 +22,7 @@ class WalletWithdrawMenu(
     val coins: Coins,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val displayAddress = buildString {
             if (bot is TgBot) append("<code>")
             append(withdrawAddress)
@@ -40,8 +40,8 @@ class WalletWithdrawMenu(
             )
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = message,
             keyboard = BotKeyboard {
                 row {
@@ -55,11 +55,11 @@ class WalletWithdrawMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.BACK -> {
-                user.setMenu(bot, MainMenu(user), message.lastMenuMessageId)
+                user.setMenu(bot, MainMenu(user), botMessage)
             }
         }
         return true

@@ -24,7 +24,7 @@ class DepositApproveMenu(
     val calc: Boolean,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val yield = NftsPersistent.countStackingPercent(user, depositPeriod.yield)
         val profit = (
                 coins.toBigDecimal()
@@ -34,8 +34,8 @@ class DepositApproveMenu(
         println(profit)
         val profitCoins = Coins(coins.currency, profit)
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = if (calc) {
                 Messages[user.settings.lang].menuDepositApproveMessageCalc.format(
                     coins,
@@ -90,11 +90,11 @@ class DepositApproveMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.CREATE -> {
-                user.setMenu(bot, DepositSelectAmountMenu(user, false, this), message.lastMenuMessageId)
+                user.setMenu(bot, DepositSelectAmountMenu(user, false, this), botMessage)
             }
 
             ButtonPayload.APPROVE -> {
@@ -109,7 +109,7 @@ class DepositApproveMenu(
                 val min = Coins(deposit.coins.currency, 2_500_000_000_000.toBigInteger())
                 if (deposit.coins < min) {
                     return bot.sendPopup(
-                        message,
+                        botMessage,
                         Messages[user.settings.lang].accountMinAmountException.format(min)
                     )
                 }
@@ -119,16 +119,16 @@ class DepositApproveMenu(
                     user.setMenu(
                         bot,
                         DepositReadyMenu(user, deposit, DepositsMenu(user, MainMenu(user))),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 } else return bot.sendPopup(
-                    message,
+                    botMessage,
                     Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney.format(deposit.coins, available)
                 )
             }
 
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
         }
         return true

@@ -20,7 +20,7 @@ data class ReceiptSubscriberMenu(
     val receipt: Receipt,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val limit = 5
         val chatIds = PostgresReceiptPersistent.getChatsByReceipt(receipt)
         val chats = emptyList<Chat>().toMutableList()
@@ -35,8 +35,8 @@ data class ReceiptSubscriberMenu(
             }
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuReceiptSubscriberMessage.format(limit.toString()),
             keyboard = BotKeyboard {
                 if (chats.isNotEmpty()) {
@@ -73,22 +73,22 @@ data class ReceiptSubscriberMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (val payloadValue = Json.decodeFromString<ButtonPayload>(payload)) {
             is ButtonPayload.Add -> {
-                user.setMenu(bot, ReceiptSubscriberAddChatMenu(user, receipt, this), message.lastMenuMessageId)
+                user.setMenu(bot, ReceiptSubscriberAddChatMenu(user, receipt, this), botMessage)
             }
 
             is ButtonPayload.Back -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
 
             is ButtonPayload.Chat -> {
                 user.setMenu(
                     bot,
                     ReceiptSubscriberRemoveChatMenu(user, receipt, payloadValue.value, this),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
         }

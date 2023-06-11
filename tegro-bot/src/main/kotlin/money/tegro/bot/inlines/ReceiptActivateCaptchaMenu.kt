@@ -22,7 +22,7 @@ data class ReceiptActivateCaptchaMenu(
     val answer: String,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         if (answer == "") {
             val id = buildString {
                 if (bot is TgBot) append("<code>")
@@ -31,8 +31,8 @@ data class ReceiptActivateCaptchaMenu(
                 if (bot is TgBot) append("</code>")
             }
             bot.updateKeyboard(
-                to = user.vkId ?: user.tgId ?: 0,
-                lastMenuMessageId = lastMenuMessageId,
+                to = botMessage.peerId,
+                lastMenuMessageId = botMessage.lastMenuMessageId,
                 message = Messages[user].receiptActivateMessage.format(id, receipt.coins),
                 keyboard = BotKeyboard {
                     row {
@@ -54,25 +54,25 @@ data class ReceiptActivateCaptchaMenu(
         }
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 is ButtonPayload.Activate -> {
-                    activate(bot, user, message)
+                    activate(bot, user, botMessage)
                     return false
                 }
 
                 is ButtonPayload.Back -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
             }
         } else {
-            if (message.body != null && message.body == answer) {
-                activate(bot, user, message)
+            if (botMessage.body != null && botMessage.body == answer) {
+                activate(bot, user, botMessage)
                 return false
             }
-            bot.sendMessage(message.peerId, Messages[user].receiptCaptchaIncorrect)
+            bot.sendMessage(botMessage.peerId, Messages[user].receiptCaptchaIncorrect)
         }
         return true
     }

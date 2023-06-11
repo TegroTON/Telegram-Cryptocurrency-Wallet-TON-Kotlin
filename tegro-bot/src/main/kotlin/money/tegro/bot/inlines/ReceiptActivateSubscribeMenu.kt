@@ -22,7 +22,7 @@ data class ReceiptActivateSubscribeMenu(
     val receipt: Receipt,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val code = receipt.id.toString()
         val tgLink = String.format("t.me/%s?start=RC-%s", System.getenv("TG_USER_NAME"), code)
         val chatIds = PostgresReceiptPersistent.getChatsByReceipt(receipt)
@@ -48,8 +48,8 @@ data class ReceiptActivateSubscribeMenu(
             ) subscribed else unsubscribed
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuReceiptActivateSubscribeMessage,
             keyboard = BotKeyboard {
                 if (chats.isNotEmpty()) {
@@ -86,11 +86,11 @@ data class ReceiptActivateSubscribeMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             is ButtonPayload.Back -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
         }
         return true

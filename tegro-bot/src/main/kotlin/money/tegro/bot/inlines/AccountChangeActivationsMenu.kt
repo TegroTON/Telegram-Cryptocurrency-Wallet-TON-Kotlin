@@ -19,10 +19,10 @@ class AccountChangeActivationsMenu(
     val account: Account,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuAccountChangeActivationsMessage,
             keyboard = BotKeyboard {
                 row {
@@ -50,12 +50,12 @@ class AccountChangeActivationsMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
 
                 ButtonPayload.ONETIME -> {
@@ -75,7 +75,7 @@ class AccountChangeActivationsMenu(
                     user.setMenu(
                         bot,
                         AccountReadyMenu(user, account, AccountsMenu(user, MainMenu(user))),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
 
@@ -95,13 +95,13 @@ class AccountChangeActivationsMenu(
                     user.setMenu(
                         bot,
                         AccountReadyMenu(user, account, AccountsMenu(user, MainMenu(user))),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
             }
         } else {
-            if (isStringInt(message.body)) {
-                val activations = message.body!!.toInt()
+            if (isStringInt(botMessage.body)) {
+                val activations = botMessage.body!!.toInt()
                 val oneTime = activations == 1
                 val zero = Coins(account.coins.currency, 0.toBigInteger())
                 val account = Account(
@@ -119,10 +119,10 @@ class AccountChangeActivationsMenu(
                 user.setMenu(
                     bot,
                     AccountReadyMenu(user, account, AccountsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             } else {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                 return false
             }
         }

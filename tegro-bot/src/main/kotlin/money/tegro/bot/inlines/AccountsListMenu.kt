@@ -26,14 +26,14 @@ class AccountsListMenu(
 
     private var maxPages: Int = max(accounts.size - 1, 0) / 6 + 1
     private var start = if (page == 1) 0 else (page - 1) * 6
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         if (page > maxPages) {
-            user.setMenu(bot, AccountsListMenu(user, accounts, 1, this), lastMenuMessageId)
+            user.setMenu(bot, AccountsListMenu(user, accounts, 1, this), botMessage)
             return
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = buildString {
                 appendLine(Messages[user.settings.lang].menuAccountsListMessage)
                 if (accounts.isNotEmpty()) {
@@ -169,60 +169,60 @@ class AccountsListMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
 
             ButtonPayload.ONE_ONE -> user.setMenu(
                 bot,
                 AccountReadyMenu(user, accounts[start], AccountsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.ONE_TWO -> user.setMenu(
                 bot,
                 AccountReadyMenu(user, accounts[start + 1], AccountsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.TWO_ONE -> user.setMenu(
                 bot,
                 AccountReadyMenu(user, accounts[start + 2], AccountsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.TWO_TWO -> user.setMenu(
                 bot,
                 AccountReadyMenu(user, accounts[start + 3], AccountsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.THREE_ONE -> user.setMenu(
                 bot,
                 AccountReadyMenu(user, accounts[start + 4], AccountsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.THREE_TWO -> user.setMenu(
                 bot,
                 AccountReadyMenu(user, accounts[start + 5], AccountsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.PREVIOUS_PAGE -> user.setMenu(
                 bot,
                 AccountsListMenu(user, accounts, page - 1, parentMenu),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
 
             ButtonPayload.NEXT_PAGE -> user.setMenu(
                 bot,
                 AccountsListMenu(user, accounts, page + 1, parentMenu),
-                message.lastMenuMessageId
+                botMessage
             )
         }
         return true

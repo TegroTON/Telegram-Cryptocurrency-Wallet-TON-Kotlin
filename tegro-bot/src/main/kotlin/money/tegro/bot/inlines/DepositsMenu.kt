@@ -16,10 +16,10 @@ class DepositsMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuDepositsMessage,
             keyboard = BotKeyboard {
                 row {
@@ -54,24 +54,24 @@ class DepositsMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.NEW -> {
-                user.setMenu(bot, DepositSelectAmountMenu(user, false, this), message.lastMenuMessageId)
+                user.setMenu(bot, DepositSelectAmountMenu(user, false, this), botMessage)
             }
 
             ButtonPayload.CURRENT -> {
                 val list = PostgresDepositsPersistent.getAllByUser(user)
-                user.setMenu(bot, DepositsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+                user.setMenu(bot, DepositsListMenu(user, list.toMutableList(), 1, this), botMessage)
             }
 
             ButtonPayload.CALC -> {
-                user.setMenu(bot, DepositSelectAmountMenu(user, true, this), message.lastMenuMessageId)
+                user.setMenu(bot, DepositSelectAmountMenu(user, true, this), botMessage)
             }
 
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
         }
         return true

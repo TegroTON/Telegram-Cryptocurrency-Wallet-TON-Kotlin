@@ -15,10 +15,10 @@ class AccountSelectActivationsMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuAccountSelectActivationsMessage,
             keyboard = BotKeyboard {
                 row {
@@ -39,27 +39,27 @@ class AccountSelectActivationsMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
 
                 ButtonPayload.SKIP -> {
-                    user.setMenu(bot, AccountSelectCurrencyMenu(user, Int.MAX_VALUE, this), message.lastMenuMessageId)
+                    user.setMenu(bot, AccountSelectCurrencyMenu(user, Int.MAX_VALUE, this), botMessage)
                 }
             }
         } else {
-            if (isStringInt(message.body)) {
+            if (isStringInt(botMessage.body)) {
                 user.setMenu(
                     bot,
-                    AccountSelectCurrencyMenu(user, message.body!!.toInt(), this),
-                    message.lastMenuMessageId
+                    AccountSelectCurrencyMenu(user, botMessage.body!!.toInt(), this),
+                    botMessage
                 )
             } else {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                 return false
             }
         }

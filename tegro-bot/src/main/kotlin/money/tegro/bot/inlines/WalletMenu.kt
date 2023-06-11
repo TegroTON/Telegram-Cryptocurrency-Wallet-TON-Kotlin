@@ -21,12 +21,12 @@ class WalletMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val walletState = walletPersistent.loadWalletState(user)
         walletPersistent.saveWalletState(user, walletState)
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = buildString {
                 appendLine(Messages[user.settings.lang].walletMenuTitle + if (testnet) "   ‼\uFE0FTESTNET‼\uFE0F" else "")
                 appendLine()
@@ -93,15 +93,15 @@ class WalletMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.DEPOSIT -> {
-                user.setMenu(bot, WalletDepositSelectMenu(user, this), message.lastMenuMessageId)
+                user.setMenu(bot, WalletDepositSelectMenu(user, this), botMessage)
             }
 
             ButtonPayload.WITHDRAW -> {
-                bot.sendPopup(message, "Maintenance, please wait...")
+                bot.sendPopup(botMessage, "Maintenance, please wait...")
                 return true
                 //user.setMenu(bot, WalletWithdrawSelectMenu(user, this), message.lastMenuMessageId)
             }
@@ -109,7 +109,7 @@ class WalletMenu(
             ButtonPayload.TRANSFER -> TODO()
             ButtonPayload.HISTORY -> TODO()
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
 
 

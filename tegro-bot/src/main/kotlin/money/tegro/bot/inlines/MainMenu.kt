@@ -105,32 +105,32 @@ data class MainMenu(
         }
     }
 
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val keyboard = createKeyboard()
         var message =
             if (bot is TgBot) Messages[user.settings.lang].mainMenuMessageTg else Messages[user.settings.lang].mainMenuMessage
         message = message.format(if (testnet) Messages[user.settings.lang].mainMenuTestnetWarning else "")
         bot.updateKeyboard(
-            user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId,
+            botMessage.peerId,
+            botMessage.lastMenuMessageId,
             message,
             keyboard
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<CommandPayload>(payload)) {
-            CommandPayload.WALLET -> user.setMenu(bot, WalletMenu(user, this), message.lastMenuMessageId)
-            CommandPayload.RECEIPTS -> user.setMenu(bot, ReceiptsMenu(user, this), message.lastMenuMessageId)
-            CommandPayload.EXCHANGE -> user.setMenu(bot, ExchangeMenu(user, this), message.lastMenuMessageId)
-            CommandPayload.STOCK -> user.setMenu(bot, StockMenu(user, this), message.lastMenuMessageId)
+            CommandPayload.WALLET -> user.setMenu(bot, WalletMenu(user, this), botMessage)
+            CommandPayload.RECEIPTS -> user.setMenu(bot, ReceiptsMenu(user, this), botMessage)
+            CommandPayload.EXCHANGE -> user.setMenu(bot, ExchangeMenu(user, this), botMessage)
+            CommandPayload.STOCK -> user.setMenu(bot, StockMenu(user, this), botMessage)
             CommandPayload.MARKET -> TODO()
-            CommandPayload.ACCOUNTS -> user.setMenu(bot, AccountsMenu(user, this), message.lastMenuMessageId)
+            CommandPayload.ACCOUNTS -> user.setMenu(bot, AccountsMenu(user, this), botMessage)
             CommandPayload.DEALS -> TODO()
-            CommandPayload.DEPOSITS -> user.setMenu(bot, DepositsMenu(user, this), message.lastMenuMessageId)
-            CommandPayload.SETTINGS -> user.setMenu(bot, SettingsMenu(user, this), message.lastMenuMessageId)
-            CommandPayload.NFT -> user.setMenu(bot, NftMenu(user, this), message.lastMenuMessageId)
+            CommandPayload.DEPOSITS -> user.setMenu(bot, DepositsMenu(user, this), botMessage)
+            CommandPayload.SETTINGS -> user.setMenu(bot, SettingsMenu(user, this), botMessage)
+            CommandPayload.NFT -> user.setMenu(bot, NftMenu(user, this), botMessage)
             CommandPayload.DEX -> TODO()
         }
         return true

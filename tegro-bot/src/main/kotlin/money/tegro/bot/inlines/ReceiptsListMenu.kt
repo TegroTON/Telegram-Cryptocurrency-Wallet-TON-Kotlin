@@ -26,14 +26,14 @@ class ReceiptsListMenu(
 
     private var maxPages: Int = max(receipts.size - 1, 0) / 6 + 1
     private var start = if (page == 1) 0 else (page - 1) * 6
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         if (page > maxPages) {
-            user.setMenu(bot, ReceiptsListMenu(user, receipts, 1, parentMenu), lastMenuMessageId)
+            user.setMenu(bot, ReceiptsListMenu(user, receipts, 1, parentMenu), botMessage)
             return
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = buildString {
                 appendLine(Messages[user.settings.lang].menuReceiptsListMessage)
                 if (receipts.isNotEmpty()) {
@@ -165,60 +165,60 @@ class ReceiptsListMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
 
             ButtonPayload.ONE_ONE -> user.setMenu(
                 bot,
                 ReceiptReadyMenu(user, receipts[start], ReceiptsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.ONE_TWO -> user.setMenu(
                 bot,
                 ReceiptReadyMenu(user, receipts[start + 1], ReceiptsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.TWO_ONE -> user.setMenu(
                 bot,
                 ReceiptReadyMenu(user, receipts[start + 2], ReceiptsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.TWO_TWO -> user.setMenu(
                 bot,
                 ReceiptReadyMenu(user, receipts[start + 3], ReceiptsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.THREE_ONE -> user.setMenu(
                 bot,
                 ReceiptReadyMenu(user, receipts[start + 4], ReceiptsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.THREE_TWO -> user.setMenu(
                 bot,
                 ReceiptReadyMenu(user, receipts[start + 5], ReceiptsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.PREVIOUS_PAGE -> user.setMenu(
                 bot,
                 ReceiptsListMenu(user, receipts, page - 1, parentMenu),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
 
             ButtonPayload.NEXT_PAGE -> user.setMenu(
                 bot,
                 ReceiptsListMenu(user, receipts, page + 1, parentMenu),
-                message.lastMenuMessageId
+                botMessage
             )
         }
         return true

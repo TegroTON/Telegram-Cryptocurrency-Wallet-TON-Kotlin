@@ -20,7 +20,7 @@ data class DepositReadyMenu(
     val deposit: Deposit,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val coins = deposit.coins
         val depositPeriod = deposit.depositPeriod
         val yield = NftsPersistent.countStackingPercent(user, depositPeriod.yield)
@@ -34,8 +34,8 @@ data class DepositReadyMenu(
         val time =
             SimpleDateFormat("dd.MM.yyyy HH:mm").format(date)
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuDepositReadyMessage.format(
                 coins,
                 depositPeriod.period,
@@ -61,15 +61,15 @@ data class DepositReadyMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.BACK -> {
                 val list = PostgresDepositsPersistent.getAllByUser(user)
                 user.setMenu(
                     bot,
                     DepositsListMenu(user, list.toMutableList(), 1, DepositsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
         }

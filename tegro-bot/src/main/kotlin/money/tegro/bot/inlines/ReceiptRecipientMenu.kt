@@ -20,10 +20,10 @@ data class ReceiptRecipientMenu(
     val receipt: Receipt,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = if (receipt.recipient == null) Messages[user.settings.lang].menuReceiptRecipientMessage else Messages[user.settings.lang].menuReceiptRecipientSetMessage,
             keyboard = BotKeyboard {
                 if (receipt.recipient != null) {
@@ -46,9 +46,9 @@ data class ReceiptRecipientMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        if (message.payload != null) {
-            val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        if (botMessage.payload != null) {
+            val payload = botMessage.payload
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.UNATTACH -> {
                     val newReceipt = receipt.copy(recipient = null)
@@ -56,24 +56,24 @@ data class ReceiptRecipientMenu(
                     user.setMenu(
                         bot,
                         ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
 
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
             }
-        } else if (message.forwardMessages.isNotEmpty()) {
+        } else if (botMessage.forwardMessages.isNotEmpty()) {
             val newRecipient: User? = if (bot is TgBot) {
-                PostgresUserPersistent.loadByTg(message.forwardMessages[0].userId)
+                PostgresUserPersistent.loadByTg(botMessage.forwardMessages[0].userId)
             } else {
-                PostgresUserPersistent.loadByVk(message.forwardMessages[0].userId)
+                PostgresUserPersistent.loadByVk(botMessage.forwardMessages[0].userId)
 
             }
             if (newRecipient == null) {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptRecipientNotRegistered)
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuReceiptRecipientNotRegistered)
+                user.setMenu(bot, parentMenu, botMessage)
                 return true
             }
             val newReceipt = receipt.copy(recipient = newRecipient)
@@ -81,12 +81,12 @@ data class ReceiptRecipientMenu(
             user.setMenu(
                 bot,
                 ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
-                message.lastMenuMessageId
+                botMessage
             )
         } else {
             //TODO get id from mention
-            bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptRecipientNotFound)
-            user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+            bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuReceiptRecipientNotFound)
+            user.setMenu(bot, parentMenu, botMessage)
             return true
         }
         return true

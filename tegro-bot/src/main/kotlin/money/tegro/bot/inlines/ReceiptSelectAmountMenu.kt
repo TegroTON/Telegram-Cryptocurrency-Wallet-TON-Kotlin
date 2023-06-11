@@ -19,13 +19,13 @@ class ReceiptSelectAmountMenu(
     val currency: CryptoCurrency,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val available = PostgresWalletPersistent.loadWalletState(user).active[currency]
         val min = Coins(currency, currency.minAmount)
         if (available < min) {
             bot.updateKeyboard(
-                to = user.vkId ?: user.tgId ?: 0,
-                lastMenuMessageId = lastMenuMessageId,
+                to = botMessage.peerId,
+                lastMenuMessageId = botMessage.lastMenuMessageId,
                 message = String.format(
                     Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney,
                     min,
@@ -44,8 +44,8 @@ class ReceiptSelectAmountMenu(
             return
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = String.format(
                 Messages[user.settings.lang].menuReceiptsSelectAmountMessage,
                 currency.ticker,
@@ -77,36 +77,36 @@ class ReceiptSelectAmountMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload
         val available = PostgresWalletPersistent.loadWalletState(user).active[currency]
         val min = Coins(currency, currency.minAmount)
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.MIN -> {
-                    user.setMenu(bot, ReceiptSelectActivationsMenu(user, min, this), message.lastMenuMessageId)
+                    user.setMenu(bot, ReceiptSelectActivationsMenu(user, min, this), botMessage)
                 }
 
                 ButtonPayload.MAX -> {
-                    user.setMenu(bot, ReceiptSelectActivationsMenu(user, available, this), message.lastMenuMessageId)
+                    user.setMenu(bot, ReceiptSelectActivationsMenu(user, available, this), botMessage)
                 }
 
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
             }
         } else {
-            if (isStringLong(message.body)) {
-                val count = (message.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
+            if (isStringLong(botMessage.body)) {
+                val count = (botMessage.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
                 val coins = Coins(currency, count)
                 if (count < min.amount || count > available.amount) {
-                    bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                    bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                     return false
                 }
-                user.setMenu(bot, ReceiptSelectActivationsMenu(user, coins, this), message.lastMenuMessageId)
+                user.setMenu(bot, ReceiptSelectActivationsMenu(user, coins, this), botMessage)
                 return true
             } else {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                 return false
             }
         }

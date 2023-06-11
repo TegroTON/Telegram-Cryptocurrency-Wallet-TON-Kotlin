@@ -27,14 +27,14 @@ class NftListMenu(
 
     private var maxPages: Int = max(nfts.size - 1, 0) / 6 + 1
     private var start = if (page == 1) 0 else (page - 1) * 6
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         if (page > maxPages) {
-            user.setMenu(bot, NftListMenu(user, nfts, 1, parentMenu), lastMenuMessageId)
+            user.setMenu(bot, NftListMenu(user, nfts, 1, parentMenu), botMessage)
             return
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = buildString {
                 appendLine(
                     Messages[user.settings.lang].menuNftListMessage.format(
@@ -212,24 +212,24 @@ class NftListMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
 
             ButtonPayload.PREVIOUS_PAGE -> user.setMenu(
                 bot,
                 NftListMenu(user, nfts, page - 1, parentMenu),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
 
             ButtonPayload.NEXT_PAGE -> user.setMenu(
                 bot,
                 NftListMenu(user, nfts, page + 1, parentMenu),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.UPDATE -> {
@@ -245,16 +245,16 @@ class NftListMenu(
                         settings = userSettings
                     )
                     if (user.settings.nfts == nfts) {
-                        user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                        user.setMenu(bot, parentMenu, botMessage)
                     } else {
                         userCopy.setMenu(
                             bot,
                             NftListMenu(userCopy, nfts.toMutableList(), 1, parentMenu),
-                            message.lastMenuMessageId
+                            botMessage
                         )
                     }
                 } else {
-                    bot.sendPopup(message, Messages[user].menNftListCooldown.format(timeDisplay))
+                    bot.sendPopup(botMessage, Messages[user].menNftListCooldown.format(timeDisplay))
                     return true
                 }
             }

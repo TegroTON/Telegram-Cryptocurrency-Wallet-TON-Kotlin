@@ -23,15 +23,15 @@ class WalletWithdrawSelectAmountMenu(
     val network: BlockchainType,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val fee = Coins(currency, NftsPersistent.countBotFee(user, currency))
         val balance = PostgresWalletPersistent.loadWalletState(user).active[currency]
         val min = Coins(currency, currency.minAmount)
         val minAvailable = Coins(currency, currency.minAmount) + fee
         if (balance < minAvailable) {
             bot.updateKeyboard(
-                to = user.vkId ?: user.tgId ?: 0,
-                lastMenuMessageId = lastMenuMessageId,
+                to = botMessage.peerId,
+                lastMenuMessageId = botMessage.lastMenuMessageId,
                 message = String.format(
                     Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney,
                     minAvailable,
@@ -51,8 +51,8 @@ class WalletWithdrawSelectAmountMenu(
         }
         val available = balance - fee
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = String.format(
                 Messages[user.settings.lang].menuWalletWithdrawSelectAmountMessage,
                 currency.ticker,
@@ -86,8 +86,8 @@ class WalletWithdrawSelectAmountMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload
         val fee = Coins(currency, NftsPersistent.countBotFee(user, currency))
         val available = try {
             PostgresWalletPersistent.loadWalletState(user).active[currency] - fee
@@ -101,7 +101,7 @@ class WalletWithdrawSelectAmountMenu(
                     user.setMenu(
                         bot,
                         WalletWithdrawSelectAddressMenu(user, network, min, this),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
 
@@ -109,30 +109,30 @@ class WalletWithdrawSelectAmountMenu(
                     user.setMenu(
                         bot,
                         WalletWithdrawSelectAddressMenu(user, network, available, this),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
 
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
             }
         } else {
-            if (isStringLong(message.body)) {
-                val count = (message.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
+            if (isStringLong(botMessage.body)) {
+                val count = (botMessage.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
                 val coins = Coins(currency, count)
                 if (count < min.amount || count > available.amount) {
-                    bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                    bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                     return false
                 }
                 user.setMenu(
                     bot,
                     WalletWithdrawSelectAddressMenu(user, network, coins, this),
-                    message.lastMenuMessageId
+                    botMessage
                 )
                 return true
             } else {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                 return false
             }
         }

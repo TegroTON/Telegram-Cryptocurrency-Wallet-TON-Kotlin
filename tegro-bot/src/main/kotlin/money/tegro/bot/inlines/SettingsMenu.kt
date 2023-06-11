@@ -14,10 +14,10 @@ class SettingsMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuSettingsMessage,
             keyboard = BotKeyboard {
                 row {
@@ -72,10 +72,10 @@ class SettingsMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
-            ButtonPayload.REFS -> user.setMenu(bot, ReferralsMenu(user, this), message.lastMenuMessageId)
+            ButtonPayload.REFS -> user.setMenu(bot, ReferralsMenu(user, this), botMessage)
             ButtonPayload.LANG -> {
                 val changeTo = if (user.settings.lang == Language.RU) Language.EN else Language.RU
                 val userSettings = user.settings.copy(lang = changeTo)
@@ -83,7 +83,7 @@ class SettingsMenu(
                 val newUser = user.copy(
                     settings = userSettings
                 )
-                newUser.setMenu(bot, SettingsMenu(newUser, MainMenu(newUser)), message.lastMenuMessageId)
+                newUser.setMenu(bot, SettingsMenu(newUser, MainMenu(newUser)), botMessage)
             }
 
             ButtonPayload.CURRENCY -> {
@@ -94,13 +94,13 @@ class SettingsMenu(
                 val newUser = user.copy(
                     settings = userSettings
                 )
-                newUser.setMenu(bot, SettingsMenu(newUser, MainMenu(newUser)), message.lastMenuMessageId)
+                newUser.setMenu(bot, SettingsMenu(newUser, MainMenu(newUser)), botMessage)
             }
 
             ButtonPayload.HINTS -> TODO()
             ButtonPayload.HELP -> TODO()
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
         }
         return true

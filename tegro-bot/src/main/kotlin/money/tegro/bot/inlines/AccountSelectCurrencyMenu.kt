@@ -18,10 +18,10 @@ class AccountSelectCurrencyMenu(
     val activations: Int,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuAccountSelectCurrencyMessage,
             keyboard = BotKeyboard {
                 CryptoCurrency.values().forEach { cryptoCurrency ->
@@ -48,23 +48,23 @@ class AccountSelectCurrencyMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val rawPayload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val rawPayload = botMessage.payload ?: return false
         when (val payload = Json.decodeFromString<ButtonPayload>(rawPayload)) {
             is ButtonPayload.Currency -> {
                 val currency = payload.value
                 if (!currency.isEnabled) {
-                    return bot.sendPopup(message, Messages[user.settings.lang].soon)
+                    return bot.sendPopup(botMessage, Messages[user.settings.lang].soon)
                 }
                 user.setMenu(
                     bot,
                     AccountSelectAmountMenu(user, activations, payload.value, this),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
 
             ButtonPayload.Back -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
         }
         return true

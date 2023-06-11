@@ -19,10 +19,10 @@ class WalletWithdrawSelectNetworkMenu(
     val currency: CryptoCurrency,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuWalletWithdrawSelectNetworkMessage.format(currency.ticker),
             keyboard = BotKeyboard {
                 if (currency.nativeBlockchainType != null) {
@@ -52,14 +52,14 @@ class WalletWithdrawSelectNetworkMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (val payloadValue = Json.decodeFromString<ButtonPayload>(payload)) {
-            ButtonPayload.Back -> user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+            ButtonPayload.Back -> user.setMenu(bot, parentMenu, botMessage)
             is ButtonPayload.Network -> user.setMenu(
                 bot,
                 WalletWithdrawSelectAmountMenu(user, currency, payloadValue.blockchainType, this),
-                message.lastMenuMessageId
+                botMessage
             )
         }
         return true

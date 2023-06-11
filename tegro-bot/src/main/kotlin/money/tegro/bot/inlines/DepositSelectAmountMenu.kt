@@ -20,14 +20,14 @@ class DepositSelectAmountMenu(
     val calc: Boolean,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val currency = CryptoCurrency.TGR
         val available = PostgresWalletPersistent.loadWalletState(user).active[currency]
         val min = Coins(currency, 2_500_000_000_000.toBigInteger())
         if (!calc && available < min) {
             bot.updateKeyboard(
-                to = user.vkId ?: user.tgId ?: 0,
-                lastMenuMessageId = lastMenuMessageId,
+                to = botMessage.peerId,
+                lastMenuMessageId = botMessage.lastMenuMessageId,
                 message = String.format(
                     Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney,
                     min,
@@ -46,8 +46,8 @@ class DepositSelectAmountMenu(
             return
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = if (calc) Messages[user.settings.lang].menuDepositSelectAmountMessageCalc.format(currency.ticker)
             else Messages[user.settings.lang].menuDepositSelectAmountMessage.format(currency.ticker, available),
             keyboard = BotKeyboard {
@@ -78,8 +78,8 @@ class DepositSelectAmountMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload
         val currency = CryptoCurrency.TGR
         val available = try {
             PostgresWalletPersistent.loadWalletState(user).active[currency] // TODO: Calc bot fee
@@ -90,34 +90,34 @@ class DepositSelectAmountMenu(
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.MIN -> {
-                    user.setMenu(bot, DepositSelectPeriodMenu(user, min, false, this), message.lastMenuMessageId)
+                    user.setMenu(bot, DepositSelectPeriodMenu(user, min, false, this), botMessage)
                     return true
                 }
 
                 ButtonPayload.MAX -> {
-                    user.setMenu(bot, DepositSelectPeriodMenu(user, available, false, this), message.lastMenuMessageId)
+                    user.setMenu(bot, DepositSelectPeriodMenu(user, available, false, this), botMessage)
                     return true
                 }
 
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
             }
         } else {
-            if (isStringLong(message.body)) {
-                val count = (message.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
+            if (isStringLong(botMessage.body)) {
+                val count = (botMessage.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
                 val coins = Coins(currency, count)
                 if (calc) {
-                    user.setMenu(bot, DepositSelectPeriodMenu(user, coins, true, this), message.lastMenuMessageId)
+                    user.setMenu(bot, DepositSelectPeriodMenu(user, coins, true, this), botMessage)
                     return true
                 }
                 if (count < min.amount || count > available.amount) {
-                    return bot.sendPopup(message, Messages[user.settings.lang].menuSelectInvalidAmount)
+                    return bot.sendPopup(botMessage, Messages[user.settings.lang].menuSelectInvalidAmount)
                 }
-                user.setMenu(bot, DepositSelectPeriodMenu(user, coins, false, this), message.lastMenuMessageId)
+                user.setMenu(bot, DepositSelectPeriodMenu(user, coins, false, this), botMessage)
                 return true
             } else {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                 return false
             }
         }

@@ -276,7 +276,7 @@ class TgBot(
             val botMessage = BotMessage(
                 message.messageId.toLong(),
                 userTgId,
-                message.chatId,
+                message.chat.id,
                 message.isGroupMessage,
                 message.text,
                 update.callbackQuery?.data,
@@ -311,24 +311,6 @@ class TgBot(
 //                            async {
 //                                WalletObserver.checkForNewDeposits(
 //                                    user,
-//                                    TonBlockchainManager,
-//                                    CryptoCurrency.TGR
-//                                )
-//                            },
-//                        ).awaitAll().filter { it.amount > BigInteger.ZERO }.forEach { coins ->
-//                            sendMessage(
-//                                botMessage.peerId,
-//                                Messages[user].walletMenuDepositMessage.format(
-//                                    coins,
-//                                    Coins(coins.currency, coins.currency.networkFeeReserve)
-//                                )
-//                            )
-//                            LogsUtil.log(user, "$coins", LogType.DEPOSIT)
-//                        }
-//                        listOf(
-//                            async {
-//                                WalletObserver.checkForNewDeposits(
-//                                    user,
 //                                    EthBlockchainManager,
 //                                    CryptoCurrency.TGR
 //                                )
@@ -358,11 +340,11 @@ class TgBot(
                     return@launch
                 }
             } catch (e: Throwable) {
-                user.setMenu(this@TgBot, MainMenu(user), botMessage.lastMenuMessageId)
+                user.setMenu(this@TgBot, MainMenu(user), botMessage)
                 throw RuntimeException("Failed handle message for user $user in menu: $menu", e)
             }
             println("Open main menu for user ${user.id}")
-            user.setMenu(this@TgBot, MainMenu(user), botMessage.lastMenuMessageId)
+            user.setMenu(this@TgBot, MainMenu(user), botMessage)
         }
     }
 

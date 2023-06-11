@@ -16,10 +16,10 @@ class AccountsMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuAccountsMessage,
             keyboard = BotKeyboard {
                 row {
@@ -47,21 +47,21 @@ class AccountsMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.CREATE -> {
                 //return false
-                user.setMenu(bot, AccountSelectTypeMenu(user, this), message.lastMenuMessageId)
+                user.setMenu(bot, AccountSelectTypeMenu(user, this), botMessage)
             }
 
             ButtonPayload.LIST -> {
                 val list = PostgresAccountsPersistent.loadAccounts(user).filter { it.isActive }
-                user.setMenu(bot, AccountsListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+                user.setMenu(bot, AccountsListMenu(user, list.toMutableList(), 1, this), botMessage)
             }
 
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
         }
         return true

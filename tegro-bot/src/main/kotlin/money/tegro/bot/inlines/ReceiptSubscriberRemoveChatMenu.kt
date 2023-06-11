@@ -20,14 +20,14 @@ data class ReceiptSubscriberRemoveChatMenu(
     val chatId: Long,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         var chat = bot.getChat(chatId)
         if (chat == null) {
             chat = Chat(chatId, "Chat not found: $chatId", "null")
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuReceiptSubscriberRemoveChatMessage.format(
                 chat.title,
                 chat.username
@@ -52,8 +52,8 @@ data class ReceiptSubscriberRemoveChatMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.APPROVE -> {
                 PostgresReceiptPersistent.deleteChatFromReceipt(receipt, chatId)
@@ -64,12 +64,12 @@ data class ReceiptSubscriberRemoveChatMenu(
                         receipt,
                         ReceiptReadyMenu(user, receipt, ReceiptsMenu(user, MainMenu(user)))
                     ),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
 
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
         }
         return true

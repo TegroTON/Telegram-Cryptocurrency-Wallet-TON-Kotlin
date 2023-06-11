@@ -18,7 +18,7 @@ class NftDisconnectMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val address = user.settings.address
         val displayAddress = buildString {
             if (bot is TgBot) append("<code>")
@@ -28,8 +28,8 @@ class NftDisconnectMenu(
             if (bot is TgBot) append("</code>")
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuNftDisconnectMessage.format(displayAddress),
             keyboard = BotKeyboard {
                 row {
@@ -50,11 +50,11 @@ class NftDisconnectMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.Back -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
 
             is ButtonPayload.Disconnect -> {
@@ -63,7 +63,7 @@ class NftDisconnectMenu(
                 val newUser = user.copy(
                     settings = userSettings
                 )
-                newUser.setMenu(bot, NftMenu(newUser, MainMenu(newUser)), message.lastMenuMessageId)
+                newUser.setMenu(bot, NftMenu(newUser, MainMenu(newUser)), botMessage)
             }
         }
         return true

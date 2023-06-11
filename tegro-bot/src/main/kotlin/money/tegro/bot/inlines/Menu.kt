@@ -6,7 +6,7 @@ import money.tegro.bot.objects.BotMessage
 
 @Serializable
 sealed interface Menu {
-    suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?)
-    suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean
+    suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage)
+    suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean
 }
 

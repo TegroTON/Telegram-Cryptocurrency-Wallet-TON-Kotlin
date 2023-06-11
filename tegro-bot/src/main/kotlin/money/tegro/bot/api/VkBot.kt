@@ -15,14 +15,11 @@ import money.tegro.bot.menuPersistent
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
-import money.tegro.bot.ton.TonBlockchainManager
 import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.utils.PostgresDepositsPersistent
-import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.wallet.WalletObserver
 import java.io.File
 import java.io.InputStream
-import java.math.BigInteger
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.hours
@@ -97,18 +94,6 @@ class VkBot : Bot, CoroutineScope {
                             sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
                             LogsUtil.log(user, "$coins", LogType.DEPOSIT)
                         }
-                        listOf(
-                            async {
-                                WalletObserver.checkForNewDeposits(
-                                    user,
-                                    TonBlockchainManager,
-                                    CryptoCurrency.TGR
-                                )
-                            },
-                        ).awaitAll().filter { it.amount > BigInteger.ZERO }.forEach { coins ->
-                            sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
-                            LogsUtil.log(user, "$coins", LogType.DEPOSIT)
-                        }
                         delay(15_000)
                     }
                 }
@@ -123,7 +108,7 @@ class VkBot : Bot, CoroutineScope {
                 } catch (e: Throwable) {
                     throw RuntimeException("Failed handle message for user $user in menu: $menu", e)
                 }
-                user.setMenu(this@VkBot, MainMenu(user), null)
+                user.setMenu(this@VkBot, MainMenu(user), botMessage)
             }
         }
 

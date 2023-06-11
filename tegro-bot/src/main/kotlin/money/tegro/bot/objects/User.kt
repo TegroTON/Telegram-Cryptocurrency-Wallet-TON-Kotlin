@@ -18,10 +18,10 @@ data class User(
     val settings: UserSettings
 ) {
 
-    suspend fun setMenu(bot: Bot, menu: Menu, lastMenuMessageId: Long?) {
+    suspend fun setMenu(bot: Bot, menu: Menu, botMessage: BotMessage) {
         menuPersistent.saveMenu(this, menu)
 //        println("setMenu: $id - $menu")
-        menu.sendKeyboard(bot, lastMenuMessageId)
+        menu.sendKeyboard(bot, botMessage)
     }
 
     suspend fun transfer(receiver: User, coins: Coins) {

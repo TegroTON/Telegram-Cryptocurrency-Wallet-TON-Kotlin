@@ -20,7 +20,7 @@ class AccountPaySelectAmountMenu(
     val account: Account,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val min = account.minAmount
         val max = if (account.maxCoins.amount > 0.toBigInteger()) account.maxCoins - account.coins else account.maxCoins
         val available = PostgresWalletPersistent.loadWalletState(user).active[account.coins.currency]
@@ -36,8 +36,8 @@ class AccountPaySelectAmountMenu(
             if (bot is TgBot) append("</i>")
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuAccountPaySelectAmountMessage.format(
                 id,
                 if (min.amount > 0.toBigInteger()) min else notSet,
@@ -72,8 +72,8 @@ class AccountPaySelectAmountMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload
         val min = account.minAmount
         val max = if (account.maxCoins.amount > 0.toBigInteger()) account.maxCoins - account.coins else account.maxCoins
         val available = PostgresWalletPersistent.loadWalletState(user).active[account.coins.currency]
@@ -81,39 +81,39 @@ class AccountPaySelectAmountMenu(
             when (Json.decodeFromString<ButtonPayload>(payload)) {
 
                 ButtonPayload.DECLINE -> {
-                    user.setMenu(bot, MainMenu(user), message.lastMenuMessageId)
+                    user.setMenu(bot, MainMenu(user), botMessage)
                 }
 
                 ButtonPayload.MIN -> {
                     user.setMenu(
                         bot,
                         AccountPayMenu(user, account, min, this),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
 
                 ButtonPayload.MAX -> {
                     if (max.amount > 0.toBigInteger() && max > available) {
                         return bot.sendPopup(
-                            message,
+                            botMessage,
                             Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney.format(max, available)
                         )
                     }
                     user.setMenu(
                         bot,
                         AccountPayMenu(user, account, max, this),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
             }
         } else {
-            if (isStringLong(message.body)) {
+            if (isStringLong(botMessage.body)) {
                 val currency = account.coins.currency
-                val count = (message.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
+                val count = (botMessage.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
                 val coins = Coins(currency, count)
                 if (count > available.amount) {
                     bot.sendMessage(
-                        message.peerId, Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney.format(
+                        botMessage.peerId, Messages[user.settings.lang].menuReceiptsSelectAmountNoMoney.format(
                             coins,
                             available
                         )
@@ -122,7 +122,7 @@ class AccountPaySelectAmountMenu(
                 }
                 if (count < min.amount) {
                     bot.sendMessage(
-                        message.peerId, Messages[user.settings.lang].menuAccountPaySelectAmountErrorMinAmount.format(
+                        botMessage.peerId, Messages[user.settings.lang].menuAccountPaySelectAmountErrorMinAmount.format(
                             min,
                             coins
                         )
@@ -131,7 +131,7 @@ class AccountPaySelectAmountMenu(
                 }
                 if (max.amount > 0.toBigInteger() && count > account.maxCoins.amount) {
                     bot.sendMessage(
-                        message.peerId, Messages[user.settings.lang].menuAccountPaySelectAmountErrorMaxCoins.format(
+                        botMessage.peerId, Messages[user.settings.lang].menuAccountPaySelectAmountErrorMaxCoins.format(
                             account.maxCoins,
                             coins
                         )
@@ -141,11 +141,11 @@ class AccountPaySelectAmountMenu(
                 user.setMenu(
                     bot,
                     AccountPayMenu(user, account, coins, MainMenu(user)),
-                    message.lastMenuMessageId
+                    botMessage
                 )
                 return true
             } else {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                 return false
             }
         }

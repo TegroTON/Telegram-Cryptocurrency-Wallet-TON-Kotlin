@@ -17,7 +17,7 @@ class NftMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val address = user.settings.address
         val displayAddress = buildString {
             if (address == "") {
@@ -29,8 +29,8 @@ class NftMenu(
             }
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuNftMessage,
             keyboard = BotKeyboard {
                 row {
@@ -68,11 +68,11 @@ class NftMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
 
             ButtonPayload.CONNECT -> {
@@ -81,13 +81,13 @@ class NftMenu(
                     user.setMenu(
                         bot,
                         NftConnectSelectAddressMenu(user, this),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 } else {
                     user.setMenu(
                         bot,
                         NftDisconnectMenu(user, this),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
             }
@@ -103,10 +103,10 @@ class NftMenu(
                     userCopy.setMenu(
                         bot,
                         NftListMenu(userCopy, list.toMutableList(), 1, this),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 } else {
-                    user.setMenu(bot, NftListMenu(user, list.toMutableList(), 1, this), message.lastMenuMessageId)
+                    user.setMenu(bot, NftListMenu(user, list.toMutableList(), 1, this), botMessage)
                 }
             }
         }

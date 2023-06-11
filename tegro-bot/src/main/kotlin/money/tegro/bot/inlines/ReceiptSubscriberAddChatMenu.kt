@@ -18,10 +18,10 @@ data class ReceiptSubscriberAddChatMenu(
     val receipt: Receipt,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuReceiptSubscriberAddChatMessage,
             keyboard = BotKeyboard {
                 row {
@@ -35,26 +35,26 @@ data class ReceiptSubscriberAddChatMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        if (message.payload != null) {
-            val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        if (botMessage.payload != null) {
+            val payload = botMessage.payload
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
             }
-        } else if (message.forwardMessages.isNotEmpty()) {
-            val chatId = message.forwardMessages[0].userId
+        } else if (botMessage.forwardMessages.isNotEmpty()) {
+            val chatId = botMessage.forwardMessages[0].userId
             if (chatId > 0) {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptSubscriberAddChatError)
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuReceiptSubscriberAddChatError)
+                user.setMenu(bot, parentMenu, botMessage)
                 return true
             }
 
             val chat = bot.getChat(chatId)
             if (chat == null) {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptSubscriberAddChatError)
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuReceiptSubscriberAddChatError)
+                user.setMenu(bot, parentMenu, botMessage)
                 return true
             }
 
@@ -69,11 +69,11 @@ data class ReceiptSubscriberAddChatMenu(
                     receipt,
                     ReceiptReadyMenu(user, receipt, ReceiptsMenu(user, MainMenu(user)))
                 ),
-                message.lastMenuMessageId
+                botMessage
             )
         } else {
-            bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptSubscriberAddChatError)
-            user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+            bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuReceiptSubscriberAddChatError)
+            user.setMenu(bot, parentMenu, botMessage)
             return true
         }
         return true

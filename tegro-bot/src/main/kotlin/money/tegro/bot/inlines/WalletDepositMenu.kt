@@ -31,7 +31,7 @@ class WalletDepositMenu(
     val network: BlockchainType,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val privateKey = UserPrivateKey(user.id, MASTER_KEY)
         val userAddress = BlockchainManager[network].getAddress(privateKey.key.toByteArray())
         val displayAddress = buildString {
@@ -42,8 +42,8 @@ class WalletDepositMenu(
         val feeInfo = Messages[user].menuWalletDepositFee.format(Coins(currency, currency.networkFeeReserve))
         val checkInfo = Messages[user].menuWalletDepositCheckInfo
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = String.format(
                 Messages[user].menuWalletDepositMessage,
                 currency.ticker,
@@ -97,8 +97,8 @@ class WalletDepositMenu(
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
 
             ButtonPayload.LINK -> TODO()
@@ -114,7 +114,7 @@ class WalletDepositMenu(
                             },
                         ).awaitAll().filter { it.amount > BigInteger.ZERO }.forEach { coins ->
                             bot.sendMessage(
-                                message.peerId,
+                                botMessage.peerId,
                                 Messages[user].walletMenuDepositMessage.format(
                                     coins,
                                     Coins(coins.currency, coins.currency.networkFeeReserve)
@@ -123,24 +123,24 @@ class WalletDepositMenu(
                             LogsUtil.log(user, "$coins", LogType.DEPOSIT)
                         }
                     }
-                    bot.sendMessage(message.peerId, "⌛\uFE0F")
-                    user.setMenu(bot, MainMenu(user), message.lastMenuMessageId)
+                    bot.sendMessage(botMessage.peerId, "⌛\uFE0F")
+                    user.setMenu(bot, MainMenu(user), botMessage)
                 } else {
                     val time = PostgresUserPersistent.getCooldown(user, CooldownType.DEPOSIT_CHECK)
                     val date = Date.from(time.toJavaInstant())
                     val timeDisplay = SimpleDateFormat("HH:mm").format(date)
-                    bot.sendPopup(message, Messages[user].menuWalletDepositCooldown.format(timeDisplay))
+                    bot.sendPopup(botMessage, Messages[user].menuWalletDepositCooldown.format(timeDisplay))
                     return true
                 }
 
             }
 
             ButtonPayload.MENU -> {
-                user.setMenu(bot, MainMenu(user), message.lastMenuMessageId)
+                user.setMenu(bot, MainMenu(user), botMessage)
             }
 
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
         }
         return true

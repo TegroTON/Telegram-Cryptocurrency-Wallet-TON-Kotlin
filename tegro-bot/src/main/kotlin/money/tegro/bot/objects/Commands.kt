@@ -23,7 +23,7 @@ class Commands {
     companion object {
         suspend fun execute(user: User, botMessage: BotMessage, bot: Bot, menu: Menu?, isPremium: Boolean?) {
             if (botMessage.body == null) {
-                user.setMenu(bot, MainMenu(user), null)
+                user.setMenu(bot, MainMenu(user), botMessage)
                 return
             }
             val args = botMessage.body.split(" ")
@@ -31,12 +31,12 @@ class Commands {
             when (args[0]) {
                 "/start" -> {
                     if (args.size == 1) {
-                        user.setMenu(bot, MainMenu(user), null)
+                        user.setMenu(bot, MainMenu(user), botMessage)
                         return
                     }
                     val split = args[1].split("-")
                     if (split.size != 6) {
-                        user.setMenu(bot, MainMenu(user), null)
+                        user.setMenu(bot, MainMenu(user), botMessage)
                         return
                     }
                     val type = split[0]
@@ -66,7 +66,7 @@ class Commands {
                                                         user.setMenu(
                                                             bot,
                                                             ReceiptActivateSubscribeMenu(user, receipt, MainMenu(user)),
-                                                            null
+                                                            botMessage
                                                         )
                                                         return
                                                     } else {
@@ -127,7 +127,7 @@ class Commands {
                                                 "",
                                                 MainMenu(user)
                                             ),
-                                            botMessage.lastMenuMessageId
+                                            botMessage
                                         )
                                     } catch (ex: RecipientNotSubscriberException) {
                                         append(lang.recipientNotSubscriberException.format(ex.chatName))
@@ -142,7 +142,7 @@ class Commands {
                                 if (result.isNotEmpty()) {
                                     bot.sendMessage(botMessage.peerId, result)
                                 }
-                            } else user.setMenu(bot, MainMenu(user), null)
+                            } else user.setMenu(bot, MainMenu(user), botMessage)
                         }
 
                         "AC" -> {
@@ -152,31 +152,35 @@ class Commands {
                                     user.setMenu(
                                         bot,
                                         AccountPayMenu(user, account, account.maxCoins, MainMenu(user)),
-                                        null
+                                        botMessage
                                     )
                                 } else {
-                                    user.setMenu(bot, AccountPaySelectAmountMenu(user, account, MainMenu(user)), null)
+                                    user.setMenu(
+                                        bot,
+                                        AccountPaySelectAmountMenu(user, account, MainMenu(user)),
+                                        botMessage
+                                    )
                                 }
-                            } else user.setMenu(bot, MainMenu(user), null)
+                            } else user.setMenu(bot, MainMenu(user), botMessage)
                         }
 
                         "RF" -> {
-                            user.setMenu(bot, MainMenu(user), null)
+                            user.setMenu(bot, MainMenu(user), botMessage)
                         }
                     }
                 }
 
-                "/menu" -> user.setMenu(bot, MainMenu(user), null)
-                "/wallet" -> user.setMenu(bot, WalletMenu(user, backMenu), botMessage.lastMenuMessageId)
-                "/receipts" -> user.setMenu(bot, ReceiptsMenu(user, backMenu), botMessage.lastMenuMessageId)
-                //"/exchange" -> user.setMenu(bot, ExchangeMenu(user, backMenu), botMessage.lastMenuMessageId)
-                //"/stock" -> user.setMenu(bot, StockMenu(user, backMenu), botMessage.lastMenuMessageId)
+                "/menu" -> user.setMenu(bot, MainMenu(user), botMessage)
+                "/wallet" -> user.setMenu(bot, WalletMenu(user, backMenu), botMessage)
+                "/receipts" -> user.setMenu(bot, ReceiptsMenu(user, backMenu), botMessage)
+                //"/exchange" -> user.setMenu(bot, ExchangeMenu(user, backMenu), botMessage)
+                //"/stock" -> user.setMenu(bot, StockMenu(user, backMenu), botMessage)
                 //market
-                "/accounts" -> user.setMenu(bot, AccountsMenu(user, backMenu), botMessage.lastMenuMessageId)
+                "/accounts" -> user.setMenu(bot, AccountsMenu(user, backMenu), botMessage)
                 //deals
-                "/deposits" -> user.setMenu(bot, DepositsMenu(user, backMenu), botMessage.lastMenuMessageId)
+                "/deposits" -> user.setMenu(bot, DepositsMenu(user, backMenu), botMessage)
                 //nft
-                "/settings" -> user.setMenu(bot, SettingsMenu(user, backMenu), botMessage.lastMenuMessageId)
+                "/settings" -> user.setMenu(bot, SettingsMenu(user, backMenu), botMessage)
                 "/whoami" -> {
                     val userDisplay = buildString {
                         if (bot is TgBot) append("<code>")
@@ -188,11 +192,11 @@ class Commands {
 
                 "/logsbytype" -> {
                     if (user.tgId == null) {
-                        user.setMenu(bot, MainMenu(user), null)
+                        user.setMenu(bot, MainMenu(user), botMessage)
                         return
                     }
                     if (user.tgId != 453460175L) {
-                        user.setMenu(bot, MainMenu(user), null)
+                        user.setMenu(bot, MainMenu(user), botMessage)
                         return
                     }
                     val type = LogType.valueOf(args[1])
@@ -203,11 +207,11 @@ class Commands {
 
                 "/logsbyuserid" -> {
                     if (user.tgId == null) {
-                        user.setMenu(bot, MainMenu(user), null)
+                        user.setMenu(bot, MainMenu(user), botMessage)
                         return
                     }
                     if (user.tgId != 453460175L) {
-                        user.setMenu(bot, MainMenu(user), null)
+                        user.setMenu(bot, MainMenu(user), botMessage)
                         return
                     }
                     val targetUser = PostgresUserPersistent.load(UUID.fromString(args[1]))
@@ -233,11 +237,11 @@ class Commands {
 
                 "/logsbyusertg" -> {
                     if (user.tgId == null) {
-                        user.setMenu(bot, MainMenu(user), null)
+                        user.setMenu(bot, MainMenu(user), botMessage)
                         return
                     }
                     if (user.tgId != 453460175L) {
-                        user.setMenu(bot, MainMenu(user), null)
+                        user.setMenu(bot, MainMenu(user), botMessage)
                         return
                     }
                     val targetUser = PostgresUserPersistent.loadByTg(args[1].toLong())
@@ -251,7 +255,7 @@ class Commands {
                     bot.sendMessage(botMessage.peerId, link)
                 }
 
-                else -> user.setMenu(bot, MainMenu(user), null)
+                else -> user.setMenu(bot, MainMenu(user), botMessage)
             }
         }
 

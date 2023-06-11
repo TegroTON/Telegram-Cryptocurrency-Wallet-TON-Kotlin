@@ -19,11 +19,11 @@ class ReceiptSelectActivationsMenu(
     val coins: Coins,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val maxCoins = PostgresWalletPersistent.loadWalletState(user).active[coins.currency].amount
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuReceiptsSelectActivationsMessage,
             keyboard = BotKeyboard {
                 row {
@@ -55,8 +55,8 @@ class ReceiptSelectActivationsMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload
         val maxCoins = PostgresWalletPersistent.loadWalletState(user).active[coins.currency].amount
         val maxActivations = (maxCoins / coins.amount).toInt()
         if (payload != null) {
@@ -68,7 +68,7 @@ class ReceiptSelectActivationsMenu(
                         PostgresReceiptPersistent.createReceipt(user, coins, 1),
                         ReceiptsMenu(user, MainMenu(user))
                     ),
-                    message.lastMenuMessageId
+                    botMessage
                 )
 
                 ButtonPayload.MAX -> user.setMenu(
@@ -78,18 +78,18 @@ class ReceiptSelectActivationsMenu(
                         PostgresReceiptPersistent.createReceipt(user, coins, maxActivations),
                         ReceiptsMenu(user, MainMenu(user))
                     ),
-                    message.lastMenuMessageId
+                    botMessage
                 )
 
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
             }
         } else {
-            if (isStringInt(message.body)) {
-                val count = message.body!!.toInt()
+            if (isStringInt(botMessage.body)) {
+                val count = botMessage.body!!.toInt()
                 if (count > maxActivations) {
-                    bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                    bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                     return false
                 }
                 user.setMenu(
@@ -99,10 +99,10 @@ class ReceiptSelectActivationsMenu(
                         PostgresReceiptPersistent.createReceipt(user, coins, count),
                         ReceiptsMenu(user, MainMenu(user))
                     ),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             } else {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                 return false
             }
         }

@@ -23,11 +23,11 @@ class AccountSelectAmountMenu(
     val currency: CryptoCurrency,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val min = Coins(currency, currency.minAmount)
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuAccountSelectAmountMessage.format(currency.ticker),
             keyboard = BotKeyboard {
                 row {
@@ -48,14 +48,14 @@ class AccountSelectAmountMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload
         val min = Coins(currency, currency.minAmount)
         val zero = Coins(currency, 0.toBigInteger())
         if (payload != null) {
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
 
                 ButtonPayload.MIN -> {
@@ -74,16 +74,16 @@ class AccountSelectAmountMenu(
                     user.setMenu(
                         bot,
                         AccountReadyMenu(user, account, AccountsMenu(user, MainMenu(user))),
-                        message.lastMenuMessageId
+                        botMessage
                     )
                 }
             }
         } else {
-            if (isStringLong(message.body)) {
-                val count = (message.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
+            if (isStringLong(botMessage.body)) {
+                val count = (botMessage.body!!.toDouble() * getFactor(currency.decimals)).toLong().toBigInteger()
                 val coins = Coins(currency, count)
                 if (count < min.amount) {
-                    return bot.sendPopup(message, Messages[user.settings.lang].menuSelectInvalidAmount)
+                    return bot.sendPopup(botMessage, Messages[user.settings.lang].menuSelectInvalidAmount)
                 }
                 val account = Account(
                     UUID.randomUUID(),
@@ -100,11 +100,11 @@ class AccountSelectAmountMenu(
                 user.setMenu(
                     bot,
                     AccountReadyMenu(user, account, AccountsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
                 return true
             } else {
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuSelectInvalidAmount)
                 return false
             }
         }

@@ -17,10 +17,10 @@ class NftConnectSelectAddressMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user].menuNftConnectSelectAddressMessage,
             keyboard = BotKeyboard {
                 row {
@@ -34,13 +34,13 @@ class NftConnectSelectAddressMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val messageBody = message.body
-        if (message.payload != null) {
-            val payload = message.payload
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val messageBody = botMessage.body
+        if (botMessage.payload != null) {
+            val payload = botMessage.payload
             when (Json.decodeFromString<ButtonPayload>(payload)) {
                 ButtonPayload.BACK -> {
-                    user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                    user.setMenu(bot, parentMenu, botMessage)
                 }
             }
         } else if (messageBody != null) {
@@ -48,7 +48,7 @@ class NftConnectSelectAddressMenu(
             val withdrawAddress: String = messageBody
             if (!blockchainManager.isValidAddress(messageBody)) {
                 bot.sendMessage(
-                    message.peerId,
+                    botMessage.peerId,
                     Messages[user].walletMenuWithdrawInvalidAddress
                 )
                 return true
@@ -56,7 +56,7 @@ class NftConnectSelectAddressMenu(
             user.setMenu(
                 bot,
                 NftConnectWaitingMenu(user, withdrawAddress, this),
-                message.lastMenuMessageId
+                botMessage
             )
         }
         return true

@@ -26,10 +26,10 @@ data class ReceiptReadyMenu(
     val receipt: Receipt,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = getBody(bot),
             keyboard = getKeyboard(bot, true)
         )
@@ -138,8 +138,8 @@ data class ReceiptReadyMenu(
         }
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         val code = receipt.id.toString()
         val tgLink = String.format("t.me/%s?start=RC-%s", System.getenv("TG_USER_NAME"), code)
         val vkLink = String.format("https://vk.com/write-%s?ref=RC-%s", System.getenv("VK_GROUP_ID"), code)
@@ -158,7 +158,7 @@ data class ReceiptReadyMenu(
                 val imageBytes = qrCodeCanvas.getBytes()
 
                 bot.sendPhoto(
-                    message.peerId,
+                    botMessage.peerId,
                     getBody(bot),
                     ByteArrayInputStream(imageBytes),
                     filename,
@@ -169,7 +169,7 @@ data class ReceiptReadyMenu(
                 user.setMenu(
                     bot,
                     ReceiptsListMenu(user, list.toMutableList(), 1, ReceiptsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
 
@@ -180,7 +180,7 @@ data class ReceiptReadyMenu(
                 user.setMenu(
                     bot,
                     ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
 
@@ -190,7 +190,7 @@ data class ReceiptReadyMenu(
                 user.setMenu(
                     bot,
                     ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
 
@@ -200,25 +200,25 @@ data class ReceiptReadyMenu(
                 user.setMenu(
                     bot,
                     ReceiptReadyMenu(user, newReceipt, ReceiptsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
 
             ButtonPayload.USER -> user.setMenu(
                 bot,
                 ReceiptRecipientMenu(user, receipt, this),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.REF -> {
-                bot.sendPopup(message, Messages[user].soon)
+                bot.sendPopup(botMessage, Messages[user].soon)
                 return true
             }
 
             ButtonPayload.SUB -> user.setMenu(
                 bot,
                 ReceiptSubscriberMenu(user, receipt, this),
-                message.lastMenuMessageId
+                botMessage
             )
 
             ButtonPayload.DELETE -> {
@@ -226,12 +226,12 @@ data class ReceiptReadyMenu(
                     PostgresReceiptPersistent.deleteChatFromReceipt(receipt, chatId)
                 }
                 PostgresReceiptPersistent.deleteReceipt(receipt)
-                bot.sendMessage(message.peerId, Messages[user.settings.lang].menuReceiptDeleted)
+                bot.sendMessage(botMessage.peerId, Messages[user.settings.lang].menuReceiptDeleted)
                 val list = PostgresReceiptPersistent.loadReceipts(user).filter { it.isActive }
                 user.setMenu(
                     bot,
                     ReceiptsListMenu(user, list.toMutableList(), 1, ReceiptsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
 
@@ -240,7 +240,7 @@ data class ReceiptReadyMenu(
                 user.setMenu(
                     bot,
                     ReceiptsListMenu(user, list.toMutableList(), 1, ReceiptsMenu(user, MainMenu(user))),
-                    message.lastMenuMessageId
+                    botMessage
                 )
             }
         }

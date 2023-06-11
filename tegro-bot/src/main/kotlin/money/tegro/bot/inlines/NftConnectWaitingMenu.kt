@@ -22,7 +22,7 @@ class NftConnectWaitingMenu(
     val address: String,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val chars = ('a'..'z').toList() + ('0'..'9').toList()
         val verifyCode = (0 until 6).map { chars.random() }.joinToString("")
         val displayMasterAddress = buildString {
@@ -41,8 +41,8 @@ class NftConnectWaitingMenu(
             if (bot is TgBot) append("</code>")
         }
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = Messages[user.settings.lang].menuNftConnectWaitingMessage.format(
                 Coins(CryptoCurrency.TON, CryptoCurrency.TON.botFee),
                 displayMasterAddress,
@@ -68,11 +68,11 @@ class NftConnectWaitingMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (val payloadValue = Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.Back -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
 
             is ButtonPayload.Check -> {
@@ -84,9 +84,9 @@ class NftConnectWaitingMenu(
                     val newUser = user.copy(
                         settings = userSettings
                     )
-                    newUser.setMenu(bot, NftMenu(newUser, MainMenu(newUser)), message.lastMenuMessageId)
+                    newUser.setMenu(bot, NftMenu(newUser, MainMenu(newUser)), botMessage)
                 } else {
-                    bot.sendPopup(message, Messages[user].menuNftConnectWaitingCheckFailed)
+                    bot.sendPopup(botMessage, Messages[user].menuNftConnectWaitingCheckFailed)
                     return true
                 }
             }

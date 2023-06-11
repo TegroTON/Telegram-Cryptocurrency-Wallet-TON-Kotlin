@@ -19,15 +19,15 @@ class ReferralsMenu(
     val user: User,
     val parentMenu: Menu
 ) : Menu {
-    override suspend fun sendKeyboard(bot: Bot, lastMenuMessageId: Long?) {
+    override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val code = user.id.toString()
         val tgLink = String.format("t.me/%s?start=RF-%s", System.getenv("TG_USER_NAME"), code)
         val vkLink = String.format("https://vk.com/write-%s?ref=RF-%s", System.getenv("VK_GROUP_ID"), code)
         val referrals = PostgresUserPersistent.getRefsByUser(user)
         val profit = Coins(CryptoCurrency.TGR, 0.toBigInteger()) //TODO
         bot.updateKeyboard(
-            to = user.vkId ?: user.tgId ?: 0,
-            lastMenuMessageId = lastMenuMessageId,
+            to = botMessage.peerId,
+            lastMenuMessageId = botMessage.lastMenuMessageId,
             message = String.format(
                 Messages[user.settings.lang].menuReferralsMessage,
                 if (bot is TgBot) tgLink else vkLink,
@@ -46,11 +46,11 @@ class ReferralsMenu(
         )
     }
 
-    override suspend fun handleMessage(bot: Bot, message: BotMessage): Boolean {
-        val payload = message.payload ?: return false
+    override suspend fun handleMessage(bot: Bot, botMessage: BotMessage): Boolean {
+        val payload = botMessage.payload ?: return false
         when (Json.decodeFromString<ButtonPayload>(payload)) {
             ButtonPayload.BACK -> {
-                user.setMenu(bot, parentMenu, message.lastMenuMessageId)
+                user.setMenu(bot, parentMenu, botMessage)
             }
         }
         return true
