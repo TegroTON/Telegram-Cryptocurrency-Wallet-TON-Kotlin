@@ -231,8 +231,25 @@ data class Messages(
     val menuStockHistory: String = "menuStockHistory",
 
     /**************
+     *   Inline   *
+     **************/
+    val inlineInviteTitle: String = "inlineInviteTitle",
+    val inlineInviteDescription: String = "inlineInviteDescription",
+    val inlineInviteText: String = "inlineInviteText",
+    val inlineInviteButtonText: String = "inlineInviteButtonText",
+    val inlineReceiptTitle: String = "inlineReceiptTitle",
+    val inlineReceiptDescription: String = "inlineReceiptDescription",
+    val inlineReceiptText: String = "inlineReceiptText",
+    val inlineReceiptButtonText: String = "inlineReceiptButtonText",
+    val inlineAccountTitle: String = "inlineAccountTitle",
+    val inlineAccountDescription: String = "inlineAccountDescription",
+    val inlineAccountText: String = "inlineAccountText",
+    val inlineAccountButtonText: String = "inlineAccountButtonText",
+
+    /**************
      *   Others   *
      **************/
+    val onlyTgFunction: String = "onlyTgFunction",
     val menuSelectInvalidAmount: String = "menuSelectInvalidAmount",
     val menuButtonApprove: String = "menuButtonApprove",
     val menuButtonCheck: String = "menuButtonCheck",

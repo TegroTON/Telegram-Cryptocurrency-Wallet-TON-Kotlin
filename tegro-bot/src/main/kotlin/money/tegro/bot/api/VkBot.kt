@@ -98,16 +98,20 @@ class VkBot : Bot, CoroutineScope {
                     }
                 }
                 if (message.text.startsWith("/")) {
+                    println("Got command from ${user.id}: ${message.text}")
                     Commands.execute(user, botMessage, this@VkBot, menu, null)
                     return@launch
                 }
                 try {
+                    println("Open menu $menu for user ${user.id}")
                     if (menu?.handleMessage(this@VkBot, botMessage) == true) {
                         return@launch
                     }
                 } catch (e: Throwable) {
+                    user.setMenu(this@VkBot, MainMenu(user), botMessage)
                     throw RuntimeException("Failed handle message for user $user in menu: $menu", e)
                 }
+                println("Open main menu for user ${user.id}")
                 user.setMenu(this@VkBot, MainMenu(user), botMessage)
             }
         }

@@ -15,7 +15,7 @@ import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.utils.PostgresAccountsPersistent
 import money.tegro.bot.utils.button
-import money.tegro.bot.utils.linkButton
+import money.tegro.bot.utils.inlineButton
 import java.io.ByteArrayInputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -28,17 +28,15 @@ data class AccountReadyMenu(
 ) : Menu {
     override suspend fun sendKeyboard(bot: Bot, botMessage: BotMessage) {
         val code = account.id.toString()
-        val tgLink = String.format("t.me/%s?start=AC-%s", System.getenv("TG_USER_NAME"), code)
-        val vkLink = String.format("https://vk.com/write-%s?ref=AC-%s", System.getenv("VK_GROUP_ID"), code)
         bot.updateKeyboard(
             to = botMessage.peerId,
             lastMenuMessageId = botMessage.lastMenuMessageId,
             message = getBody(bot),
             keyboard = BotKeyboard {
                 row {
-                    linkButton(
-                        Messages[user.settings.lang].menuReceiptReadyShare,
-                        if (bot is TgBot) tgLink else vkLink,
+                    inlineButton(
+                        Messages[user].menuReceiptReadyShare,
+                        "AC-$code",
                         ButtonPayload.serializer(),
                         ButtonPayload.SHARE
                     )
@@ -117,7 +115,11 @@ data class AccountReadyMenu(
                 )
             }
 
-            ButtonPayload.SHARE -> TODO()
+            ButtonPayload.SHARE -> {
+                bot.sendPopup(botMessage, Messages[user].onlyTgFunction)
+                return true
+            }
+
             ButtonPayload.QR -> {
 
                 val filename = "qr-$code.png"

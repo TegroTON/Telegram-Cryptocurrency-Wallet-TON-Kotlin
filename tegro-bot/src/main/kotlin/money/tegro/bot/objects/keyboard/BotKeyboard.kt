@@ -17,7 +17,7 @@ data class BotKeyboard(
         for (row in buttons) {
             val keyboardRow = ArrayList<Keyboard.Button>()
             for (button in row.buttons) {
-                if (button.getLink() == "") {
+                if (button.getLink() == "" || button is InlineButton) {
                     keyboardRow.add(
                         Keyboard.Button(
                             action = Keyboard.Button.Action(
@@ -53,9 +53,14 @@ data class BotKeyboard(
             for (button in botRow.buttons) {
                 val ib = InlineKeyboardButton()
                 ib.text = button.getText()
-                ib.callbackData = button.getPayload()
                 if (button.getLink() != "") {
-                    ib.url = button.getLink()
+                    if (button is OpenLinkButton) {
+                        ib.url = button.getLink()
+                    } else {
+                        ib.switchInlineQuery = button.getLink()
+                    }
+                } else {
+                    ib.callbackData = button.getPayload()
                 }
                 row.add(ib)
             }

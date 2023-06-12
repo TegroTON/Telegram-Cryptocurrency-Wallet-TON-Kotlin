@@ -3,6 +3,7 @@ package money.tegro.bot.wallet
 import kotlinx.serialization.Serializable
 import money.tegro.bot.exceptions.NegativeCoinsException
 import money.tegro.bot.objects.LocalCurrency
+import money.tegro.bot.objects.User
 import money.tegro.bot.utils.BigIntegerSerializer
 import money.tegro.bot.utils.RatePersistent
 import java.math.BigDecimal
@@ -46,6 +47,10 @@ data class Coins(
     operator fun minus(other: BigInteger): Coins = minus(Coins(currency, other))
 
     override fun toString(): String = "${currency.fromNano(amount)} ${currency.ticker}"
+
+    fun toStringWithRate(user: User): String {
+        return toStringWithRate(user.settings.localCurrency)
+    }
 
     fun toStringWithRate(localCurrency: LocalCurrency): String {
         val rate = RatePersistent.getRate(currency, localCurrency)

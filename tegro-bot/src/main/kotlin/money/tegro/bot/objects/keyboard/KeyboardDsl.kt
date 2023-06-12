@@ -34,4 +34,8 @@ class RowDslBuilder {
     fun addLinkButton(label: String, link: String, payload: String?, block: OpenLinkButton.() -> Unit = {}) {
         buttons.addButton(OpenLinkButton(label, link, payload ?: "").apply(block).build())
     }
+
+    fun addInlineButton(label: String, query: String, payload: String?, block: InlineButton.() -> Unit = {}) {
+        buttons.addButton(InlineButton(label, query, payload ?: "").apply(block).build())
+    }
 }

@@ -15,7 +15,7 @@ import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
 import money.tegro.bot.receipts.Receipt
 import money.tegro.bot.utils.button
-import money.tegro.bot.utils.linkButton
+import money.tegro.bot.utils.inlineButton
 import java.io.ByteArrayInputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -31,7 +31,7 @@ data class ReceiptReadyMenu(
             to = botMessage.peerId,
             lastMenuMessageId = botMessage.lastMenuMessageId,
             message = getBody(bot),
-            keyboard = getKeyboard(bot, true)
+            keyboard = getKeyboard()
         )
     }
 
@@ -64,28 +64,24 @@ data class ReceiptReadyMenu(
         )
     }
 
-    private fun getKeyboard(bot: Bot, qrButton: Boolean): BotKeyboard {
+    private fun getKeyboard(): BotKeyboard {
         val code = receipt.id.toString()
-        val tgLink = String.format("t.me/%s?start=RC-%s", System.getenv("TG_USER_NAME"), code)
-        val vkLink = String.format("https://vk.com/write-%s?ref=RC-%s", System.getenv("VK_GROUP_ID"), code)
         val captchaActivation = if (receipt.captcha) Messages[user].enabled else Messages[user].disabled
         val onlyNewActivation = if (receipt.onlyNew) Messages[user].enabled else Messages[user].disabled
         val onlyPremiumActivation = if (receipt.onlyPremium) Messages[user].enabled else Messages[user].disabled
         return BotKeyboard {
             row {
-                linkButton(
-                    Messages[user.settings.lang].menuReceiptReadyShare,
-                    if (bot is TgBot) tgLink else vkLink,
+                inlineButton(
+                    Messages[user].menuReceiptReadyShare,
+                    "RC-$code",
                     ButtonPayload.serializer(),
                     ButtonPayload.SHARE
                 )
-                if (qrButton) {
-                    button(
-                        Messages[user.settings.lang].menuReceiptReadyQr,
-                        ButtonPayload.serializer(),
-                        ButtonPayload.QR
-                    )
-                }
+                button(
+                    Messages[user].menuReceiptReadyQr,
+                    ButtonPayload.serializer(),
+                    ButtonPayload.QR
+                )
             }
             row {
                 button(
@@ -123,14 +119,14 @@ data class ReceiptReadyMenu(
             }
             row {
                 button(
-                    Messages[user.settings.lang].menuReceiptReadyDelete,
+                    Messages[user].menuReceiptReadyDelete,
                     ButtonPayload.serializer(),
                     ButtonPayload.DELETE
                 )
             }
             row {
                 button(
-                    Messages[user.settings.lang].menuButtonBack,
+                    Messages[user].menuButtonBack,
                     ButtonPayload.serializer(),
                     ButtonPayload.BACK
                 )
@@ -144,8 +140,11 @@ data class ReceiptReadyMenu(
         val tgLink = String.format("t.me/%s?start=RC-%s", System.getenv("TG_USER_NAME"), code)
         val vkLink = String.format("https://vk.com/write-%s?ref=RC-%s", System.getenv("VK_GROUP_ID"), code)
         when (Json.decodeFromString<ButtonPayload>(payload)) {
+            ButtonPayload.SHARE -> {
+                bot.sendPopup(botMessage, Messages[user].onlyTgFunction)
+                return true
+            }
 
-            ButtonPayload.SHARE -> TODO()
             ButtonPayload.QR -> {
 
                 val filename = "qr-$code.png"

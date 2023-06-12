@@ -2,6 +2,7 @@ package money.tegro.bot.utils
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
+import money.tegro.bot.objects.keyboard.InlineButton
 import money.tegro.bot.objects.keyboard.OpenLinkButton
 import money.tegro.bot.objects.keyboard.RowDslBuilder
 import money.tegro.bot.objects.keyboard.TextButton
@@ -25,4 +26,15 @@ fun <T> RowDslBuilder.linkButton(
 ) {
     val jsonElement = Json.encodeToString(serializer, payload)
     addLinkButton(label, link, jsonElement, block)
+}
+
+fun <T> RowDslBuilder.inlineButton(
+    label: String,
+    query: String,
+    serializer: KSerializer<T>,
+    payload: T,
+    block: InlineButton.() -> Unit = { }
+) {
+    val jsonElement = Json.encodeToString(serializer, payload)
+    addInlineButton(label, query, jsonElement, block)
 }

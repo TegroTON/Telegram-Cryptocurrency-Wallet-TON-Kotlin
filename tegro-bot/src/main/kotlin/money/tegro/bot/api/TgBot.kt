@@ -222,13 +222,13 @@ class TgBot(
     }
 
     override fun onUpdateReceived(update: Update) {
-//        println("$update")
-        if (!update.hasMessage() && !update.hasCallbackQuery()) {
+        //println("$update")
+        if (!update.hasMessage() && !update.hasCallbackQuery() && !update.hasInlineQuery()) {
             println("unknown update type: $update")
             return
         }
-        val userTgId = update.message?.from?.id ?: update.callbackQuery.from.id
         launch {
+            val userTgId = update.message?.from?.id ?: update.callbackQuery?.from?.id ?: update.inlineQuery.from.id
             val randomUUID = UUID.nameUUIDFromBytes("tg_$userTgId".toByteArray())
             val ref = getRefId(update.message?.text)
             val user =
@@ -242,6 +242,11 @@ class TgBot(
                         )
                     )
                 )
+            if (update.hasInlineQuery()) {
+                val iq = update.inlineQuery
+                InlineQueryManager.answer(this@TgBot, user, iq)
+                return@launch
+            }
             val menu = menuPersistent.loadMenu(user)
             val message: Message = update.message ?: update.callbackQuery.message
             val fwdMessages = emptyList<BotMessage>().toMutableList()
