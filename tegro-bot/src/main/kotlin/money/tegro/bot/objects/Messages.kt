@@ -53,6 +53,7 @@ data class Messages(
     val menuWalletDepositCheck: String = "menuWalletDepositCheck",
     val menuWalletDepositCooldown: String = "menuWalletDepositCooldown",
     val walletMenuDepositMessage: String = "walletMenuDepositMessage",
+    val menuWalletDepositCheckMessage: String = "menuWalletDepositCheckMessage",
     val menuWalletWithdrawSelectAmountMessage: String = "menuWalletWithdrawSelectAmountMessage",
     val walletMenuWithdrawInvalidAddress: String = "walletMenuWithdrawInvalidAddress",
 
@@ -84,6 +85,7 @@ data class Messages(
     val menuReceiptLimitationsMessage: String = "menuReceiptLimitationsMessage",
     val menuReceiptLimitationsRef: String = "menuReceiptLimitationsRef",
     val menuReceiptLimitationsSub: String = "menuReceiptLimitationsSub",
+    val menuReceiptLimitationsDesc: String = "menuReceiptLimitationsDesc",
     val menuReceiptLimitationsUser: String = "menuReceiptLimitationsUser",
     val menuReceiptLimitationsUserUnattach: String = "menuReceiptLimitationsUserUnattach",
     val menuReceiptLimitationsCaptcha: String = "menuReceiptLimitationsCaptcha",
@@ -100,6 +102,8 @@ data class Messages(
     val menuReceiptSubscriberAdd: String = "menuReceiptSubscriberAdd",
     val menuReceiptSubscriberAddChatMessage: String = "menuReceiptSubscriberAddChatMessage",
     val menuReceiptSubscriberAddChatError: String = "menuReceiptSubscriberAddChatError",
+    val menuReceiptSetDescriptionMenu: String = "menuReceiptSetDescriptionMenu",
+    val menuReceiptSetDescriptionClear: String = "menuReceiptSetDescriptionClear",
     val menuReceiptsList: String = "menuReceiptsList",
     val menuReceiptsListMessage: String = "menuReceiptsListMessage",
     val menuReceiptsListEmpty: String = "menuReceiptsListEmpty",
@@ -251,6 +255,7 @@ data class Messages(
      **************/
     val onlyTgFunction: String = "onlyTgFunction",
     val menuSelectInvalidAmount: String = "menuSelectInvalidAmount",
+    val invalidText: String = "invalidText",
     val menuButtonApprove: String = "menuButtonApprove",
     val menuButtonCheck: String = "menuButtonCheck",
     val menuButtonMenu: String = "menuButtonMenu",

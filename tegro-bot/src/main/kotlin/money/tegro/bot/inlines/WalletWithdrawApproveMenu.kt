@@ -3,23 +3,19 @@ package money.tegro.bot.inlines
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import money.tegro.bot.MASTER_KEY
 import money.tegro.bot.api.Bot
 import money.tegro.bot.api.TgBot
-import money.tegro.bot.blockchain.BlockchainManager
 import money.tegro.bot.objects.BotMessage
 import money.tegro.bot.objects.LogType
 import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
 import money.tegro.bot.objects.keyboard.BotKeyboard
-import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.utils.NftsPersistent
-import money.tegro.bot.utils.UserPrivateKey
+import money.tegro.bot.utils.PostgresSecurityPersistent
 import money.tegro.bot.utils.button
 import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.walletPersistent
-import java.util.*
 
 @Serializable
 class WalletWithdrawApproveMenu(
@@ -83,7 +79,7 @@ class WalletWithdrawApproveMenu(
                     botMessage
                 )
 
-                val blockchainManager = BlockchainManager[network]
+//                val blockchainManager = BlockchainManager[network]
 
                 val active = walletPersistent.loadWalletState(user).active[coins.currency]
                 if (active < coins) return false
@@ -91,43 +87,51 @@ class WalletWithdrawApproveMenu(
                 val amountWithFee = coins + fee
 
                 walletPersistent.freeze(user, amountWithFee)
-                try {
-                    val pk = UserPrivateKey(UUID(0, 0), MASTER_KEY)
-                    if (coins.currency.isNative) {
-                        blockchainManager.transfer(
-                            pk.key.toByteArray(),
-                            withdrawAddress,
-                            coins
-                        )
-                    } else {
-                        blockchainManager.transferToken(
-                            pk.key.toByteArray(),
-                            coins.currency,
-                            withdrawAddress,
-                            coins
-                        )
-                    }
-                    val oldFreeze = walletPersistent.loadWalletState(user).frozen[coins.currency]
-                    walletPersistent.updateFreeze(user, coins.currency) { updated ->
-                        (updated - amountWithFee).also {
-                            println(
-                                "Remove from freeze:\n" +
-                                        " old freeze: $oldFreeze\n" +
-                                        " amount    : $amountWithFee\n" +
-                                        " new freeze: $it"
-                            )
-                        }
-                    }
-                    LogsUtil.log(user, "$coins", LogType.WITHDRAW)
-                    LogsUtil.log(
-                        user,
-                        "$coins (fee: $fee), balance ${active - amountWithFee}",
-                        LogType.WITHDRAW_ADMIN
-                    )
-                } catch (e: Throwable) {
-                    walletPersistent.unfreeze(user, amountWithFee)
-                    throw e
-                }
+                PostgresSecurityPersistent.addFinanceRequest(
+                    user,
+                    LogType.WITHDRAW,
+                    amountWithFee,
+                    network,
+                    withdrawAddress
+                )
+//                try {
+//                    val pk = UserPrivateKey(UUID(0, 0), MASTER_KEY)
+//                    if (coins.currency.isNative) {
+//                        blockchainManager.transfer(
+//                            pk.key.toByteArray(),
+//                            withdrawAddress,
+//                            coins
+//                        )
+//                    } else {
+//                        blockchainManager.transferToken(
+//                            pk.key.toByteArray(),
+//                            coins.currency,
+//                            withdrawAddress,
+//                            coins
+//                        )
+//                    }
+//                    val oldFreeze = walletPersistent.loadWalletState(user).frozen[coins.currency]
+//                    walletPersistent.updateFreeze(user, coins.currency) { updated ->
+//                        (updated - amountWithFee).also {
+//                            println(
+//                                "Remove from freeze:\n" +
+//                                        " old freeze: $oldFreeze\n" +
+//                                        " amount    : $amountWithFee\n" +
+//                                        " new freeze: $it"
+//                            )
+//                        }
+//                    }
+//                    SecurityPersistent.log(user, coins, "$coins", LogType.WITHDRAW)
+//                    SecurityPersistent.log(
+//                        user,
+//                        coins,
+//                        "$coins (fee: $fee), balance ${active - amountWithFee}",
+//                        LogType.WITHDRAW_ADMIN
+//                    )
+//                } catch (e: Throwable) {
+//                    walletPersistent.unfreeze(user, amountWithFee)
+//                    throw e
+//                }
             }
         }
         return true

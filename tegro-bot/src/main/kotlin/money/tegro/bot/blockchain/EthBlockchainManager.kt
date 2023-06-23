@@ -56,10 +56,21 @@ object EthBlockchainManager : BlockchainManager {
 
     override suspend fun getBalance(address: String): Coins {
         println("get native balance for $address")
-        return Coins(
-            CryptoCurrency.BNB,
-            web3j.ethGetBalance(address, DefaultBlockParameterName.LATEST).sendAsync().get().balance
-        )
+        val response = httpClient.post(endpoint) {
+            contentType(ContentType.Application.Json)
+            setBody(
+                EthRequest(
+                    method = "eth_getBalance",
+                    params = listOf(
+                        address,
+                        DefaultBlockParameterName.LATEST.value
+                    )
+                )
+            )
+        }.body<EthResponse<String>>()
+        val result = response.result ?: throw RuntimeException(response.error?.message)
+        println("coins found manager: ${Numeric.decodeQuantity(result)}")
+        return Coins(CryptoCurrency.BNB, Numeric.decodeQuantity(result) / 1_000_000_000.toBigInteger())
     }
 
     override suspend fun getTokenBalance(cryptoCurrency: CryptoCurrency, ownerAddress: String): Coins {
@@ -123,7 +134,7 @@ object EthBlockchainManager : BlockchainManager {
             gasPrice = gasPrice,
             gasLimit = BigInteger.valueOf(50000),
             destination = destinationAddress,
-            value = value.amount
+            value = value.amount * 1_000_000_000.toBigInteger()
         )
     }
 

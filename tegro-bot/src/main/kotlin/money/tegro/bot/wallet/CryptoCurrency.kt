@@ -56,12 +56,12 @@ enum class CryptoCurrency(
         displayName = "Binance BNB",
         coingecoId = "binancecoin",
         ticker = "BNB",
-        decimals = 18,
-        minAmount = 10_000_000_000_000_000.toBigInteger(),
-        networkFeeReserve = 20_000_000_000_000_000.toBigInteger(),
-        botFee = 1_000_000_000_000_000.toBigInteger(),
+        decimals = 9,
+        minAmount = 10_000_000.toBigInteger(),
+        networkFeeReserve = 20_000_000.toBigInteger(),
+        botFee = 1_000_000.toBigInteger(),
         nativeBlockchainType = BlockchainType.BSC,
-        isEnabled = false
+//        isEnabled = false
     );
 
     private val factor = BigDecimal.TEN.pow(decimals)

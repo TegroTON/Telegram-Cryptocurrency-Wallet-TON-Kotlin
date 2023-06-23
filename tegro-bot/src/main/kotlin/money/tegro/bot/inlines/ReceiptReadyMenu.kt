@@ -55,11 +55,13 @@ data class ReceiptReadyMenu(
         } else {
             Messages[user.settings.lang].menuReceiptReadyAnyone
         }
+        val description = if (receipt.description.isEmpty()) Messages[user].notSet else receipt.description
         return Messages[user.settings.lang].menuReceiptReadyMessage.format(
             receipt.coins.toStringWithRate(user.settings.localCurrency),
             receipt.activations,
             time,
             limitation,
+            description,
             if (bot is TgBot) tgLink else vkLink
         )
     }
@@ -103,6 +105,13 @@ data class ReceiptReadyMenu(
                     Messages[user].menuReceiptLimitationsSub,
                     ButtonPayload.serializer(),
                     ButtonPayload.SUB
+                )
+            }
+            row {
+                button(
+                    Messages[user].menuReceiptLimitationsDesc,
+                    ButtonPayload.serializer(),
+                    ButtonPayload.DESC
                 )
             }
             row {
@@ -220,6 +229,12 @@ data class ReceiptReadyMenu(
                 botMessage
             )
 
+            ButtonPayload.DESC -> user.setMenu(
+                bot,
+                ReceiptSetDescriptionMenu(user, receipt, this),
+                botMessage
+            )
+
             ButtonPayload.DELETE -> {
                 for (chatId: Long in PostgresReceiptPersistent.getChatsByReceipt(receipt)) {
                     PostgresReceiptPersistent.deleteChatFromReceipt(receipt, chatId)
@@ -256,6 +271,7 @@ data class ReceiptReadyMenu(
         USER,
         REF,
         SUB,
+        DESC,
         DELETE,
         BACK
     }

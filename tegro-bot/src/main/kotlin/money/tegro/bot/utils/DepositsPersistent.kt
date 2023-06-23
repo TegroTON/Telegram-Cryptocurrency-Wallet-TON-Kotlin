@@ -57,7 +57,7 @@ object PostgresDepositsPersistent : DepositsPersistent {
                 it[isPaid] = false
             }
         }
-        LogsUtil.log(deposit.issuer, "base=${deposit.coins}", LogType.DEPOSIT_CREATE)
+        SecurityPersistent.log(deposit.issuer, deposit.coins, "base=${deposit.coins}", LogType.DEPOSIT_CREATE)
     }
 
     override suspend fun getAllByUser(user: User): List<Deposit> {
@@ -145,7 +145,12 @@ object PostgresDepositsPersistent : DepositsPersistent {
                 profitCoins
             )
         )
-        LogsUtil.log(deposit.issuer, "profit=$profitCoins, base=${deposit.coins}", LogType.DEPOSIT_PAID)
+        SecurityPersistent.log(
+            deposit.issuer,
+            deposit.coins + profitCoins,
+            "profit=$profitCoins, base=${deposit.coins}",
+            LogType.DEPOSIT_PAID
+        )
     }
 
 }

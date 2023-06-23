@@ -3,6 +3,7 @@ package money.tegro.bot.utils
 import kotlinx.datetime.Clock
 import money.tegro.bot.exceptions.*
 import money.tegro.bot.objects.Account
+import money.tegro.bot.objects.LogType
 import money.tegro.bot.objects.PostgresUserPersistent
 import money.tegro.bot.objects.User
 import money.tegro.bot.utils.PostgresAccountsPersistent.UsersAccounts.activations
@@ -85,6 +86,12 @@ object PostgresAccountsPersistent : AccountsPersistent {
                 activations = activations,
                 isActive = true,
             )
+            SecurityPersistent.log(
+                issuer,
+                maxCoins,
+                "${account.id} | min=$minAmount, max=$maxCoins, activations=$activations",
+                LogType.ACCOUNT_CREATE
+            )
             saveAccount(account)
             return account
         } catch (e: Throwable) {
@@ -129,6 +136,12 @@ object PostgresAccountsPersistent : AccountsPersistent {
     }
 
     suspend fun deleteAccount(account: Account) {
+        SecurityPersistent.log(
+            account.issuer,
+            account.maxCoins,
+            "${account.id} | profit=${account.coins}",
+            LogType.ACCOUNT_INACTIVATE
+        )
         inactivateAccount(account)
     }
 
@@ -163,6 +176,8 @@ object PostgresAccountsPersistent : AccountsPersistent {
 
         payer.freeze(coins)
         payer.transfer(account.issuer, coins)
+        SecurityPersistent.log(payer, coins, "paid $coins for account ${account.id}", LogType.ACCOUNT_PAID)
+        SecurityPersistent.log(account.issuer, coins, "got $coins from account ${account.id}", LogType.ACCOUNT_GOT)
         var currentActivations = account.activations
         if (currentActivations != Int.MAX_VALUE) currentActivations--
         if (currentActivations < 1) {

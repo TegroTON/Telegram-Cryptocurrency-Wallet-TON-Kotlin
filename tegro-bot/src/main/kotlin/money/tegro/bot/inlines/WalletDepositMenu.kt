@@ -11,7 +11,7 @@ import money.tegro.bot.api.TgBot
 import money.tegro.bot.blockchain.BlockchainManager
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
-import money.tegro.bot.utils.LogsUtil
+import money.tegro.bot.utils.SecurityPersistent
 import money.tegro.bot.utils.UserPrivateKey
 import money.tegro.bot.utils.button
 import money.tegro.bot.utils.linkButton
@@ -120,7 +120,7 @@ class WalletDepositMenu(
                                     Coins(coins.currency, coins.currency.networkFeeReserve)
                                 )
                             )
-                            LogsUtil.log(user, "$coins", LogType.DEPOSIT)
+                            SecurityPersistent.log(user, coins, "$coins", LogType.DEPOSIT)
                         }
                     }
                     bot.sendMessage(botMessage.peerId, "⌛\uFE0F")

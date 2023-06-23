@@ -10,6 +10,7 @@ import money.tegro.bot.blockchain.BlockchainManager
 import money.tegro.bot.inlines.PostgresMenuPersistent
 import money.tegro.bot.receipts.PostgresReceiptPersistent
 import money.tegro.bot.utils.LogsUtil
+import money.tegro.bot.utils.SecurityPersistent
 import money.tegro.bot.utils.UserPrivateKey
 import money.tegro.bot.wallet.BlockchainType
 import money.tegro.bot.wallet.PostgresWalletPersistent
@@ -28,6 +29,7 @@ private const val ENV_PG_USER = "PG_USER"
 private const val ENV_PG_PASSWORD = "PG_PASSWORD"
 private const val ENV_MASTER_KEY = "MASTER_KEY"
 private const val ENV_TESTNET = "TESTNET"
+private const val ENV_ADMIN_CONFERENCE_ID = "ADMIN_CONFERENCE_ID"
 
 private val logger = LoggerFactory.getLogger("Launcher")
 val menuPersistent = PostgresMenuPersistent
@@ -35,6 +37,7 @@ val walletPersistent = PostgresWalletPersistent
 val receiptPersistent = PostgresReceiptPersistent
 val MASTER_KEY get() = hex(System.getenv(ENV_MASTER_KEY) ?: error("'$ENV_MASTER_KEY' not set"))
 val testnet get() = (System.getenv(ENV_TESTNET) ?: "true").toBoolean()
+val ADMIN_CONFERENCE_ID get() = System.getenv(ENV_ADMIN_CONFERENCE_ID) ?: error("'$ENV_ADMIN_CONFERENCE_ID' not set")
 
 suspend fun main() {
     val pgUrl = System.getenv(ENV_PG_URL) ?: error("'$ENV_PG_URL' not set")
@@ -51,10 +54,6 @@ suspend fun main() {
 
     val vkGroupId = System.getenv(ENV_VK_GROUP_ID)
     val vkAccessToken = System.getenv(ENV_VK_API_TOKEN)
-
-    CoroutineScope(Dispatchers.Default).launch {
-        LogsUtil.start()
-    }
 
     val vkScope = if (vkGroupId != null && vkAccessToken != null) {
         CoroutineScope(Dispatchers.Default).launch {
@@ -77,6 +76,11 @@ suspend fun main() {
 
     val tgBot = TgBot(tgAccessToken)
     tgBot.start(tgUsername)
+
+    CoroutineScope(Dispatchers.Default).launch {
+        LogsUtil.start()
+        SecurityPersistent.init()
+    }
 
     vkScope?.join()
 

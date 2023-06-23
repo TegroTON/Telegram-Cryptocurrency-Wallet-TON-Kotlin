@@ -1,16 +1,19 @@
 package money.tegro.bot.objects
 
+import money.tegro.bot.MASTER_KEY
 import money.tegro.bot.api.Bot
 import money.tegro.bot.api.TgBot
+import money.tegro.bot.blockchain.BlockchainManager
 import money.tegro.bot.exceptions.ReceiptNotPremiumUserException
 import money.tegro.bot.exceptions.ReceiptOnlyTgException
 import money.tegro.bot.exceptions.RecipientNotSubscriberException
 import money.tegro.bot.inlines.*
 import money.tegro.bot.receipts.PostgresReceiptPersistent
-import money.tegro.bot.utils.Captcha
-import money.tegro.bot.utils.LogsUtil
-import money.tegro.bot.utils.PostgresAccountsPersistent
-import money.tegro.bot.utils.PostgresLogsPersistent
+import money.tegro.bot.utils.*
+import money.tegro.bot.wallet.Coins
+import money.tegro.bot.wallet.CryptoCurrency
+import money.tegro.bot.wallet.PostgresWalletPersistent
+import money.tegro.bot.walletPersistent
 import java.awt.Color
 import java.awt.Font
 import java.io.InputStream
@@ -21,7 +24,27 @@ import kotlin.random.Random
 class Commands {
 
     companion object {
+        private val admins = listOf(453460175L to "Антон SPY_me")
+
         suspend fun execute(user: User, botMessage: BotMessage, bot: Bot, menu: Menu?, isPremium: Boolean?) {
+            if (botMessage.isFromChat) {
+                if (botMessage.body == null) return
+                val args = botMessage.body.split(" ")
+                when (args[0]) {
+                    "/logs" -> {
+                        logsCommand(bot, user, botMessage)
+                    }
+
+                    "/whoami" -> {
+                        whoAmICommand(bot, user, botMessage)
+                    }
+
+                    "/accept" -> {
+                        acceptCommand(bot, user, botMessage)
+                    }
+                }
+                return
+            }
             if (botMessage.body == null) {
                 user.setMenu(bot, MainMenu(user), botMessage)
                 return
@@ -182,69 +205,159 @@ class Commands {
                 //nft
                 "/settings" -> user.setMenu(bot, SettingsMenu(user, backMenu), botMessage)
                 "/whoami" -> {
-                    val userDisplay = buildString {
-                        if (bot is TgBot) append("<code>")
-                        append(user.id)
-                        if (bot is TgBot) append("</code>")
-                    }
-                    bot.sendMessage(botMessage.peerId, "By admin request forward this message\n$userDisplay")
+                    whoAmICommand(bot, user, botMessage)
                 }
 
-                "/logsbytype" -> {
-                    if (user.tgId == null) {
-                        user.setMenu(bot, MainMenu(user), botMessage)
-                        return
+                "/logs" -> {
+                    logsCommand(bot, user, botMessage)
+                }
+
+                "/accept" -> {
+                    acceptCommand(bot, user, botMessage)
+                }
+
+                else -> user.setMenu(bot, MainMenu(user), botMessage)
+            }
+        }
+
+        private suspend fun acceptCommand(bot: Bot, user: User, botMessage: BotMessage) {
+            if (user.tgId == null) {
+                return
+            }
+            val admin = admins.find { it.first == user.tgId } ?: return
+            val code = botMessage.body!!.split(" ")[1]
+            val financeRequest = PostgresSecurityPersistent.loadFinanceRequest(UUID.fromString(code))
+            val targetUser = PostgresUserPersistent.load(financeRequest.userId)
+            if (targetUser == null) {
+                bot.sendMessage(botMessage.peerId, "User not found")
+                return
+            }
+            val coins = financeRequest.coins
+            when (financeRequest.logType) {
+                LogType.DEPOSIT -> {
+                    walletPersistent.updateActive(targetUser, coins.currency) { oldCoins ->
+                        (oldCoins + coins).also { newCoins ->
+                            println(
+                                "New deposit: $targetUser\n" +
+                                        "     old coins: $oldCoins\n" +
+                                        " deposit coins: $coins\n" +
+                                        "     new coins: $newCoins"
+                            )
+                        }
                     }
-                    if (user.tgId != 453460175L) {
-                        user.setMenu(bot, MainMenu(user), botMessage)
-                        return
+                    bot.sendMessage(
+                        targetUser.tgId ?: targetUser.vkId ?: 0,
+                        Messages[targetUser].walletMenuDepositMessage.format(
+                            coins.toStringWithRate(targetUser.settings.localCurrency),
+                            Coins(coins.currency, coins.currency.networkFeeReserve)
+                        )
+                    )
+                    val active = PostgresWalletPersistent.loadWalletState(targetUser).active[CryptoCurrency.TON]
+                    SecurityPersistent.log(targetUser, coins, "$coins", LogType.DEPOSIT)
+                    SecurityPersistent.log(
+                        targetUser,
+                        coins,
+                        "$coins, balance $active, approved by ${admin.second}(${admin.first})",
+                        LogType.DEPOSIT_ADMIN
+                    )
+                }
+
+                LogType.WITHDRAW -> {
+                    val blockchainManager = BlockchainManager[financeRequest.blockchainType]
+
+                    val active = walletPersistent.loadWalletState(targetUser).active[coins.currency]
+                    if (active < coins) return
+                    val fee = Coins(coins.currency, NftsPersistent.countBotFee(targetUser, coins.currency))
+                    val amountWithFee = coins + fee
+
+                    walletPersistent.freeze(targetUser, amountWithFee)
+                    try {
+                        val pk = UserPrivateKey(UUID(0, 0), MASTER_KEY)
+                        if (coins.currency.isNative) {
+                            blockchainManager.transfer(
+                                pk.key.toByteArray(),
+                                financeRequest.address,
+                                coins
+                            )
+                        } else {
+                            blockchainManager.transferToken(
+                                pk.key.toByteArray(),
+                                coins.currency,
+                                financeRequest.address,
+                                coins
+                            )
+                        }
+                        val oldFreeze = walletPersistent.loadWalletState(targetUser).frozen[coins.currency]
+                        walletPersistent.updateFreeze(targetUser, coins.currency) { updated ->
+                            (updated - amountWithFee).also {
+                                println(
+                                    "Remove from freeze:\n" +
+                                            " old freeze: $oldFreeze\n" +
+                                            " amount    : $amountWithFee\n" +
+                                            " new freeze: $it"
+                                )
+                            }
+                        }
+                        SecurityPersistent.log(targetUser, coins, "$coins", LogType.WITHDRAW)
+                        SecurityPersistent.log(
+                            targetUser,
+                            coins,
+                            "$coins (fee: $fee) to ${financeRequest.address}, balance ${active - amountWithFee}, approved by ${admin.second}(${admin.first})",
+                            LogType.WITHDRAW_ADMIN
+                        )
+                    } catch (e: Throwable) {
+                        walletPersistent.unfreeze(targetUser, amountWithFee)
+                        throw e
                     }
-                    val type = LogType.valueOf(args[1])
+                }
+
+                else -> {
+
+                }
+            }
+        }
+
+        private fun whoAmICommand(bot: Bot, user: User, botMessage: BotMessage) {
+            val userDisplay = buildString {
+                if (bot is TgBot) append("<code>")
+                append(user.id)
+                if (bot is TgBot) append("</code>")
+            }
+            println("whoami from ${botMessage.peerId}")
+            bot.sendMessage(botMessage.peerId, "By admin request forward this message\n$userDisplay")
+        }
+
+        private suspend fun logsCommand(bot: Bot, user: User, botMessage: BotMessage) {
+            if (user.tgId == null) {
+                user.setMenu(bot, MainMenu(user), botMessage)
+                return
+            }
+            if (user.tgId != 453460175L) {
+                user.setMenu(bot, MainMenu(user), botMessage)
+                return
+            }
+            val args = botMessage.body!!.split(" ")
+            if (args.size < 3) return
+            when (args[1]) {
+                "type" -> {
+                    val type = LogType.valueOf(args[2])
                     val link = LogsUtil.getLogsLink(PostgresLogsPersistent.getLogsByType(type), "Logs by $type")
 
                     bot.sendMessage(botMessage.peerId, link)
                 }
 
-                "/logsbyuserid" -> {
-                    if (user.tgId == null) {
-                        user.setMenu(bot, MainMenu(user), botMessage)
-                        return
-                    }
-                    if (user.tgId != 453460175L) {
-                        user.setMenu(bot, MainMenu(user), botMessage)
-                        return
-                    }
-                    val targetUser = PostgresUserPersistent.load(UUID.fromString(args[1]))
+                "userid" -> {
+                    val targetUser = PostgresUserPersistent.load(UUID.fromString(args[2]))
                     if (targetUser == null) {
                         bot.sendMessage(botMessage.peerId, "User not found")
                         return
                     }
-                    val userInfo = buildString {
-                        appendLine("User TG id: ${targetUser.tgId}")
-                        appendLine("User VK id: ${targetUser.vkId}")
-                        appendLine("User address: ${targetUser.settings.address}")
-                        appendLine("User referral id: ${targetUser.settings.referralId}")
-                    }
-                    val link =
-                        LogsUtil.getLogsLink(
-                            PostgresLogsPersistent.getLogsByUser(targetUser),
-                            userInfo,
-                            "Logs by ${user.id}"
-                        )
 
-                    bot.sendMessage(botMessage.peerId, link)
+                    bot.sendMessage(botMessage.peerId, LogsUtil.logsByUser(targetUser))
                 }
 
-                "/logsbyusertg" -> {
-                    if (user.tgId == null) {
-                        user.setMenu(bot, MainMenu(user), botMessage)
-                        return
-                    }
-                    if (user.tgId != 453460175L) {
-                        user.setMenu(bot, MainMenu(user), botMessage)
-                        return
-                    }
-                    val targetUser = PostgresUserPersistent.loadByTg(args[1].toLong())
+                "tgid" -> {
+                    val targetUser = PostgresUserPersistent.loadByTg(args[2].toLong())
                     if (targetUser == null) {
                         bot.sendMessage(botMessage.peerId, "User not found")
                         return
@@ -254,8 +367,6 @@ class Commands {
 
                     bot.sendMessage(botMessage.peerId, link)
                 }
-
-                else -> user.setMenu(bot, MainMenu(user), botMessage)
             }
         }
 
@@ -289,6 +400,6 @@ class Commands {
                 .build()
             return Pair(captcha.image!!, captcha.answer)
         }
-        }
+    }
 //    }
 }

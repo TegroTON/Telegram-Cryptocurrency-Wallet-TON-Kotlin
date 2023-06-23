@@ -11,7 +11,6 @@ import money.tegro.bot.objects.PostgresUserPersistent
 import money.tegro.bot.objects.User
 import money.tegro.bot.ton.TonBlockchainManager
 import money.tegro.bot.utils.UserPrivateKey
-import money.tegro.bot.walletPersistent
 import java.math.BigInteger
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -24,29 +23,26 @@ object WalletObserver {
     val hashMap = emptyMap<User, TokenDepositFlow>().toMutableMap()
 
     @OptIn(DelicateCoroutinesApi::class)
-    private val tonNativeCache = Caffeine.newBuilder().expireAfterWrite(15000, TimeUnit.MILLISECONDS)
+    private val tonNativeCache = Caffeine.newBuilder().expireAfterWrite(15, TimeUnit.SECONDS)
         .buildAsync<UUID, List<Coins>> { userId, e ->
             GlobalScope.async(e.asCoroutineDispatcher()) {
-//                println("Start checking: $userId")
                 val user = PostgresUserPersistent.load(userId) ?: return@async emptyList()
                 listOf(
                     async { checkForNewDeposits(user, TonBlockchainManager, CryptoCurrency.TON) },
-                ).awaitAll().also {
-//                    println("User deposits $user:\n ${it.joinToString("\n ")}")
-                }
+                ).awaitAll()
             }.asCompletableFuture()
         }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private val bnbNativeCache = Caffeine.newBuilder().expireAfterWrite(60, TimeUnit.SECONDS)
+    private val bnbNativeCache = Caffeine.newBuilder().expireAfterWrite(15, TimeUnit.SECONDS)
         .buildAsync<UUID, List<Coins>> { userId, e ->
             GlobalScope.async(e.asCoroutineDispatcher()) {
-//                println("Start checking: $userId")
+                println("Start checking: $userId")
                 val user = PostgresUserPersistent.load(userId) ?: return@async emptyList()
                 listOf(
                     async { checkForNewDeposits(user, EthBlockchainManager, CryptoCurrency.BNB) },
                 ).awaitAll().also {
-//                    println("User deposits $user:\n ${it.joinToString("\n ")}")
+                    println("User deposits $user:\n ${it.joinToString("\n ")}")
                 }
             }.asCompletableFuture()
         }
@@ -117,13 +113,13 @@ object WalletObserver {
         val userWalletPk = UserPrivateKey(user.id, MASTER_KEY).key.toByteArray()
         val userWalletAddress = blockchainManager.getAddress(userWalletPk)
         val balance = blockchainManager.getTokenBalance(cryptoCurrency, userWalletAddress)
-        //println("balance $balance : ${balance.amount}")
+        println("balance $balance : ${balance.amount}")
         val reserve = cryptoCurrency.networkFeeReserve
-        //println("reserve ${Coins(cryptoCurrency, reserve)} : $reserve")
         if (balance.amount > reserve) {
+            println("reserve ${Coins(cryptoCurrency, reserve)} : $reserve")
             println("Нашли у ${user.id} ($userWalletAddress) денег на контракте: $balance")
             val depositCoins = balance - reserve
-            //println("balance - reserve $depositCoins : ${depositCoins.amount}")
+            println("balance - reserve $depositCoins : ${depositCoins.amount}")
             val masterWalletPk = UserPrivateKey(UUID(0, 0), MASTER_KEY).key.toByteArray()
             val masterWalletAddress = blockchainManager.getAddress(masterWalletPk)
             if (cryptoCurrency.isNative) {
@@ -131,16 +127,16 @@ object WalletObserver {
                 blockchainManager.transfer(
                     privateKey = userWalletPk, destinationAddress = masterWalletAddress, value = depositCoins
                 )
-                walletPersistent.updateActive(user, depositCoins.currency) { oldCoins ->
-                    (oldCoins + depositCoins).also { newCoins ->
-                        println(
-                            "New deposit: $user\n" +
-                                    "     old coins: $oldCoins\n" +
-                                    " deposit coins: $depositCoins\n" +
-                                    "     new coins: $newCoins"
-                        )
-                    }
-                }
+//                walletPersistent.updateActive(user, depositCoins.currency) { oldCoins ->
+//                    (oldCoins + depositCoins).also { newCoins ->
+//                        println(
+//                            "New deposit: $user\n" +
+//                                    "     old coins: $oldCoins\n" +
+//                                    " deposit coins: $depositCoins\n" +
+//                                    "     new coins: $newCoins"
+//                        )
+//                    }
+//                }
                 return depositCoins
             } else {
                 val a = TokenDepositFlow(blockchainManager, cryptoCurrency, userWalletPk)
@@ -184,16 +180,16 @@ object WalletObserver {
                         destinationAddress = masterWalletAddress,
                         value = depositCoins
                     )
-                    walletPersistent.updateActive(user, depositCoins.currency) { oldCoins ->
-                        (oldCoins + depositCoins).also { newCoins ->
-                            println(
-                                "New deposit: $user\n" +
-                                        "     old coins: $oldCoins\n" +
-                                        " deposit coins: $depositCoins\n" +
-                                        "     new coins: $newCoins"
-                            )
-                        }
-                    }
+//                    walletPersistent.updateActive(user, depositCoins.currency) { oldCoins ->
+//                        (oldCoins + depositCoins).also { newCoins ->
+//                            println(
+//                                "New deposit: $user\n" +
+//                                        "     old coins: $oldCoins\n" +
+//                                        " deposit coins: $depositCoins\n" +
+//                                        "     new coins: $newCoins"
+//                            )
+//                        }
+//                    }
                     hashMap.remove(user)
                     return depositCoins
                 } else {

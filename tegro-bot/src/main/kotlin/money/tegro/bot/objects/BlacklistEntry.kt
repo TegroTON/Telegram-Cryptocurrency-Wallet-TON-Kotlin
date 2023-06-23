@@ -5,14 +5,12 @@ import money.tegro.bot.utils.UUIDSerializer
 import java.util.*
 
 @Serializable
-data class UserSettings(
+data class BlacklistEntry(
+    @Serializable(UUIDSerializer::class)
+    val id: UUID,
     @Serializable(UUIDSerializer::class)
     val userId: UUID,
-    val lang: Language,
-    val localCurrency: LocalCurrency,
-    @Serializable(UUIDSerializer::class)
-    val referralId: UUID?,
-    val address: String = "",
-    val phone: String = "",
-    val nfts: List<Nft> = emptyList()
+    val address: String?,
+    val phone: String?,
+    val reason: String?
 )

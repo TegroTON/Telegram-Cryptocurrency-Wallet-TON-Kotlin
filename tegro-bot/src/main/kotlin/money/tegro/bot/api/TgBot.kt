@@ -9,12 +9,9 @@ import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
 import money.tegro.bot.testnet
-import money.tegro.bot.utils.LogsUtil
-import money.tegro.bot.utils.PostgresAccountsPersistent
-import money.tegro.bot.utils.PostgresDepositsPersistent
-import money.tegro.bot.utils.RatePersistent
-import money.tegro.bot.wallet.Coins
-import money.tegro.bot.wallet.WalletObserver
+import money.tegro.bot.utils.*
+import money.tegro.bot.wallet.*
+import money.tegro.bot.walletPersistent
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.TelegramBotsApi
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
@@ -62,19 +59,21 @@ class TgBot(
                 delay(1.hours)
             }
         }
+
+        SecurityPersistent.informAdmins(this@TgBot, "Bot logger init")
     }
 
-    override suspend fun sendMessage(to: Long, message: String) {
+    override fun sendMessage(to: Long, message: String) {
         sendMessage(to, message, true)
     }
 
-    suspend fun sendMessage(to: Long, message: String, html: Boolean) {
+    fun sendMessage(to: Long, message: String, html: Boolean) {
         val sendMessage = SendMessage().apply {
             chatId = to.toString()
             enableHtml(html)
             text = message
         }
-        executeAsync(sendMessage).await()
+        executeAsync(sendMessage)
     }
 
     override suspend fun sendPhoto(to: Long, message: String, file: File, keyboard: BotKeyboard?) {
@@ -282,7 +281,7 @@ class TgBot(
                 message.messageId.toLong(),
                 userTgId,
                 message.chat.id,
-                message.isGroupMessage,
+                !message.isUserMessage,
                 message.text,
                 update.callbackQuery?.data,
                 update.callbackQuery?.message?.messageId?.toLong(),
@@ -292,6 +291,16 @@ class TgBot(
             GlobalScope.launch {
                 repeat(6) {
                     WalletObserver.checkDeposit(user).forEach { coins ->
+                        walletPersistent.updateActive(user, coins.currency) { oldCoins ->
+                            (oldCoins + coins).also { newCoins ->
+                                println(
+                                    "New deposit: $user\n" +
+                                            "     old coins: $oldCoins\n" +
+                                            " deposit coins: $coins\n" +
+                                            "     new coins: $newCoins"
+                                )
+                            }
+                        }
                         sendMessage(
                             botMessage.peerId,
                             Messages[user].walletMenuDepositMessage.format(
@@ -299,18 +308,23 @@ class TgBot(
                                 Coins(coins.currency, coins.currency.networkFeeReserve)
                             )
                         )
-                        LogsUtil.log(user, "$coins", LogType.DEPOSIT)
+                        val active = PostgresWalletPersistent.loadWalletState(user).active[CryptoCurrency.TON]
+                        SecurityPersistent.log(user, coins, "$coins", LogType.DEPOSIT)
+                        SecurityPersistent.log(user, coins, "$coins, balance $active", LogType.DEPOSIT_ADMIN)
                     }
-//                    WalletObserver.checkDepositBnb(user).forEach { coins ->
-//                        sendMessage(
-//                            botMessage.peerId,
-//                            Messages[user].walletMenuDepositMessage.format(
-//                                coins,
-//                                Coins(coins.currency, coins.currency.networkFeeReserve)
-//                            )
-//                        )
-//                        LogsUtil.log(user, "$coins", LogType.DEPOSIT)
-//                    }
+                    WalletObserver.checkDepositBnb(user).forEach { coins ->
+                        PostgresSecurityPersistent.addFinanceRequest(
+                            user,
+                            LogType.DEPOSIT,
+                            coins,
+                            BlockchainType.BSC,
+                            ""
+                        )
+                        sendMessage(
+                            botMessage.peerId,
+                            Messages[user].menuWalletDepositCheckMessage.format(coins)
+                        )
+                    }
                     if (!testnet) {
 //                        listOf(
 //                            async {
@@ -339,6 +353,7 @@ class TgBot(
                 Commands.execute(user, botMessage, this@TgBot, menu, message.from.isPremium)
                 return@launch
             }
+            if (botMessage.isFromChat) return@launch
             try {
                 println("Open menu $menu for user ${user.id}")
                 if (menu?.handleMessage(this@TgBot, botMessage) == true) {

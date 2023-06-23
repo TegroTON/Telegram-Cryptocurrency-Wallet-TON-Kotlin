@@ -15,8 +15,8 @@ import money.tegro.bot.menuPersistent
 import money.tegro.bot.objects.*
 import money.tegro.bot.objects.keyboard.BotKeyboard
 import money.tegro.bot.receipts.PostgresReceiptPersistent
-import money.tegro.bot.utils.LogsUtil
 import money.tegro.bot.utils.PostgresDepositsPersistent
+import money.tegro.bot.utils.SecurityPersistent
 import money.tegro.bot.wallet.WalletObserver
 import java.io.File
 import java.io.InputStream
@@ -92,7 +92,7 @@ class VkBot : Bot, CoroutineScope {
                     repeat(6) {
                         WalletObserver.checkDeposit(user).forEach { coins ->
                             sendMessage(botMessage.peerId, Messages[user].walletMenuDepositMessage.format(coins))
-                            LogsUtil.log(user, "$coins", LogType.DEPOSIT)
+                            SecurityPersistent.log(user, coins, "$coins", LogType.DEPOSIT)
                         }
                         delay(15_000)
                     }
@@ -131,14 +131,17 @@ class VkBot : Bot, CoroutineScope {
             }
         }
 
-        runBlocking { client.startLongPolling(settings = VkBotsLongPollApi.Settings(maxFails = 5)) }
+        runBlocking { client.startLongPolling(settings = VkBotsLongPollApi.Settings(maxFails = -1)) }
     }
 
-    override suspend fun sendMessage(to: Long, message: String) {
-        client.sendMessage {
-            peerId = to.toInt()
-            this.message = message
-        }.execute()
+    @OptIn(DelicateCoroutinesApi::class)
+    override fun sendMessage(to: Long, message: String) {
+        GlobalScope.launch {
+            client.sendMessage {
+                peerId = to.toInt()
+                this.message = message
+            }.execute()
+        }
     }
 
     override suspend fun sendMessageKeyboard(to: Long, message: String, keyboard: BotKeyboard) {

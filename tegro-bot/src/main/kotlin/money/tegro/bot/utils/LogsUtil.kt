@@ -5,11 +5,12 @@ import fr.minuskube.pastee.data.Paste
 import fr.minuskube.pastee.data.Section
 import fr.minuskube.pastee.response.SubmitResponse
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
 import money.tegro.bot.objects.Log
-import money.tegro.bot.objects.LogType
+import money.tegro.bot.objects.Messages
 import money.tegro.bot.objects.User
+import money.tegro.bot.walletPersistent
+import java.math.BigInteger
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.time.Duration.Companion.minutes
@@ -17,7 +18,7 @@ import kotlin.time.Duration.Companion.minutes
 class LogsUtil {
 
     companion object {
-        var logs: MutableList<Log> = emptyList<Log>().toMutableList()
+        private var logs: MutableList<Log> = emptyList<Log>().toMutableList()
 
         suspend fun start() {
             while (true) {
@@ -29,15 +30,36 @@ class LogsUtil {
             }
         }
 
-        fun log(user: User, info: String, logType: LogType) {
-            val log = Log(
-                UUID.randomUUID(),
-                user.id,
-                Clock.System.now(),
-                logType,
-                info
-            )
+        fun log(log: Log) {
             logs.add(log)
+        }
+
+        suspend fun logsByUser(user: User): String {
+            val walletState = walletPersistent.loadWalletState(user)
+            val userInfo = buildString {
+                appendLine("User TG id: ${user.tgId}")
+                appendLine("User VK id: ${user.vkId}")
+                appendLine("User address: ${user.settings.address}")
+                appendLine("User referral id: ${user.settings.referralId}")
+                appendLine()
+                walletState.active.forEach {
+                    appendLine("· ${it.currency.displayName}: ${it.toStringWithRate(user.settings.localCurrency)}")
+                }
+                val frozen = walletState.frozen.filter { it.amount > BigInteger.ZERO }
+                if (frozen.isNotEmpty()) {
+                    appendLine()
+                    appendLine(Messages[user].menuWalletFrozenTitle)
+                    appendLine()
+                    frozen.forEach {
+                        appendLine("· ${it.currency.displayName}: $it")
+                    }
+                }
+            }
+            return getLogsLink(
+                PostgresLogsPersistent.getLogsByUser(user),
+                userInfo,
+                "Logs by ${user.id}"
+            )
         }
 
         fun getLogsLink(logs: List<Log>, userInfo: String, name: String): String {

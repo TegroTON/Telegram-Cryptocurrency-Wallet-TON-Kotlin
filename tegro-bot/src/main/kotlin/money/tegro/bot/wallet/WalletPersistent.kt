@@ -3,8 +3,10 @@ package money.tegro.bot.wallet
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import money.tegro.bot.exceptions.NotEnoughCoinsException
+import money.tegro.bot.objects.LogType
 import money.tegro.bot.objects.PostgresUserPersistent
 import money.tegro.bot.objects.User
+import money.tegro.bot.utils.SecurityPersistent
 import net.dzikoysk.exposed.upsert.upsert
 import net.dzikoysk.exposed.upsert.withUnique
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -183,6 +185,8 @@ object PostgresWalletPersistent : WalletPersistent {
         val newCoins = walletState.active.withCoins(currentCoins - coins)
         val newFrozen = walletState.frozen.withCoins(currentFrozen + coins)
 
+        SecurityPersistent.log(user, coins, "$coins, avail ${newCoins[coins.currency]}", LogType.COINS_FROZEN)
+
         val newWalletState = walletState.copy(
             active = newCoins,
             frozen = newFrozen
@@ -197,6 +201,8 @@ object PostgresWalletPersistent : WalletPersistent {
 
         val newFrozen = walletState.frozen.withCoins(currentFrozen - coins)
         val newCoins = walletState.active.withCoins(currentCoins + coins)
+
+        SecurityPersistent.log(user, coins, "$coins, avail ${newCoins[coins.currency]}", LogType.COINS_UNFROZEN)
 
         val newWalletState = walletState.copy(
             active = newCoins,

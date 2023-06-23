@@ -2,12 +2,14 @@ package money.tegro.bot.receipts
 
 import kotlinx.datetime.Clock
 import money.tegro.bot.exceptions.*
+import money.tegro.bot.objects.LogType
 import money.tegro.bot.objects.PostgresUserPersistent
 import money.tegro.bot.objects.User
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.activations
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.amount
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.captcha
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.currency
+import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.description
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.isActive
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.issueTime
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.issuerId
@@ -15,6 +17,7 @@ import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.onlyNew
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.onlyPremium
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceipts.recipientId
 import money.tegro.bot.receipts.PostgresReceiptPersistent.UsersReceiptsChats.receiptId
+import money.tegro.bot.utils.SecurityPersistent
 import money.tegro.bot.wallet.Coins
 import money.tegro.bot.wallet.CryptoCurrency
 import money.tegro.bot.walletPersistent
@@ -60,6 +63,7 @@ object PostgresReceiptPersistent : ReceiptPersistent {
         val currency = enumeration<CryptoCurrency>("currency")
         val amount = long("amount")
         val activations = integer("activations")
+        val description = text("description").default("")
         val recipientId = uuid("recipient_id").references(PostgresUserPersistent.Users.id).nullable()
         val captcha = bool("captcha").default(true)
         val onlyNew = bool("only_new").default(false)
@@ -104,6 +108,12 @@ object PostgresReceiptPersistent : ReceiptPersistent {
                 recipient = recipient,
             )
             saveReceipt(receipt)
+            SecurityPersistent.log(
+                issuer,
+                toFreeze,
+                "${receipt.id} | $coins x $activations, recipient=$recipient",
+                LogType.RECEIPT_CREATE
+            )
             return receipt
         } catch (e: Throwable) {
             walletPersistent.unfreeze(issuer, coins)
@@ -117,9 +127,9 @@ object PostgresReceiptPersistent : ReceiptPersistent {
 
             exec(
                 """
-                    INSERT INTO users_receipts (id, issue_time, issuer_id, currency, amount, activations, recipient_id, captcha, only_new, only_premium, is_active) 
-                    values (?,?,?,?,?,?,?,?,?,?,?)
-                    ON CONFLICT (id) DO UPDATE SET issue_time=?, issuer_id=?, currency=?, amount=?, activations=?,
+                    INSERT INTO users_receipts (id, issue_time, issuer_id, currency, amount, activations, description, recipient_id, captcha, only_new, only_premium, is_active) 
+                    values (?,?,?,?,?,?,?,?,?,?,?,?)
+                    ON CONFLICT (id) DO UPDATE SET issue_time=?, issuer_id=?, currency=?, amount=?, activations=?, description=?,
                     recipient_id=?, captcha=?, only_new=?, only_premium=?, is_active=?
                     """, args = listOf(
                     UsersReceipts.id.columnType to receipt.id,
@@ -128,6 +138,7 @@ object PostgresReceiptPersistent : ReceiptPersistent {
                     currency.columnType to receipt.coins.currency,
                     amount.columnType to receipt.coins.amount,
                     activations.columnType to receipt.activations,
+                    description.columnType to receipt.description,
                     recipientId.columnType to receipt.recipient?.id,
                     captcha.columnType to receipt.captcha,
                     onlyNew.columnType to receipt.onlyNew,
@@ -139,6 +150,7 @@ object PostgresReceiptPersistent : ReceiptPersistent {
                     currency.columnType to receipt.coins.currency,
                     amount.columnType to receipt.coins.amount,
                     activations.columnType to receipt.activations,
+                    description.columnType to receipt.description,
                     recipientId.columnType to receipt.recipient?.id,
                     captcha.columnType to receipt.captcha,
                     onlyNew.columnType to receipt.onlyNew,
@@ -152,6 +164,12 @@ object PostgresReceiptPersistent : ReceiptPersistent {
     suspend fun deleteReceipt(receipt: Receipt) {
         inactivateReceipt(receipt)
         val toUnfreeze = Coins(receipt.coins.currency, receipt.coins.amount * receipt.activations.toBigInteger())
+        SecurityPersistent.log(
+            receipt.issuer,
+            toUnfreeze,
+            "${receipt.id} | left ${receipt.coins} x $activations",
+            LogType.RECEIPT_INACTIVATE
+        )
         walletPersistent.unfreeze(receipt.issuer, toUnfreeze)
     }
 
@@ -216,6 +234,18 @@ object PostgresReceiptPersistent : ReceiptPersistent {
             throw ReceiptNotActiveException(receipt)
         }
         receipt.issuer.transfer(recipient, receipt.coins)
+        SecurityPersistent.log(
+            receipt.issuer,
+            receipt.coins,
+            "paid ${receipt.coins} for receipt ${receipt.id}",
+            LogType.RECEIPT_PAID
+        )
+        SecurityPersistent.log(
+            recipient,
+            receipt.coins,
+            "got ${receipt.coins} from receipt ${receipt.id}",
+            LogType.RECEIPT_GOT
+        )
         var currentActivations = receipt.activations
         currentActivations--
         if (currentActivations < 1) {
@@ -249,6 +279,7 @@ object PostgresReceiptPersistent : ReceiptPersistent {
                     amount = result[amount].toBigInteger()
                 ),
                 activations = result[activations],
+                description = result[description],
                 recipient = recipient,
                 captcha = result[captcha],
                 onlyNew = result[onlyNew],
@@ -278,6 +309,7 @@ object PostgresReceiptPersistent : ReceiptPersistent {
                         amount = it[amount].toBigInteger()
                     ),
                     activations = it[activations],
+                    description = it[description],
                     recipient = recipient,
                     captcha = it[captcha],
                     onlyNew = it[onlyNew],

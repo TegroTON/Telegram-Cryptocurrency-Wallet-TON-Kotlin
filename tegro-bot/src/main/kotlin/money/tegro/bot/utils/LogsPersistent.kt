@@ -40,7 +40,7 @@ object PostgresLogsPersistent : LogsPersistent {
     }
 
     override suspend fun pushLogs(logs: List<Log>) {
-        suspendedTransactionAsync {
+        transaction {
             for (log: Log in logs) {
                 UsersLogs.insert {
                     it[userId] = log.userId

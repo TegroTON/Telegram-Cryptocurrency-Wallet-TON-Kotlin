@@ -48,6 +48,7 @@ object PostgresUserPersistent : UserPersistent {
         val localCurrency = enumeration<LocalCurrency>("local_currecny")
         val referralId = uuid("referral_id").references(Users.id).nullable()
         val address = text("address").default("")
+        val phone = text("phone").default("")
 
         val unique = withUnique("user_id", userId)
 
@@ -88,20 +89,22 @@ object PostgresUserPersistent : UserPersistent {
         transaction {
             exec(
                 """
-                    INSERT INTO users_settings (user_id, "language", local_currecny, referral_id, address) 
-                    values (?, ?, ?, ?, ?)
-                    ON CONFLICT (user_id) DO UPDATE SET "language"=?, local_currecny=?, referral_id=?, address=?
+                    INSERT INTO users_settings (user_id, "language", local_currecny, referral_id, address, phone) 
+                    values (?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (user_id) DO UPDATE SET "language"=?, local_currecny=?, referral_id=?, address=?, phone=?
                     """, args = listOf(
                     UsersSettings.userId.columnType to settings.userId,
                     UsersSettings.language.columnType to settings.lang,
                     UsersSettings.localCurrency.columnType to settings.localCurrency,
                     UsersSettings.referralId.columnType to settings.referralId,
                     UsersSettings.address.columnType to settings.address,
+                    UsersSettings.phone.columnType to settings.phone,
 
                     UsersSettings.language.columnType to settings.lang,
                     UsersSettings.localCurrency.columnType to settings.localCurrency,
                     UsersSettings.referralId.columnType to settings.referralId,
                     UsersSettings.address.columnType to settings.address,
+                    UsersSettings.phone.columnType to settings.phone,
                 )
             )
         }
@@ -109,6 +112,7 @@ object PostgresUserPersistent : UserPersistent {
 
     override suspend fun load(uuid: UUID): User? {
         return transaction {
+            SchemaUtils.createMissingTablesAndColumns(UsersSettings)
             val userRow = Users.select {
                 Users.id.eq(uuid)
             }.firstOrNull() ?: return@transaction null
@@ -179,6 +183,7 @@ object PostgresUserPersistent : UserPersistent {
                     settingsRow[UsersSettings.localCurrency],
                     settingsRow[UsersSettings.referralId],
                     settingsRow[UsersSettings.address],
+                    settingsRow[UsersSettings.phone],
                     nfts
                 )
                 User(
@@ -228,6 +233,7 @@ object PostgresUserPersistent : UserPersistent {
                     settingsRow[UsersSettings.localCurrency],
                     settingsRow[UsersSettings.referralId],
                     settingsRow[UsersSettings.address],
+                    settingsRow[UsersSettings.phone],
                     nfts
                 )
                 User(

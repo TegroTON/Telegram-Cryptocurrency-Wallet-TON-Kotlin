@@ -101,9 +101,9 @@ class WalletMenu(
             }
 
             ButtonPayload.WITHDRAW -> {
-                bot.sendPopup(botMessage, "Maintenance, please wait...")
-                return true
-                //user.setMenu(bot, WalletWithdrawSelectMenu(user, this), message.lastMenuMessageId)
+                //bot.sendPopup(botMessage, "Maintenance, please wait...")
+                //return true
+                user.setMenu(bot, WalletWithdrawSelectMenu(user, this), botMessage)
             }
 
             ButtonPayload.TRANSFER -> TODO()
