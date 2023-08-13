@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Обновление зависимостей Gradle для проекта на Kotlin
+  - package-ecosystem: "gradle"
+    directory: "/" # Путь к вашему файлу build.gradle или build.gradle.kts в проекте
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Обновление зависимостей GitHub Actions, если они используются в вашем проекте
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
