@@ -33,7 +33,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
     implementation("io.github.g0dkar:qrcode-kotlin-jvm:3.3.0")
     implementation("net.dzikoysk:exposed-upsert:1.1.0")
-    implementation("org.postgresql:postgresql:42.5.4")
+    implementation("org.postgresql:postgresql:42.6.0")
     implementation("org.telegram:telegrambots:6.5.0")
     implementation("tech.ydb:ydb-sdk-core:$ydbVersion")
     implementation("tech.ydb:ydb-sdk-table:$ydbVersion")
