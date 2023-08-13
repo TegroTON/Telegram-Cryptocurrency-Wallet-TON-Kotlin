@@ -9,7 +9,7 @@ plugins {
 dependencies {
     val vkSdkKotlinVersion = "0.0.8"
     val ydbVersion = "2.0.1"
-    val ktorVersion = "2.2.4"
+    val ktorVersion = "2.3.3"
     val tonKotlinVersion = "0.3.0-SNAPSHOT"
 
     implementation("com.petersamokhin.vksdk:core:$vkSdkKotlinVersion")
