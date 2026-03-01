@@ -21,7 +21,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build image with gradle
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/gradle-build-action@v3
         with:
           arguments: installDist
 
