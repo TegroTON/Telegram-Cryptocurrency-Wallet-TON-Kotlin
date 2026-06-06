@@ -1,5 +1,13 @@
 # Tegro Bot: Advanced Cryptocurrency Telegram Wallet for TON Blockchain
 
+[![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Built on TON](https://img.shields.io/badge/Built%20on-TON-0098EA?logo=ton&logoColor=white)](https://ton.org)
+[![Telegram Bot](https://img.shields.io/badge/Telegram-@TegroMoneyBot-26A5E4?logo=telegram&logoColor=white)](https://t.me/TegroMoneyBot)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+![Stars](https://img.shields.io/github/stars/TegroTON/Telegram-Cryptocurrency-Wallet-TON-Kotlin?style=social)
+
+> 🤖 **TL;DR:** A non-custodial **TON wallet as a Telegram bot** — send/receive Toncoin & jettons, pay with crypto inside Telegram, send funds via virtual checks, and get fee discounts for holding partner NFTs. Try it live: **[@TegroMoneyBot](https://t.me/TegroMoneyBot)**.
+
 ## Introduction
 Welcome to Tegro Bot, a cutting-edge Telegram bot specifically designed for the TON blockchain. Our bot revolutionizes the way users interact with cryptocurrencies by offering an intuitive, secure, and efficient platform for managing Toncoin and other TON blockchain tokens. Tegro Bot is not just a wallet; it's a complete ecosystem that integrates seamlessly with Telegram, providing users with an unprecedented level of convenience and flexibility in their cryptocurrency transactions.
 
@@ -44,6 +52,36 @@ Welcome to Tegro Bot, a cutting-edge Telegram bot specifically designed for the 
 ## Development Insights
 
 This Telegram bot is developed using the robust TON Kotlin library, sourced from GitHub. This library provides a solid foundation, ensuring reliability and scalability. For an in-depth look into this technology, visit the [TON Kotlin GitHub Repository](https://github.com/andreypfau/ton-kotlin).
+
+### Tech Stack
+
+- **Language:** Kotlin (JVM)
+- **TON integration:** [ton-kotlin](https://github.com/andreypfau/ton-kotlin)
+- **Platform:** Telegram Bot API
+- **Capabilities:** Toncoin & jetton transfers, in-Telegram crypto payments, virtual checks, NFT-based fee discounts
+
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/TegroTON/Telegram-Cryptocurrency-Wallet-TON-Kotlin.git
+cd Telegram-Cryptocurrency-Wallet-TON-Kotlin
+
+# Build (Gradle wrapper)
+./gradlew build
+```
+
+Provide your Telegram bot token and TON configuration via environment variables / config before running. See the source for the expected settings.
+
+## Tegro Ecosystem
+
+This wallet is part of the open-source **Tegro** DeFi & Web3 ecosystem on TON:
+
+- 👛 **Wallet bot** — https://t.me/TegroMoneyBot
+- 🔁 **DEX (Tegro Finance)** — https://tegro.finance
+- 💳 **Payments (Tegro Money)** — https://tegro.money
+- 💬 **Community** — https://t.me/TegroMoney
+- 🏠 **All open-source repos** — https://github.com/TegroTON
 
 ## Community Involvement
 
